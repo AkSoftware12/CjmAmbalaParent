@@ -1,5 +1,4 @@
 import 'package:avi/HexColorCode/HexColor.dart';
-import 'package:avi/PaymentGateway/PayButton/pay_button.dart';
 import 'package:avi/UI/Attendance/AttendanceScreen.dart';
 import 'package:carousel_slider_plus/carousel_slider_plus.dart';
 import 'package:flutter/cupertino.dart';
@@ -737,24 +736,17 @@ class CarouselFees extends StatelessWidget {
             scrollDirection: Axis.horizontal,
           ),
           items: imgList.map((item) {
-            return DueAmountCard(
-              dueAmount: dueAmount,
-              status: status,
-              dueDate: dueDate,
-              onPayNow: () {
-                // print("Processing payment for ₹${fess[index]['to_pay_amount']}");
-
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (context) => HomeGateway()),
-                // );
-              },
-              custFirstName: custLastName,
-              custLastName: 'N/A',
-              mobile: mobile,
-              email:email,
-              address: address,
-              payDate: payDate,
+            return  DueAmountCard(
+              dueAmount: '0',
+              status: 'due',
+              dueDate: '',
+              payDate: '',
+              onPayNow: () {},
+              custFirstName: '',
+              lastName: 'N/A',
+              mobile: '',
+              email:  '',
+              address:  '',
             );
 
             //   GestureDetector(
@@ -795,173 +787,84 @@ class DueAmountCard extends StatelessWidget {
   final String status;
   final String dueDate;
   final String payDate;
-  final String custFirstName; //optional
-  final String custLastName; //optional
-  final String mobile; //optional
-  final String email; //optional
+  final String custFirstName;
+  final String lastName;
+  final String mobile;
+  final String email;
   final String address;
 
-  DueAmountCard({required this.dueAmount, required this.onPayNow, required this.status, required this.dueDate, required this.payDate, required this.custFirstName, required this.custLastName, required this.mobile, required this.email, required this.address});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [Colors.red, Colors.white, Colors.red], // Gradient Colors
-          ),
-        ),
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Title
-            Text(
-              "Due Amount",
-              style: GoogleFonts.montserrat(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: HexColor('#f62c13'), // Highlight in Yellow
-              ),
-            ),
-            SizedBox(height: 8),
-
-            // Amount
-            Text(
-              "₹ ${dueAmount}",
-              style: GoogleFonts.montserrat(
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                color: HexColor('#f62c13'), // Highlight in Yellow
-              ),
-            ),
-            SizedBox(height: 12),
-
-            // Pay Now Button
-            SizedBox(
-              width: double.infinity,
-              child:CommonNdpsButton(buttonText: "Pay Now",
-                status: status,
-                amount: '1',
-                // amount: dueAmount,
-                custFirstName: custFirstName,
-                custLastName: custLastName,
-                mobile: mobile, email: email,
-                address: address,
-              ),
-
-
-
-              // ElevatedButton(
-              //   onPressed: onPayNow,
-              //   style: ElevatedButton.styleFrom(
-              //     backgroundColor: Colors.white, // White button for contrast
-              //     padding: EdgeInsets.symmetric(vertical: 12),
-              //     shape: RoundedRectangleBorder(
-              //       borderRadius: BorderRadius.circular(10),
-              //     ),
-              //   ),
-              //   child: Text(
-              //     "Pay Now",
-              //     style: GoogleFonts.montserrat(
-              //       fontSize: 16,
-              //       fontWeight: FontWeight.w600,
-              //       color: Colors.redAccent, // Matching gradient color
-              //     ),
-              //   ),
-              // ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class PromotionCard extends StatelessWidget {
-  const PromotionCard({
+  const DueAmountCard({
     super.key,
+    required this.dueAmount,
+    required this.onPayNow,
+    required this.status,
+    required this.dueDate,
+    required this.payDate,
+    required this.custFirstName,
+    required this.lastName,
+    required this.mobile,
+    required this.email,
+    required this.address,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(2.0),
-      child: Container(
-        height: 130,
-        decoration: BoxDecoration(
-          color: AppColors.secondary,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: AppColors.textwhite, // You can change the color as needed
-            width: 1,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const BottomNavBarScreen(initialIndex: 3),
           ),
+        );
+      },
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.11,
+        width: MediaQuery.of(context).size.width * 0.93,
+        decoration: BoxDecoration(
+          color: HexColor('6e6edf'),
+          borderRadius: BorderRadius.circular(10.sp),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: EdgeInsets.all(5.sp),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 18.0),
-              child: Image.asset(
-                AppAssets.logo,
-                color: AppColors.textwhite,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Image.asset('assets/due_fees_amount.png', height: 40.sp, width: 40.sp),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Due Fees",
+                      style: GoogleFonts.poppins(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textwhite,
+                      ),
+                    ),
+                    Text(
+                      "₹ $dueAmount",
+                      style: GoogleFonts.poppins(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textwhite,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 18.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '3D Design \nFundamentals',
-                    style: GoogleFonts.montserrat(
-                      textStyle: Theme.of(context).textTheme.displayLarge,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      fontStyle: FontStyle.normal,
-                      color: AppColors.textwhite,
-                    ),
-                  ),
-                  SizedBox(
-                    height: 20,
-                  ),
-                  Container(
-                    width: 100,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: HexColor('#e16a54'),
-                        // You can change the color as needed
-                        width: 1,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Center(
-                        child: Text(
-                          'Click',
-                          style: GoogleFonts.montserrat(
-                            textStyle: Theme.of(context).textTheme.displayLarge,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            fontStyle: FontStyle.normal,
-                            color: AppColors.textwhite,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                ],
+            SizedBox(height: 3.sp),
+            Text(
+              "Click to pay overdue fees",
+              maxLines: 1,
+              style: GoogleFonts.poppins(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textwhite,
               ),
             ),
           ],
@@ -970,3 +873,4 @@ class PromotionCard extends StatelessWidget {
     );
   }
 }
+

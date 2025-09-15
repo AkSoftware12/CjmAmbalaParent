@@ -4,18 +4,14 @@ import 'package:avi/TecaherUi/UI/Assignment/upload_assignments.dart' show Assign
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:open_filex/open_filex.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../../CommonCalling/data_not_found.dart';
-import '../../../HexColorCode/HexColor.dart';
 import '../../../constants.dart';
 import '../../../utils/textSize.dart';
 import '../Auth/login_screen.dart';

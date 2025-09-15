@@ -6,8 +6,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:upgrader/upgrader.dart';
-import '../utils/upgrader_config.dart';
 import '../UI/Dashboard/HomeScreen%20.dart';
 import '../constants.dart';
 import '../strings.dart';
@@ -16,12 +14,9 @@ import 'Attendance/AttendanceScreen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'Auth/login_screen.dart';
-import 'Auth/login_student.dart';
 import 'Auth/login_student_userlist.dart';
-import '../NewUserBottombarPage/documents.dart';
-import 'Fees/fee_demo.dart';
+import 'Fees/FeesScreen.dart';
 import 'Gallery/Album/album.dart' show GalleryScreen;
-import 'Gallery/gallery_tab.dart';
 import 'Help/help.dart';
 import 'Library/LibraryScreen.dart';
 import 'Message/message.dart';
@@ -53,8 +48,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     AttendanceCalendarScreen(title: 'Attendance'),
     // AttendanceCalendar(),
     LibraryScreen(),
-    // FeesScreen(),
-    FeesDemoScreen(),
+    FeesScreen(),
     ProfileScreen(),
   ];
 

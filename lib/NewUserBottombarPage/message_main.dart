@@ -7,8 +7,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shimmer/shimmer.dart';
 import '../CommonCalling/progressbarWhite.dart';
+import '../utils/SupportPage16/html.dart';
 import 'message_psge.dart';
-import 'package:flutter_html/flutter_html.dart';
+// import 'package:flutter_html/flutter_html.dart';
 
 class MessageMainScreen extends StatefulWidget {
   @override
@@ -316,109 +317,15 @@ class _MessageListScreenState extends State<MessageMainScreen> {
                         elevation: 4, // Added subtle shadow for depth
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), // Rounded corners
                         child: SingleChildScrollView(
-                          child: Html(
-                            anchorKey: staticAnchorKey,
-                            data: instruction?['description'].toString() ?? '',
-                            style: {
-                              // Default body styling with custom font and color
-                              "body": Style(
-                                fontFamily: 'Roboto', // Modern, clean font
-                                fontSize: FontSize(16.sp),
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black, // Dark grey for readability
-                              ),
-                              // Paragraph styling
-                              "p": Style(
-                                fontFamily: 'Roboto',
-                                fontSize: FontSize(14.sp),
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              // Heading 1 with bold color and larger size
-                              "h1": Style(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize(28.sp),
-                                color: Colors.blueAccent, // Vibrant blue for emphasis
-                                fontWeight: FontWeight.bold,
-                              ),
-                              // Heading 2 with slightly muted color
-                              "h2": Style(
-                                fontFamily: 'Poppins',
-                                fontSize: FontSize(22.sp),
-                                color: Colors.blueGrey[600],
-                                fontWeight: FontWeight.w600,
-                              ),
-                              // Table cell styling with borders
-                              "td": Style(
-                                fontFamily: 'Roboto',
-                                fontSize: FontSize(14.sp),
-                                color: Colors.black,
-                                padding: HtmlPaddings.all(8.sp), // Added padding for table cells
-                                border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
-                              ),
-                              // Table styling for better structure
-                              "table": Style(
-                                border: Border.all(color: Colors.grey[300]!), // Table border
-                                backgroundColor: Colors.white, // Light background for tables
-                              ),
-                            },
-                            extensions: [
-                              // Wrap tables in horizontal scroll
-                              TagWrapExtension(
-                                tagsToWrap: {"table"},
-                                builder: (child) {
-                                  return SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: child,
-                                  );
-                                },
-                              ),
-                              // Custom tag for bird emoji
-                              TagExtension.inline(
-                                tagsToExtend: {"bird"},
-                                child: const TextSpan(text: "🐦"),
-                              ),
-                              // Flutter logo tag
-                              TagExtension(
-                                tagsToExtend: {"flutter"},
-                                builder: (context) => CssBoxWidget(
-                                  style: context.styledElement!.style,
-                                  child: FlutterLogo(
-                                    style: context.attributes['horizontal'] != null
-                                        ? FlutterLogoStyle.horizontal
-                                        : FlutterLogoStyle.markOnly,
-                                    textColor: Colors.blueAccent, // Updated to match h1 color
-                                    size: context.styledElement!.style.fontSize!.value,
-                                  ),
-                                ),
-                              ),
-                              // Image extension for flutter.dev
-                              ImageExtension(
-                                handleAssetImages: false,
-                                handleDataImages: false,
-                                networkDomains: {"flutter.dev"},
-                                child: const FlutterLogo(size: 36),
-                              ),
-                              // Image extension for mydomain.com with custom headers
-                              ImageExtension(
-                                handleAssetImages: false,
-                                handleDataImages: false,
-                                networkDomains: {"mydomain.com"},
-                                networkHeaders: {"Custom-Header": "some-value"},
-                              ),
-                            ],
-                            onLinkTap: (url, _, __) {
-                              debugPrint("Opening $url...");
-                            },
-                            onCssParseError: (css, messages) {
-                              debugPrint("CSS parsing error in: $css");
-                              debugPrint("Error messages:");
-                              for (var element in messages) {
-                                debugPrint(element.toString());
-                              }
-                              return '';
-                            },
+
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: CustomHtmlView(
+                              html: instruction?['description'].toString() ?? '',
+
+                            ),
                           ),
+
                         ),
                       ),
                     ),

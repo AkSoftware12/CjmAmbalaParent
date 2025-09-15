@@ -1,4 +1,5 @@
 
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
-
 import '../../../CommonCalling/data_not_found.dart';
 import '../../../constants.dart';
 import '../ImageList/image_list.dart' show ImageListScreen;
@@ -203,10 +203,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Precache images after dependencies are available
-    final albums = ref.read(galleryProvider).valueOrNull ?? [];
+
+    final albumsAsync = ref.read(galleryProvider); // returns AsyncValue<List<Album>>
+    final albums = albumsAsync.value ?? []; // ✅ use .value
     _precacheImages(albums);
   }
+
 
   void _precacheImages(List<Album> albums) {
     for (var album in albums) {

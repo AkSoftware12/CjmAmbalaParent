@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:avi/HexColorCode/HexColor.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
@@ -776,7 +775,7 @@ class _CustomLoginButtonState extends State<CustomLoginButton> {
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
-          ).animate().fade(duration: 500.ms),
+          ),
         ),
       ),
     );

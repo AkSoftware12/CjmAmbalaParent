@@ -1,11 +1,14 @@
 import 'package:avi/constants.dart';
 import 'package:flutter/material.dart';
+// import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import '../utils/SupportPage16/html.dart';
 
 
 
@@ -126,9 +129,9 @@ class _MessageListScreenState extends State<MessageListScreen> {
             elevation: 5,
             child: ListTile(
               leading: CircleAvatar(
-                child: Text(msg['title']![0]),
                 backgroundColor:AppColors.secondary,
                 foregroundColor: Colors.white,
+                child: Text(msg['title']![0]),
               ),
               title: Text(msg['title']!,
                 style:  TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold, color: AppColors.textblack),
@@ -179,7 +182,7 @@ class _MessageListScreenState extends State<MessageListScreen> {
                         builder: (context) => MessageDetailScreen(
                           name: msg['title']!,
                           message: msg['message']!,
-                          time:  formatDateTime(msg['updated_at'] ?? '')!,
+                          time:  formatDateTime(msg['updated_at'] ?? ''),
                         ),
                       ),
                     );
@@ -243,6 +246,8 @@ class MessageDetailScreen extends StatelessWidget {
     required this.message,
     required this.time,
   });
+  final staticAnchorKey = GlobalKey();
+
 
   @override
   Widget build(BuildContext context) {
@@ -266,15 +271,21 @@ class MessageDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text("Sent at: $time", style: TextStyle(color: AppColors.secondary,fontWeight: FontWeight.bold,fontSize: 16.sp)),
-              SizedBox(height: 20),
-              Text(
-                message,
-                style: GoogleFonts.openSans(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
+              const SizedBox(height: 20),
+              CustomHtmlView(
+                html: message ?? '',
+
               ),
+
+
+              // Text(
+              //   message,
+              //   style: GoogleFonts.openSans(
+              //     fontSize: 15.sp,
+              //     fontWeight: FontWeight.w500,
+              //     color: Colors.black87,
+              //   ),
+              // ),
             ],
           ),
         ),

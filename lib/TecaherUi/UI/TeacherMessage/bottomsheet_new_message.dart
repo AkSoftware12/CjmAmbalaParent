@@ -1,5 +1,5 @@
 import 'package:animated_search_bar/animated_search_bar.dart';
-import 'package:awesome_dialog/awesome_dialog.dart';
+// import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -275,15 +275,15 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
           selectAllTeachers = false;
           selectAllStudents = false;
         });
-        AwesomeDialog(
-          context: context,
-          dialogType: DialogType.success,
-          animType: AnimType.scale,
-          title: 'Success',
-          desc: 'Message sent successfully!',
-          btnOkOnPress: () {},
-          btnOkColor: Colors.green,
-        ).show();
+        // AwesomeDialog(
+        //   context: context,
+        //   dialogType: DialogType.success,
+        //   animType: AnimType.scale,
+        //   title: 'Success',
+        //   desc: 'Message sent successfully!',
+        //   btnOkOnPress: () {},
+        //   btnOkColor: Colors.green,
+        // ).show();
       } else {
         _showErrorSnackBar('Failed to send message: ${response.statusCode}');
       }
