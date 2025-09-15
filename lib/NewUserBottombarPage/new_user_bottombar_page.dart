@@ -41,6 +41,7 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
   final List<Widget> _screens = [
 
     MessageMainScreen(),
+    MessageListScreen(appbar: 'AppBar',),
     NewUserPaymentScreen(),
     DocumentsScreen(),
     NewUserProfileScreen(),
@@ -240,6 +241,11 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
           type: BottomNavigationBarType.fixed,
           items:  <BottomNavigationBarItem>[
             BottomNavigationBarItem(
+              icon: const Icon(Icons.dashboard),
+              label:'DashBoard',
+              backgroundColor: AppColors.primary,
+            ),
+            BottomNavigationBarItem(
               icon: Icon(CupertinoIcons.chat_bubble_text),
               label:'Messages',
               backgroundColor: AppColors.primary,
@@ -382,7 +388,10 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                                 ),
                               ),
                               onTap: () {
-                                Navigator.pop(context);
+                                Navigator.pop(context); // Drawer close karega
+                                setState(() {
+                                  _selectedIndex = 0; // BottomNavigation ka index 0 pe set karega
+                                });
 
                                 // Navigator.push(
                                 //   context,
@@ -403,6 +412,47 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                               ),
                             ),
 
+
+                            ListTile(
+                              title: Text(
+                                'Messages ',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child: Icon(
+                                  Icons.chat,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context); // Drawer close karega
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        MessageListScreen(appbar: '',),
+                                  ),
+                                );
+
+                              },
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                              ),
+                            ),
 
 
 

@@ -10,6 +10,9 @@ import 'dart:convert';
 
 
 class MessageListScreen extends StatefulWidget {
+  final String appbar;
+  const MessageListScreen({super.key, required this.appbar});
+
   @override
   State<MessageListScreen> createState() => _MessageListScreenState();
 }
@@ -93,7 +96,7 @@ class _MessageListScreenState extends State<MessageListScreen> {
           ),
         ),
         backgroundColor: AppColors.secondary,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body:  isLoading
           ? _buildShimmerLoading()

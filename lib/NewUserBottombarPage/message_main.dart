@@ -210,7 +210,7 @@ class _MessageListScreenState extends State<MessageMainScreen> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  MessageListScreen(),
+                  MessageListScreen(appbar: '',),
             ),
           );
         },
@@ -325,7 +325,7 @@ class _MessageListScreenState extends State<MessageMainScreen> {
                                 fontFamily: 'Roboto', // Modern, clean font
                                 fontSize: FontSize(16.sp),
                                 fontWeight: FontWeight.bold,
-                                color: Colors.orange, // Dark grey for readability
+                                color: Colors.black, // Dark grey for readability
                               ),
                               // Paragraph styling
                               "p": Style(
@@ -352,7 +352,7 @@ class _MessageListScreenState extends State<MessageMainScreen> {
                               "td": Style(
                                 fontFamily: 'Roboto',
                                 fontSize: FontSize(14.sp),
-                                color: Colors.orange,
+                                color: Colors.black,
                                 padding: HtmlPaddings.all(8.sp), // Added padding for table cells
                                 border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
                               ),
