@@ -2,7 +2,7 @@ name: avi
 description: "A new Flutter project."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.10.1000+15008
+version: 1.0.15+15
 
 environment:
   sdk: ^3.8.1
@@ -60,7 +60,7 @@ dependencies:
 
 
 
-  #  awesome_dialog: ^3.2.1
+#  awesome_dialog: ^3.2.1
 #  flutter_html: ^3.0.0
 
 
