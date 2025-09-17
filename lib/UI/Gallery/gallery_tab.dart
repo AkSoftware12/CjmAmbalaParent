@@ -75,7 +75,7 @@ class _GalleryVideoTabScreenState extends State<GalleryVideoTabScreen>
         controller: _tabController,
         children: [
           GalleryScreen(),
-          VideoAlbumListScreen(),
+          // VideoAlbumListScreen(),
         ],
       ),
     );

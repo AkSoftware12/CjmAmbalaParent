@@ -98,13 +98,20 @@ class _MessageListScreenState extends State<MessageListScreen> {
             fontWeight: FontWeight.bold
           ),
         ),
+        leading:widget.appbar==''? IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context); // पिछले स्क्रीन पर वापस जाएं
+          },
+        ):null,
         backgroundColor: AppColors.secondary,
+        automaticallyImplyLeading: false,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body:  isLoading
           ? _buildShimmerLoading()
           : messages == null || messages!.isEmpty
-          ? Center(child: Text("No messages found."))
+          ? Center(child: Text("No messages found.",style: TextStyle(color: Colors.white,fontSize: 15.sp),))
           : ListView.builder(
         itemCount: messages!.length,
         itemBuilder: (context, index) {

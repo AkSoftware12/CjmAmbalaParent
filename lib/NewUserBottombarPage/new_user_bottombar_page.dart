@@ -287,17 +287,17 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                     radius: 40,
                     backgroundImage:
                     (studentData != null &&
-                        studentData?['photo'] != null &&
-                        studentData!['photo'].toString().isNotEmpty &&
-                        !studentData!['photo'].toString().endsWith(
+                        studentData?['picture_data'] != null &&
+                        studentData!['picture_data'].toString().isNotEmpty &&
+                        !studentData!['picture_data'].toString().endsWith(
                           "null",
                         ))
-                        ? NetworkImage(studentData!['photo'])
+                        ? NetworkImage(studentData!['picture_data'])
                         : null,
                     child:
                     (studentData == null ||
-                        studentData?['photo'] == null ||
-                        studentData!['photo'].toString().isEmpty)
+                        studentData?['picture_data'] == null ||
+                        studentData!['picture_data'].toString().isEmpty)
                         ? const Icon(Icons.account_circle, size: 40)
                         : null,
                   ),

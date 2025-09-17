@@ -38,6 +38,10 @@ class _LoginPageState extends State<LoginUserLIst> {
     super.initState();
     _loadLoginHistory();
     _loadSelectedStudent(); // Load the previously selected student
+
+    print('SelectedOption Int$selectedOption');
+    print('SelectedAdm Int$selectedAdmNo');
+    print('SelectedStaff Int$staffPass');
   }
 
   // Load previously selected student_id from SharedPreferences
@@ -65,7 +69,7 @@ class _LoginPageState extends State<LoginUserLIst> {
   Future<void> _login() async {
     final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
     String? deviceToken = await _firebaseMessaging.getToken();
-    print('Device id: $deviceToken');
+    print('Device id Old: $deviceToken');
 
     setState(() {
       _isLoading = true;
@@ -138,7 +142,7 @@ class _LoginPageState extends State<LoginUserLIst> {
   Future<void> _loginNewUser() async {
     final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
     String? deviceToken = await _firebaseMessaging.getToken();
-    print('Device id: $deviceToken');
+    print('Device id New: $deviceToken');
 
     setState(() {
       _isLoading = true;
@@ -280,17 +284,46 @@ class _LoginPageState extends State<LoginUserLIst> {
     await prefs.setString('selected_student_id', studentId);
   }
 
+  // Future<void> _loadLoginHistory() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   String? data = prefs.getString('loginHistory');
+  //   if (data != null) {
+  //     setState(() {
+  //       studentList = List<Map<String, dynamic>>.from(jsonDecode(data));
+  //     });
+  //     // Load selected student after loading login history
+  //     _loadSelectedStudent();
+  //   }
+  // }
+
   Future<void> _loadLoginHistory() async {
     final prefs = await SharedPreferences.getInstance();
     String? data = prefs.getString('loginHistory');
     if (data != null) {
+      List<Map<String, dynamic>> loadedList = List<Map<String, dynamic>>.from(jsonDecode(data));
       setState(() {
-        studentList = List<Map<String, dynamic>>.from(jsonDecode(data));
+        studentList = loadedList;
       });
-      // Load selected student after loading login history
-      _loadSelectedStudent();
+
+      // Ab list aagayi, abhi selected student load karo
+      String? savedStudentId = prefs.getString('selected_student_id');
+      if (savedStudentId != null) {
+        var selectedStudent = loadedList.firstWhere(
+              (student) => student['student_id'].toString() == savedStudentId,
+          orElse: () => {},
+        );
+
+        if (selectedStudent.isNotEmpty) {
+          setState(() {
+            selectedOption = savedStudentId;
+            selectedAdmNo = selectedStudent['adm_no']?.toString();
+            staffPass = selectedStudent['password']?.toString();
+          });
+        }
+      }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -479,26 +512,24 @@ class _LoginPageState extends State<LoginUserLIst> {
                     padding: EdgeInsets.only(left: 18.sp, right: 18.sp),
                     child: CustomLoginButton(
                       onPressed: () {
-                        if (selectedOption != null) {
-                          if (selectedAdmNo == 'null') {
-                            if (staffPass == 'null') {
-                              _loginNewUser();
-                            } else {
-                              _loginTeacher();
-                            }
-                          } else {
-                            _login();
-                          }
-                          print("Selected Option: $selectedOption");
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Please select a student!"),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
+                        if (selectedOption == null) {
+                          _showErrorDialog("Please select a student first");
+                          return;
                         }
+
+                        if (selectedAdmNo == 'null' || selectedAdmNo == null) {
+                          if (staffPass == 'null' || staffPass == null) {
+                            _loginNewUser();
+                          } else {
+                            _loginTeacher();
+                          }
+                        } else {
+                          _login();
+                        }
+
+                        print("Selected Option: $selectedOption");
                       },
+
                       title: 'Go',
                     ),
                   ),

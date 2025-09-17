@@ -32,7 +32,7 @@ class _MessageListScreenState extends State<MessageMainScreen> {
   Future<void> fetchProfileData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('newusertoken');
-    print("token: $token");
+    print("tokenMsg: $token");
 
     final response = await http.get(
       Uri.parse(ApiRoutes.getProfileNewUser),
@@ -60,8 +60,8 @@ class _MessageListScreenState extends State<MessageMainScreen> {
       backgroundColor: AppColors.secondary,
       body: isLoading
           ? WhiteCircularProgressWidget()
-          : messages == null || messages!.isEmpty
-          ? _buildEmptyState()
+          // : messages == null || messages!.isEmpty
+          // ? _buildEmptyState()
           : CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -218,20 +218,20 @@ class _MessageListScreenState extends State<MessageMainScreen> {
         child: Stack(
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(horizontal:10.w, vertical: 40.h),
+              padding: EdgeInsets.symmetric(horizontal:10.w, vertical: 10.h),
               child: Column(
                 children: [
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal:10.w, vertical: 0.h),
                     child: Container(
-                      padding: EdgeInsets.all(35.r),
+                      padding: EdgeInsets.all(20.r),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [AppColors.secondary.withOpacity(0.1), AppColors.secondary.withOpacity(0.1)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(20.r),
+                        borderRadius: BorderRadius.circular(40.r),
                         border: Border.all(width: 1.sp,color: Colors.pink.shade100),
                         boxShadow: [
                           BoxShadow(
