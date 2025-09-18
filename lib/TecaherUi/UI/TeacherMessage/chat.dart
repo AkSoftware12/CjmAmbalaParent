@@ -264,7 +264,7 @@ class _ChatScreenState extends State<TeacherChatScreen> {
         iconTheme: IconThemeData(color: Colors.white),
         title: Row(
           children: [
-             Padding(
+            Padding(
               padding: EdgeInsets.only(right: 5.0),
               child: CircleAvatar(
                 radius: 18,
@@ -312,70 +312,70 @@ class _ChatScreenState extends State<TeacherChatScreen> {
             ),
           ),
           // if (widget.messageSendPermissionsApp == 1)
-            SafeArea(
-              child: Card(
-                color: Colors.grey.shade200,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon:  Icon(Icons.attach_file, color: AppColors.primary),
-                        onPressed: _pickFile, // Trigger file picker
-                      ),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 5,
-                                offset: const Offset(0, 3),
+          SafeArea(
+            child: Card(
+              color: Colors.grey.shade200,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon:  Icon(Icons.attach_file, color: AppColors.primary),
+                      onPressed: _pickFile, // Trigger file picker
+                    ),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 5,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: messageController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Type a message...',
+                                  border: InputBorder.none,
+                                ),
                               ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: messageController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Type a message...',
-                                    border: InputBorder.none,
+                            ),
+                            if (selectedFile != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Text(
+                                  selectedFile!.name,
+                                  style: const TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
-                              if (selectedFile != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: Text(
-                                    selectedFile!.name,
-                                    style: const TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      CircleAvatar(
-                        backgroundColor: AppColors.primary,
-                        child: IconButton(
-                          icon: const Icon(Icons.send, color: Colors.white),
-                          onPressed: _sendMessage,
-                        ),
+                    ),
+                    const SizedBox(width: 8),
+                    CircleAvatar(
+                      backgroundColor: AppColors.primary,
+                      child: IconButton(
+                        icon: const Icon(Icons.send, color: Colors.white),
+                        onPressed: _sendMessage,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
+          ),
         ],
       ),
     );

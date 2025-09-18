@@ -1,6 +1,4 @@
-
 package com.avisunavi.avi
-// change with your package name
 
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
@@ -13,42 +11,45 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 class MainActivity: FlutterActivity() {
-    private val CHANNEL = "flutter.dev/NDPSAESLibrary"
+    /** 🔐 AES Channel */
+    private val AES_CHANNEL = "flutter.dev/NDPSAESLibrary"
 
-    val pswdIterations = 65536
-    val keySize = 256
-    val ivBytes = byteArrayOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+    /** AES Config */
+    private val pswdIterations = 65536
+    private val keySize = 256
+    private val ivBytes = byteArrayOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
-            // Note: this method is invoked on the main thread.
-                call, result ->
-            val hashMap = call.arguments as HashMap<*,*> //Get the arguments as a HashMap
-            val AESMethod = hashMap["AES_Method"]
-            val key = hashMap["encKey"]
-            val encText = hashMap["text"]
 
-            if (call.method == "NDPSAESInit") {
-                try {
-                    if(AESMethod == "encrypt") {
-                        val encryption = getAtomEncryption(encText.toString(), key.toString())
-                        result.success(encryption)
-                    }else{
-                        val decryption = getAtomDecryption(encText.toString(), key.toString())
-                        result.success(decryption)
+        /** 🔐 AES Channel */
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AES_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                val hashMap = call.arguments as HashMap<*, *>
+                val AESMethod = hashMap["AES_Method"]
+                val key = hashMap["encKey"]
+                val encText = hashMap["text"]
+
+                if (call.method == "NDPSAESInit") {
+                    try {
+                        if (AESMethod == "encrypt") {
+                            val encryption = getAtomEncryption(encText.toString(), key.toString())
+                            result.success(encryption)
+                        } else {
+                            val decryption = getAtomDecryption(encText.toString(), key.toString())
+                            result.success(decryption)
+                        }
+                    } catch (e: Exception) {
+                        result.error("Error", "AES logic failed", null)
+                        e.printStackTrace()
                     }
-                } catch (e: Exception) {
-                    result.error("Error", "AES logic failed", null)
-                    e.printStackTrace()
+                } else {
+                    result.notImplemented()
                 }
-            } else {
-                result.notImplemented()
             }
-
-        }
     }
 
+    /** 🔐 AES Utils */
     private fun getAtomEncryption(plainText: String, key: String): String {
         val saltBytes = key.toByteArray(charset("UTF-8"))
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
@@ -66,9 +67,7 @@ class MainActivity: FlutterActivity() {
         val sb = StringBuffer(byData.size * 2)
         for (i in byData.indices) {
             val v = byData[i].toInt() and 0xFF
-            if (v < 16) {
-                sb.append('0')
-            }
+            if (v < 16) sb.append('0')
             sb.append(Integer.toHexString(v))
         }
         return sb.toString().uppercase()
@@ -83,9 +82,8 @@ class MainActivity: FlutterActivity() {
         val secret = SecretKeySpec(secretKey.encoded, "AES")
         val localIvParameterSpec = IvParameterSpec(ivBytes)
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        cipher.init(2, secret, localIvParameterSpec)
-        var decryptedTextBytes: ByteArray? = null
-        decryptedTextBytes = cipher.doFinal(encryptedTextBytes)
+        cipher.init(Cipher.DECRYPT_MODE, secret, localIvParameterSpec)
+        val decryptedTextBytes = cipher.doFinal(encryptedTextBytes)
         return String(decryptedTextBytes)
     }
 

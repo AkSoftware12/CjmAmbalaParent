@@ -5,11 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shimmer/shimmer.dart';
 import '../CommonCalling/progressbarWhite.dart';
 import '../utils/SupportPage16/html.dart';
 import 'message_psge.dart';
-// import 'package:flutter_html/flutter_html.dart';
 
 class MessageMainScreen extends StatefulWidget {
   @override
