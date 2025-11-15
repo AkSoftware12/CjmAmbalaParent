@@ -54,6 +54,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
       final jsonResponse = json.decode(response.body);
       setState(() {
         assignments = jsonResponse['data']; // Update state with fetched data
+        print('Assi $assignments');
         isLoading = false; // Stop progress bar
       });
     } else {
@@ -121,10 +122,23 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
         itemBuilder: (context, index) {
           final assignment = assignments[index];
           String description = html_parser.parse(assignment['description']).body?.text ?? '';
-          String startDate = DateFormat('dd-MM-yyyy')
-              .format(DateTime.parse(assignment['start_date']));
-          String endDate = DateFormat('dd-MM-yyyy')
-              .format(DateTime.parse(assignment['due_date']));
+
+          String formatDate(String? dateStr) {
+            try {
+              if (dateStr == null || dateStr.isEmpty) return "Not Available";
+              return DateFormat('dd-MM-yyyy').format(DateTime.parse(dateStr));
+            } catch (e) {
+              return "Not Available";
+            }
+          }
+
+          String startDate = formatDate(assignment['start_date']);
+          String endDate = formatDate(assignment['due_date']);
+
+
+
+          // String startDate = DateFormat('dd-MM-yyyy').format(DateTime.parse(assignment['start_date']));
+          // String endDate = DateFormat('dd-MM-yyyy').format(DateTime.parse(assignment['due_date']));
 
           return Card(
             margin: EdgeInsets.symmetric(
@@ -201,7 +215,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                     mainAxisAlignment:
                     MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildDateInfo('Start', startDate),
+                      _buildDateInfo('Start', startDate.toString()),
                       _buildDateInfo('Due', endDate),
                     ],
                   ),
@@ -254,8 +268,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                           );
                         },
                       ),
-                      _buildStatusBox(
-                          assignment['attendance_status']),
+                      _buildStatusBox(assignment['attendance_status']),
                     ],
                   ),
                 ],

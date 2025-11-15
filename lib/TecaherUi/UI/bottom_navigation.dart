@@ -10,6 +10,7 @@ import '../../UI/Gallery/Album/album.dart';
 import '../../constants.dart';
 import '../../strings.dart';
 import '../UI/Dashboard/HomeScreen%20.dart';
+import 'AllStudents/all_students.dart';
 import 'Assignment/assignment.dart';
 import 'Attendance/AttendanceScreen.dart';
 import 'package:http/http.dart' as http;
@@ -441,6 +442,47 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
 
                           ListTile(
                             title: Text(
+                              'Students',
+                              style: GoogleFonts.cabin(
+                                textStyle: TextStyle(
+                                    color:AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            trailing: Container(
+                              height: 20,
+                              width: 20,
+                              color: AppColors2.primary,
+                              child: Icon(CupertinoIcons.person_2_alt,color:AppColors2.textblack,),
+
+                            ),
+                            onTap: () {
+                              Navigator.pop(context);
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return  AllStudents();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          Padding(
+                            padding:
+                            EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
+
+
+                          ListTile(
+                            title: Text(
                               'Attendance',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
@@ -455,7 +497,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               color: AppColors2.primary,
                               child: Icon(CupertinoIcons.clock,color:AppColors2.textblack,),
 
-                          ),
+                            ),
                             onTap: () {
                               Navigator.pop(context);
 
@@ -482,6 +524,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               thickness: 1,
                             ),
                           ),
+
 
 
                           ListTile(

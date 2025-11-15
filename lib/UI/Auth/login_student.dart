@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginStudentPage> {
 
           // Retrieve the token
           String? token = prefs.getString('token');
-          print('${AppStrings.tokenRetrieved}$token'); // Debug: Print retrieved token
+          print('${'User Token'}$token'); // Debug: Print retrieved token
 
           // Navigate to the BottomNavBarScreen with the token
           Navigator.pushReplacement(

@@ -55,14 +55,21 @@ class ApiRoutes {
   static const String baseUrlNewUser = "https://cjmambala.co.in/api";
 
 
-
+    // Doownload Main url
   static const String downloadUrl = "https://softcjm.cjmambala.co.in/student/fee-receipt/";
   static const String newUserdownloadUrl = "https://cjmambala.co.in/api/fees/";
 
+
+
 // Local  App Url
-//
-//   static const String baseUrlNewUser = "http://192.168.1.2/cjmweb/api";
-//   static const String baseUrl = "http://192.168.1.2/cjm_ambala/api";
+
+  // static const String baseUrlNewUser = "http://192.168.1.3/cjmweb/api";
+  // static const String baseUrl = "http://192.168.1.3/cjm_ambala12/api";
+  //
+  // // Download local url
+  // static const String downloadUrl = "http://192.168.1.3/cjmweb/student/fee-receipt/";
+  // static const String newUserdownloadUrl = "http://192.168.1.3/cjm_ambala12/api/fees/";
+
 
 
   // New Admission Api

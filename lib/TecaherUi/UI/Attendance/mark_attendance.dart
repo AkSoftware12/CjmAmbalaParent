@@ -18,6 +18,8 @@ import 'package:path_provider/path_provider.dart';
 import '../../../constants.dart';
 
 class AttendanceScreen extends StatefulWidget {
+  const AttendanceScreen({super.key});
+
   @override
   _AttendanceScreenState createState() => _AttendanceScreenState();
 }

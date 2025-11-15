@@ -138,8 +138,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   children: [
                     // Profile Image
                     SizedBox(
-                      height: 120,
-                      width: 120,
+                      height: 100.sp,
+                      width: 100.sp,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: Image.network(
@@ -148,8 +148,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                           errorBuilder: (context, error, stackTrace) {
                             // This widget will be displayed if the image fails to load
                             return Container(
-                              height: 120,
-                              width: 120,
+                              height: 100.sp,
+                              width: 100.sp,
                               color: Colors.white,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(20),
@@ -169,18 +169,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     Expanded(
 
                       child: Container(
-                        height: 150,
+                        height: 160.sp,
                         child: Center(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 10),
 
                               Text(
                                 studentData!['student_name'],
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 20,
+                                  fontSize: 15.sp,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
@@ -189,7 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               Text(
                                 studentData!['email'],
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 14,
+                                  fontSize: 12.sp,
                                   color: Colors.white70,
                                 ),
                               ),
@@ -197,7 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               Text(
                                 studentData!['contact_no'],
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 14,
+                                  fontSize: 12.sp,
                                   color: Colors.white70,
                                 ),
                               ),
