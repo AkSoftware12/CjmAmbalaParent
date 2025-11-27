@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1012918033516",
+    "project_id": "cjm-ambala",
+    "storage_bucket": "cjm-ambala.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1012918033516:android:0b6718b40f48b55cb84c49",
+        "android_client_info": {
+          "package_name": "com.avisunavi.avi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhuh_2exvng2cYi1-WVG8AWFGFgLjRYQM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
