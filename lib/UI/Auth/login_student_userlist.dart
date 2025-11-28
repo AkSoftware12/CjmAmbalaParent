@@ -18,8 +18,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'login_screen.dart';
 
 class LoginUserLIst extends StatefulWidget {
-
-  const LoginUserLIst({super.key,});
+  const LoginUserLIst({super.key});
 
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -52,7 +51,7 @@ class _LoginPageState extends State<LoginUserLIst> {
     if (savedStudentId != null && studentList.isNotEmpty) {
       // Find the student in the studentList with the matching student_id
       var selectedStudent = studentList.firstWhere(
-            (student) => student['student_id'].toString() == savedStudentId,
+        (student) => student['student_id'].toString() == savedStudentId,
         orElse: () => {}, // Return empty map if not found
       );
 
@@ -78,13 +77,8 @@ class _LoginPageState extends State<LoginUserLIst> {
     try {
       final response = await _dio.post(
         ApiRoutes.loginstudent,
-        data: {
-          'student_id': selectedOption,
-          'fcm': deviceToken,
-        },
-        options: Options(
-          headers: {'Content-Type': 'application/json'},
-        ),
+        data: {'student_id': selectedOption, 'fcm': deviceToken},
+        options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
       print('Device token: $deviceToken');
@@ -99,7 +93,10 @@ class _LoginPageState extends State<LoginUserLIst> {
           await prefs.remove('teachertoken');
           await prefs.remove('newusertoken');
           await prefs.setString('token', responseData['token']);
-          await prefs.setString('selected_student_id', selectedOption!); // Save selected student_id
+          await prefs.setString(
+            'selected_student_id',
+            selectedOption!,
+          ); // Save selected student_id
 
           Navigator.pushReplacement(
             context,
@@ -151,13 +148,8 @@ class _LoginPageState extends State<LoginUserLIst> {
     try {
       final response = await _dio.post(
         ApiRoutes.loginstudentNewUser,
-        data: {
-          'student_id': selectedOption,
-          'fcm': deviceToken,
-        },
-        options: Options(
-          headers: {'Content-Type': 'application/json'},
-        ),
+        data: {'student_id': selectedOption, 'fcm': deviceToken},
+        options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
       print('Device token: $deviceToken');
@@ -170,11 +162,16 @@ class _LoginPageState extends State<LoginUserLIst> {
           await prefs.remove('teachertoken');
           await prefs.remove('token');
           await prefs.setString('newusertoken', responseData['token']);
-          await prefs.setString('selected_student_id', selectedOption!); // Save selected student_id
+          await prefs.setString(
+            'selected_student_id',
+            selectedOption!,
+          ); // Save selected student_id
 
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const NewUserBottombarPage()),
+            MaterialPageRoute(
+              builder: (context) => const NewUserBottombarPage(),
+            ),
           );
         } else {
           print('${AppStrings.loginFailedDebug}${responseData['message']}');
@@ -238,14 +235,23 @@ class _LoginPageState extends State<LoginUserLIst> {
               jsonResponse['students'][0]['token'] != null) {
             await prefs.remove('newusertoken');
             await prefs.remove('token');
-            await prefs.setString('teachertoken', jsonResponse['students'][0]['token']);
-            await prefs.setString('selected_student_id', selectedOption!); // Save selected student_id
+            await prefs.setString(
+              'teachertoken',
+              jsonResponse['students'][0]['token'],
+            );
+            await prefs.setString(
+              'selected_student_id',
+              selectedOption!,
+            ); // Save selected student_id
           }
 
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => TeacherBottomNavBarScreen(initialIndex: 0)),
+              MaterialPageRoute(
+                builder: (context) =>
+                    TeacherBottomNavBarScreen(initialIndex: 0),
+              ),
             );
           }
         } else {
@@ -300,7 +306,9 @@ class _LoginPageState extends State<LoginUserLIst> {
     final prefs = await SharedPreferences.getInstance();
     String? data = prefs.getString('loginHistory');
     if (data != null) {
-      List<Map<String, dynamic>> loadedList = List<Map<String, dynamic>>.from(jsonDecode(data));
+      List<Map<String, dynamic>> loadedList = List<Map<String, dynamic>>.from(
+        jsonDecode(data),
+      );
       setState(() {
         studentList = loadedList;
       });
@@ -309,7 +317,7 @@ class _LoginPageState extends State<LoginUserLIst> {
       String? savedStudentId = prefs.getString('selected_student_id');
       if (savedStudentId != null) {
         var selectedStudent = loadedList.firstWhere(
-              (student) => student['student_id'].toString() == savedStudentId,
+          (student) => student['student_id'].toString() == savedStudentId,
           orElse: () => {},
         );
 
@@ -323,7 +331,6 @@ class _LoginPageState extends State<LoginUserLIst> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -384,14 +391,20 @@ class _LoginPageState extends State<LoginUserLIst> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       "Select Student ",
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       '(${studentList.length.toString()})',
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                   // Constrain ListView height
@@ -421,8 +434,10 @@ class _LoginPageState extends State<LoginUserLIst> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: RadioListTile<String>(
-                                contentPadding:
-                                const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 0,
+                                ),
                                 title: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -444,25 +459,26 @@ class _LoginPageState extends State<LoginUserLIst> {
                                 ),
                                 subtitle: (student['adm_no'] == 'null')
                                     ? Text(
-                                  '',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                )
+                                        '',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                      )
                                     : Text(
-                                  student['adm_no'].toString(),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
-                                  ),
-                                ),
+                                        student['adm_no'].toString(),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 12,
+                                        ),
+                                      ),
                                 value: student['student_id'].toString(),
                                 groupValue: selectedOption,
                                 onChanged: (value) {
                                   setState(() {
                                     selectedOption = value;
-                                    selectedAdmNo = student['adm_no'].toString();
+                                    selectedAdmNo = student['adm_no']
+                                        .toString();
                                     staffPass = student['password'].toString();
                                   });
                                   _saveSelectedStudent(value!);
@@ -483,19 +499,19 @@ class _LoginPageState extends State<LoginUserLIst> {
                                   padding: EdgeInsets.all(3.sp),
                                   child: student['password'] != null
                                       ? Text(
-                                    'Teacher',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 8.sp,
-                                    ),
-                                  )
+                                          'Teacher',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 8.sp,
+                                          ),
+                                        )
                                       : Text(
-                                    'Student',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 8.sp,
-                                    ),
-                                  ),
+                                          'Student',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 8.sp,
+                                          ),
+                                        ),
                                 ),
                               ),
                             ),
@@ -509,30 +525,33 @@ class _LoginPageState extends State<LoginUserLIst> {
                   _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : Padding(
-                    padding: EdgeInsets.only(left: 18.sp, right: 18.sp),
-                    child: CustomLoginButton(
-                      onPressed: () {
-                        if (selectedOption == null) {
-                          _showErrorDialog("Please select a student first");
-                          return;
-                        }
+                          padding: EdgeInsets.only(left: 18.sp, right: 18.sp),
+                          child: CustomLoginButton(
+                            onPressed: () {
+                              if (selectedOption == null) {
+                                _showErrorDialog(
+                                  "Please select a student first",
+                                );
+                                return;
+                              }
 
-                        if (selectedAdmNo == 'null' || selectedAdmNo == null) {
-                          if (staffPass == 'null' || staffPass == null) {
-                            _loginNewUser();
-                          } else {
-                            _loginTeacher();
-                          }
-                        } else {
-                          _login();
-                        }
+                              if (selectedAdmNo == 'null' ||
+                                  selectedAdmNo == null) {
+                                if (staffPass == 'null' || staffPass == null) {
+                                  _loginNewUser();
+                                } else {
+                                  _loginTeacher();
+                                }
+                              } else {
+                                _login();
+                              }
 
-                        print("Selected Option: $selectedOption");
-                      },
+                              print("Selected Option: $selectedOption");
+                            },
 
-                      title: 'Go',
-                    ),
-                  ),
+                            title: 'Go',
+                          ),
+                        ),
                 ],
               ),
             ),
@@ -555,6 +574,7 @@ class _LoginPageState extends State<LoginUserLIst> {
     );
   }
 }
+
 class CustomLoginButton extends StatefulWidget {
   final VoidCallback onPressed;
   final String title;
@@ -590,7 +610,6 @@ class _CustomLoginButtonState extends State<CustomLoginButton> {
         widget.onPressed();
       },
 
-
       child: AnimatedContainer(
         duration: Duration(milliseconds: 150),
         curve: Curves.easeInOut,
@@ -606,12 +625,12 @@ class _CustomLoginButtonState extends State<CustomLoginButton> {
           boxShadow: isPressed
               ? []
               : [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.5),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.5),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
         ),
         child: Center(
           child: Text(

@@ -15,8 +15,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'login_screen.dart';
 
 class LoginStudentPage extends StatefulWidget {
-
-  const LoginStudentPage({super.key,});
+  const LoginStudentPage({super.key});
 
   @override
   _LoginPageState createState() => _LoginPageState();
@@ -37,7 +36,6 @@ class _LoginPageState extends State<LoginStudentPage> {
   void initState() {
     super.initState();
     _loadStudents();
-
   }
 
   Future<void> _login() async {
@@ -46,7 +44,9 @@ class _LoginPageState extends State<LoginStudentPage> {
     print('Device id: $deviceToken');
     // if (!_formKey.currentState!.validate()) return;
 
-    print('${AppStrings.apiLoginUrl}${ApiRoutes.loginstudent}'); // Debug: Print the API URL
+    print(
+      '${AppStrings.apiLoginUrl}${ApiRoutes.loginstudent}',
+    ); // Debug: Print the API URL
     setState(() {
       _isLoading = true;
     });
@@ -54,19 +54,18 @@ class _LoginPageState extends State<LoginStudentPage> {
     try {
       final response = await _dio.post(
         ApiRoutes.loginstudent,
-        data: {
-          'student_id': selectedOption,
-          'fcm': deviceToken,
-        },
-        options: Options(
-          headers: {'Content-Type': 'application/json'},
-        ),
+        data: {'student_id': selectedOption, 'fcm': deviceToken},
+        options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
       print(' Device token : - $deviceToken');
 
-      print('${AppStrings.responseStatusDebug}${response.statusCode}'); // Debug: Print status code
-      print('${AppStrings.responseDataDebug}${response.data}'); // Debug: Print the response data
+      print(
+        '${AppStrings.responseStatusDebug}${response.statusCode}',
+      ); // Debug: Print status code
+      print(
+        '${AppStrings.responseDataDebug}${response.data}',
+      ); // Debug: Print the response data
 
       if (response.statusCode == 200) {
         final responseData = response.data;
@@ -75,33 +74,45 @@ class _LoginPageState extends State<LoginStudentPage> {
           // Save token in SharedPreferences
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', responseData['token']);
-          print('${AppStrings.tokenSaved}${responseData['token']}'); // Debug: Print the saved token
+          print(
+            '${AppStrings.tokenSaved}${responseData['token']}',
+          ); // Debug: Print the saved token
 
           // Retrieve the token
           String? token = prefs.getString('token');
-          print('${AppStrings.tokenRetrieved}$token'); // Debug: Print retrieved token
+          print(
+            '${AppStrings.tokenRetrieved}$token',
+          ); // Debug: Print retrieved token
 
           // Navigate to the BottomNavBarScreen with the token
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => BottomNavBarScreen(initialIndex: 0,),
+              builder: (context) => BottomNavBarScreen(initialIndex: 0),
             ),
           );
         } else {
-          print('${AppStrings.loginFailedDebug}${responseData['message']}'); // Debug: Print failure message
+          print(
+            '${AppStrings.loginFailedDebug}${responseData['message']}',
+          ); // Debug: Print failure message
           _showErrorDialog(responseData['message']);
         }
       } else {
-        print('${AppStrings.loginFailedMessage} ${response.statusCode}'); // Debug: Unexpected status code
+        print(
+          '${AppStrings.loginFailedMessage} ${response.statusCode}',
+        ); // Debug: Unexpected status code
         _showErrorDialog(AppStrings.loginFailedMessage);
       }
     } on DioException catch (e) {
-      print('${AppStrings.dioExceptionDebug}${e.message}'); // Debug: Print DioException message
+      print(
+        '${AppStrings.dioExceptionDebug}${e.message}',
+      ); // Debug: Print DioException message
 
       String errorMessage = AppStrings.unexpectedError;
       if (e.response != null) {
-        print('${AppStrings.errorResponseDebug}${e.response?.data}'); // Debug: Print error response data
+        print(
+          '${AppStrings.errorResponseDebug}${e.response?.data}',
+        ); // Debug: Print error response data
 
         if (e.response?.data is Map<String, dynamic>) {
           errorMessage = e.response?.data['message'] ?? errorMessage;
@@ -122,6 +133,7 @@ class _LoginPageState extends State<LoginStudentPage> {
       });
     }
   }
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -139,13 +151,12 @@ class _LoginPageState extends State<LoginStudentPage> {
       ),
     );
   }
-// Save selected student_id to SharedPreferences
+
+  // Save selected student_id to SharedPreferences
   Future<void> _saveSelectedStudent(String studentId) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('selected_student_id', studentId);
   }
-
-
 
   Future<void> _loadStudents() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -171,8 +182,8 @@ class _LoginPageState extends State<LoginStudentPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: MediaQuery.of(context).size.width* 0.9,
-              padding:  EdgeInsets.all(10.sp),
+              width: MediaQuery.of(context).size.width * 0.9,
+              padding: EdgeInsets.all(10.sp),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
@@ -184,7 +195,7 @@ class _LoginPageState extends State<LoginStudentPage> {
                   ),
                 ],
               ),
-              child:  Padding(
+              child: Padding(
                 padding: const EdgeInsets.all(0.0),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -208,9 +219,7 @@ class _LoginPageState extends State<LoginStudentPage> {
                               child: SizedBox(
                                 height: 90.sp,
                                 width: 90.sp,
-                                child: Image.asset(
-                                  AppAssets.cjmlogo,
-                                ),
+                                child: Image.asset(AppAssets.cjmlogo),
                               ),
                             ),
                           ),
@@ -222,7 +231,10 @@ class _LoginPageState extends State<LoginStudentPage> {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         "Select Student",
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.sp),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14.sp,
+                        ),
                       ),
                     ),
                     ListView.builder(
@@ -237,19 +249,44 @@ class _LoginPageState extends State<LoginStudentPage> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
-                              BoxShadow(color: AppColors.secondary, blurRadius: 10, offset: Offset(2, 2)),
+                              BoxShadow(
+                                color: AppColors.secondary,
+                                blurRadius: 10,
+                                offset: Offset(2, 2),
+                              ),
                             ],
                           ),
                           child: RadioListTile<String>(
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 0,
+                            ),
                             title: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(student['name'].toString(), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.sp)),
-                                Text("${student['student_id'].toString()}", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.sp)),
+                                Text(
+                                  student['name'].toString(),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 14.sp,
+                                  ),
+                                ),
+                                Text(
+                                  "${student['student_id'].toString()}",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12.sp,
+                                  ),
+                                ),
                               ],
                             ),
-                            subtitle: Text("${student['adm_no'].toString()}", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.sp)),
+                            subtitle: Text(
+                              "${student['adm_no'].toString()}",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12.sp,
+                              ),
+                            ),
 
                             value: student['student_id'].toString(),
                             groupValue: selectedOption,
@@ -258,7 +295,6 @@ class _LoginPageState extends State<LoginStudentPage> {
                                 selectedOption = value;
                               });
                               _saveSelectedStudent(value!);
-
                             },
                             activeColor: AppColors.secondary,
                           ),
@@ -268,62 +304,65 @@ class _LoginPageState extends State<LoginStudentPage> {
                     SizedBox(height: 50.sp),
                     if (_isLoading)
                       const Center(child: CircularProgressIndicator())
-                    else Padding(
-                      padding:  EdgeInsets.only(left: 18.sp,right: 18.sp),
-                      child: CustomLoginButton(onPressed: () {
-                        if (selectedOption != null) {
-                          _login();
-                          print("Selected Option: $selectedOption");
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Please select a student!"),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      }, title: 'Go',),
-                    ),
-                      // SizedBox(
-                      //   width: double.infinity,
-                      //   child: ElevatedButton(
-                      //     style: ElevatedButton.styleFrom(
-                      //       backgroundColor: CupertinoColors.systemGreen,
-                      //       padding: const EdgeInsets.symmetric(vertical: 14),
-                      //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      //     ),
-                      //     onPressed: () {
-                      //       if (selectedOption != null) {
-                      //         _login();
-                      //         print("Selected Option: $selectedOption");
-                      //       } else {
-                      //         ScaffoldMessenger.of(context).showSnackBar(
-                      //           SnackBar(
-                      //             content: Text("Please select a student!"),
-                      //             backgroundColor: Colors.red,
-                      //           ),
-                      //         );
-                      //       }
-                      //     },
-                      //     child: Text("Go", style: TextStyle(fontSize: 16.sp, color: Colors.white)),
-                      //   ),
-                      // ),
+                    else
+                      Padding(
+                        padding: EdgeInsets.only(left: 18.sp, right: 18.sp),
+                        child: CustomLoginButton(
+                          onPressed: () {
+                            if (selectedOption != null) {
+                              _login();
+                              print("Selected Option: $selectedOption");
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Please select a student!"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          title: 'Go',
+                        ),
+                      ),
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   child: ElevatedButton(
+                    //     style: ElevatedButton.styleFrom(
+                    //       backgroundColor: CupertinoColors.systemGreen,
+                    //       padding: const EdgeInsets.symmetric(vertical: 14),
+                    //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    //     ),
+                    //     onPressed: () {
+                    //       if (selectedOption != null) {
+                    //         _login();
+                    //         print("Selected Option: $selectedOption");
+                    //       } else {
+                    //         ScaffoldMessenger.of(context).showSnackBar(
+                    //           SnackBar(
+                    //             content: Text("Please select a student!"),
+                    //             backgroundColor: Colors.red,
+                    //           ),
+                    //         );
+                    //       }
+                    //     },
+                    //     child: Text("Go", style: TextStyle(fontSize: 16.sp, color: Colors.white)),
+                    //   ),
+                    // ),
                   ],
-                )
-
-              )
+                ),
+              ),
             ),
             Column(
               children: [
-
                 Padding(
-                  padding:  EdgeInsets.only(top: 8.0),
+                  padding: EdgeInsets.only(top: 8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(0.0),
-                        child: Text('Provider by AVI-SUN',
+                        child: Text(
+                          'Provider by AVI-SUN',
                           style: GoogleFonts.montserrat(
                             textStyle: Theme.of(context).textTheme.displayLarge,
                             fontSize: 12.sp,
@@ -335,14 +374,11 @@ class _LoginPageState extends State<LoginStudentPage> {
                       ),
                     ],
                   ),
-                )
-
+                ),
               ],
             ),
-
           ],
         ),
-
       ),
     );
   }
@@ -383,7 +419,6 @@ class _CustomLoginButtonState extends State<CustomLoginButton> {
         widget.onPressed();
       },
 
-
       child: AnimatedContainer(
         duration: Duration(milliseconds: 150),
         curve: Curves.easeInOut,
@@ -399,12 +434,12 @@ class _CustomLoginButtonState extends State<CustomLoginButton> {
           boxShadow: isPressed
               ? []
               : [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.5),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.5),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
         ),
         child: Center(
           child: Text(

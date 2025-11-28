@@ -24,10 +24,12 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final Dio _dio = Dio(BaseOptions(
-    connectTimeout: Duration(seconds: 10),
-    receiveTimeout: Duration(seconds: 10),
-  ));
+  final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: Duration(seconds: 10),
+      receiveTimeout: Duration(seconds: 10),
+    ),
+  );
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
@@ -139,21 +141,34 @@ class _LoginPageState extends State<LoginPage> {
           if (jsonResponse['students'] != null &&
               jsonResponse['students'].isNotEmpty &&
               jsonResponse['students'][0]['token'] != null) {
-            await prefs.setString('newusertoken', jsonResponse['students'][0]['token']);
+            await prefs.setString(
+              'newusertoken',
+              jsonResponse['students'][0]['token'],
+            );
             // Save the student_id of the logged-in user
-            await prefs.setString('selected_student_id', jsonResponse['students'][0]['student_id'].toString());
+            await prefs.setString(
+              'selected_student_id',
+              jsonResponse['students'][0]['student_id'].toString(),
+            );
           }
 
           await _saveCredentials();
-          await prefs.setString('studentList', jsonEncode(jsonResponse['students']));
+          await prefs.setString(
+            'studentList',
+            jsonEncode(jsonResponse['students']),
+          );
 
           setState(() {
-            loginStudent = List<Map<String, dynamic>>.from(jsonResponse['students']);
+            loginStudent = List<Map<String, dynamic>>.from(
+              jsonResponse['students'],
+            );
           });
 
           loginHistory = await _getStoredLoginList();
           for (var student in loginStudent) {
-            bool exists = loginHistory.any((s) => s['student_id'] == student['student_id']);
+            bool exists = loginHistory.any(
+              (s) => s['student_id'] == student['student_id'],
+            );
             if (!exists) loginHistory.insert(0, student);
           }
           await _saveLoginList(loginHistory);
@@ -161,7 +176,9 @@ class _LoginPageState extends State<LoginPage> {
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const NewUserBottombarPage()),
+              MaterialPageRoute(
+                builder: (context) => const NewUserBottombarPage(),
+              ),
             );
           }
 
@@ -190,22 +207,32 @@ class _LoginPageState extends State<LoginPage> {
         final jsonResponse = response.data;
         if (jsonResponse['success'] == true) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setString('studentList', jsonEncode(jsonResponse['students']));
+          await prefs.setString(
+            'studentList',
+            jsonEncode(jsonResponse['students']),
+          );
           // Save the student_id of the logged-in user
           if (jsonResponse['students'] != null &&
               jsonResponse['students'].isNotEmpty &&
               jsonResponse['students'][0]['student_id'] != null) {
-            await prefs.setString('selected_student_id', jsonResponse['students'][0]['student_id'].toString());
+            await prefs.setString(
+              'selected_student_id',
+              jsonResponse['students'][0]['student_id'].toString(),
+            );
           }
           await _saveCredentials();
 
           setState(() {
-            loginStudent = List<Map<String, dynamic>>.from(jsonResponse['students']);
+            loginStudent = List<Map<String, dynamic>>.from(
+              jsonResponse['students'],
+            );
           });
 
           loginHistory = await _getStoredLoginList();
           for (var student in loginStudent) {
-            bool exists = loginHistory.any((s) => s['adm_no'] == student['adm_no']);
+            bool exists = loginHistory.any(
+              (s) => s['adm_no'] == student['adm_no'],
+            );
             if (!exists) loginHistory.insert(0, student);
           }
           await _saveLoginList(loginHistory);
@@ -250,21 +277,34 @@ class _LoginPageState extends State<LoginPage> {
         if (jsonResponse['students'] != null &&
             jsonResponse['students'].isNotEmpty &&
             jsonResponse['students'][0]['token'] != null) {
-          await prefs.setString('teachertoken', jsonResponse['students'][0]['token']);
+          await prefs.setString(
+            'teachertoken',
+            jsonResponse['students'][0]['token'],
+          );
           // Save the student_id of the logged-in user
-          await prefs.setString('selected_student_id', jsonResponse['students'][0]['student_id'].toString());
+          await prefs.setString(
+            'selected_student_id',
+            jsonResponse['students'][0]['student_id'].toString(),
+          );
         }
 
         await _saveCredentials();
-        await prefs.setString('studentList', jsonEncode(jsonResponse['students']));
+        await prefs.setString(
+          'studentList',
+          jsonEncode(jsonResponse['students']),
+        );
 
         setState(() {
-          loginStudent = List<Map<String, dynamic>>.from(jsonResponse['students']);
+          loginStudent = List<Map<String, dynamic>>.from(
+            jsonResponse['students'],
+          );
         });
 
         loginHistory = await _getStoredLoginList();
         for (var student in loginStudent) {
-          bool exists = loginHistory.any((s) => s['student_id'] == student['student_id']);
+          bool exists = loginHistory.any(
+            (s) => s['student_id'] == student['student_id'],
+          );
           if (!exists) loginHistory.insert(0, student);
         }
         await _saveLoginList(loginHistory);
@@ -272,7 +312,9 @@ class _LoginPageState extends State<LoginPage> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => TeacherBottomNavBarScreen(initialIndex: 0)),
+            MaterialPageRoute(
+              builder: (context) => TeacherBottomNavBarScreen(initialIndex: 0),
+            ),
           );
         }
 
@@ -325,8 +367,6 @@ class _LoginPageState extends State<LoginPage> {
       },
     );
   }
-
-
 
   Future<void> _saveLoginList(List<Map<String, dynamic>> list) async {
     final prefs = await SharedPreferences.getInstance();
@@ -382,203 +422,199 @@ class _LoginPageState extends State<LoginPage> {
       resizeToAvoidBottomInset: true,
       body: Center(
         child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-        Center(
-        child: Padding(
-        padding: EdgeInsets.all(15.sp),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.all(Radius.circular(20)),
-          ),
-          padding: EdgeInsets.all(12.sp),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                Column(
-                  children: [
-                    SizedBox(
-                      height: 90.sp,
-                      width: 90.sp,
-                      child: Image.asset(AppAssets.cjmlogo),
-                    ),
-                    Text(
-                      'Convent of Jesus & Mary'.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30.sp),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(
-                      CupertinoIcons.mail_solid,
-                      color: Colors.black,
-                    ),
-                    hintText: 'Enter User Id, or Adm. no',
-                    hintStyle: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 16,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.blueAccent,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.blue,
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.grey.shade400,
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 12,
-                    ),
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Center(
+              child: Padding(
+                padding: EdgeInsets.all(15.sp),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
                   ),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your User Id or Adm. no';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 15),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(
-                      CupertinoIcons.padlock_solid,
-                      color: Colors.black,
-                    ),
-                    hintText: AppStrings.password,
-                    hintStyle: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 16,
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? CupertinoIcons.eye_slash_fill
-                            : CupertinoIcons.eye_solid,
-                        color: Colors.black,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.blueAccent,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.blue,
-                        width: 2,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.grey.shade400,
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 12,
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return AppStrings.passwordRequired;
-                    }
-                    if (value.length < 4) {
-                      return 'Password must be at least 4 characters long';
-                    }
-                    return null;
-                  },
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _rememberMe,
-                      activeColor: AppColors.secondary,
-                      onChanged: (value) {
-                        setState(() {
-                          _rememberMe = value ?? false;
-                        });
-                      },
-                    ),
-                    Text(
-                      'Remember Me',
-                      style: TextStyle(fontSize: 14.sp),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                if (_isLoading)
-                  Center(child: CircularProgressIndicator())
-                else
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 18.sp),
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : tryLogin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.secondary,
-                        foregroundColor: Colors.white,
-                        minimumSize: Size(double.infinity, 45.sp),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                  padding: EdgeInsets.all(12.sp),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        Column(
+                          children: [
+                            SizedBox(
+                              height: 90.sp,
+                              width: 90.sp,
+                              child: Image.asset(AppAssets.cjmlogo),
+                            ),
+                            Text(
+                              'Convent of Jesus & Mary'.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      child: Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
+                        SizedBox(height: 30.sp),
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(
+                              CupertinoIcons.mail_solid,
+                              color: Colors.black,
+                            ),
+                            hintText: 'Enter User Id, or Adm. no',
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.blueAccent),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.blue,
+                                width: 2,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 12,
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your User Id or Adm. no';
+                            }
+                            return null;
+                          },
                         ),
-                      ),
+                        const SizedBox(height: 15),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: !_isPasswordVisible,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(
+                              CupertinoIcons.padlock_solid,
+                              color: Colors.black,
+                            ),
+                            hintText: AppStrings.password,
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 16,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? CupertinoIcons.eye_slash_fill
+                                    : CupertinoIcons.eye_solid,
+                                color: Colors.black,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.blueAccent),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.blue,
+                                width: 2,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 12,
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return AppStrings.passwordRequired;
+                            }
+                            if (value.length < 4) {
+                              return 'Password must be at least 4 characters long';
+                            }
+                            return null;
+                          },
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              activeColor: AppColors.secondary,
+                              onChanged: (value) {
+                                setState(() {
+                                  _rememberMe = value ?? false;
+                                });
+                              },
+                            ),
+                            Text(
+                              'Remember Me',
+                              style: TextStyle(fontSize: 14.sp),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        if (_isLoading)
+                          Center(child: CircularProgressIndicator())
+                        else
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18.sp),
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : tryLogin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.secondary,
+                                foregroundColor: Colors.white,
+                                minimumSize: Size(double.infinity, 45.sp),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: Text(
+                                'Login',
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        SizedBox(height: 10.sp),
+                      ],
                     ),
                   ),
-                SizedBox(height: 10.sp),
-              ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
-        )
-      ],
-    ),
-    ),
     );
   }
 }

@@ -11,7 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/UI/bottom_navigation.dart';
 import '/constants.dart';
 import '../../strings.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'login_student.dart';
 
@@ -33,7 +32,6 @@ class _LoginPageState extends State<LoginPageDemo> {
 
   List loginStudent = []; // Declare a list to hold API data
 
-
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -48,9 +46,7 @@ class _LoginPageState extends State<LoginPageDemo> {
           'email': _emailController.text,
           'password': _passwordController.text,
         },
-        options: Options(
-          headers: {'Content-Type': 'application/json'},
-        ),
+        options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
       if (response.statusCode == 200) {
@@ -58,9 +54,13 @@ class _LoginPageState extends State<LoginPageDemo> {
 
         if (jsonResponse['success'] == true) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setString('studentList', jsonEncode(jsonResponse['students']));
+          await prefs.setString(
+            'studentList',
+            jsonEncode(jsonResponse['students']),
+          );
           setState(() {
-            loginStudent = jsonResponse['students']; // Update state with fetched data
+            loginStudent =
+                jsonResponse['students']; // Update state with fetched data
             _isLoading = false;
             print('Login Student: $loginStudent');
           });
@@ -68,9 +68,7 @@ class _LoginPageState extends State<LoginPageDemo> {
           // Navigate to the bottom navigation screen
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => LoginStudentPage(),
-            ),
+            MaterialPageRoute(builder: (context) => LoginStudentPage()),
           );
         } else {
           print('${AppStrings.loginFailedDebug}${jsonResponse['message']}');
@@ -128,14 +126,23 @@ class _LoginPageState extends State<LoginPageDemo> {
             children: [
               SizedBox(
                 height: 130.sp,
-                  width: double.infinity,
-                  child: Image.asset('assets/login_top.png',fit: BoxFit.fill,color: HexColor('#3a1e0d'),)),
+                width: double.infinity,
+                child: Image.asset(
+                  'assets/login_top.png',
+                  fit: BoxFit.fill,
+                  color: HexColor('#3a1e0d'),
+                ),
+              ),
 
               SizedBox(
-                  width: double.infinity,
-                  height: 130.sp,
-                  child: Image.asset('assets/login_bottom.png',fit: BoxFit.fill,color: HexColor('#3a1e0d'),)),
-
+                width: double.infinity,
+                height: 130.sp,
+                child: Image.asset(
+                  'assets/login_bottom.png',
+                  fit: BoxFit.fill,
+                  color: HexColor('#3a1e0d'),
+                ),
+              ),
             ],
           ),
           Container(
@@ -144,7 +151,7 @@ class _LoginPageState extends State<LoginPageDemo> {
               children: [
                 Center(
                   child: Container(
-                    padding:  EdgeInsets.all(12.sp),
+                    padding: EdgeInsets.all(12.sp),
                     // decoration: BoxDecoration(
                     //   color: Colors.white,
                     //   borderRadius: BorderRadius.circular(10),
@@ -166,12 +173,10 @@ class _LoginPageState extends State<LoginPageDemo> {
                               SizedBox(
                                 height: 140.sp,
                                 width: 140.sp,
-                                child: Image.asset(
-                                  'assets/aonelogo.png',
-                                ),
+                                child: Image.asset('assets/aonelogo.png'),
                               ),
                               // const SizedBox(height: 5),
-                               Text(
+                              Text(
                                 'A One Recovery'.toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 18.sp,
@@ -180,14 +185,15 @@ class _LoginPageState extends State<LoginPageDemo> {
                               ),
                             ],
                           ),
-                           SizedBox(height: 10.sp),
+                          SizedBox(height: 10.sp),
 
                           TextFormField(
                             controller: _emailController,
                             decoration: InputDecoration(
                               prefixIcon: const Icon(
                                 CupertinoIcons.person,
-                                color: Colors.black, // आइकन का रंग बेहतर किया गया
+                                color:
+                                    Colors.black, // आइकन का रंग बेहतर किया गया
                               ),
                               hintText: 'Name',
                               hintStyle: TextStyle(
@@ -195,30 +201,47 @@ class _LoginPageState extends State<LoginPageDemo> {
                                 fontSize: 16,
                               ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12), // बॉर्डर को अधिक स्मूथ किया
-                                borderSide: BorderSide(color: Colors.blueAccent),
+                                borderRadius: BorderRadius.circular(
+                                  12,
+                                ), // बॉर्डर को अधिक स्मूथ किया
+                                borderSide: BorderSide(
+                                  color: Colors.blueAccent,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue, width: 2), // अधिक स्पष्ट फोकस बॉर्डर
+                                borderSide: BorderSide(
+                                  color: Colors.blue,
+                                  width: 2,
+                                ), // अधिक स्पष्ट फोकस बॉर्डर
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade400),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade400,
+                                ),
                               ),
-                              contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12), // बेहतर padding
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 12,
+                              ), // बेहतर padding
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return AppStrings.invalidEmail;
                               }
-                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                              if (!RegExp(
+                                r'^[^@]+@[^@]+\.[^@]+',
+                              ).hasMatch(value)) {
                                 return AppStrings.invalidEmail;
                               }
                               return null;
                             },
 
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           const SizedBox(height: 15),
 
@@ -227,7 +250,8 @@ class _LoginPageState extends State<LoginPageDemo> {
                             decoration: InputDecoration(
                               prefixIcon: const Icon(
                                 CupertinoIcons.mail_solid,
-                                color: Colors.black, // आइकन का रंग बेहतर किया गया
+                                color:
+                                    Colors.black, // आइकन का रंग बेहतर किया गया
                               ),
                               hintText: AppStrings.email,
                               hintStyle: TextStyle(
@@ -235,30 +259,47 @@ class _LoginPageState extends State<LoginPageDemo> {
                                 fontSize: 16,
                               ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12), // बॉर्डर को अधिक स्मूथ किया
-                                borderSide: BorderSide(color: Colors.blueAccent),
+                                borderRadius: BorderRadius.circular(
+                                  12,
+                                ), // बॉर्डर को अधिक स्मूथ किया
+                                borderSide: BorderSide(
+                                  color: Colors.blueAccent,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue, width: 2), // अधिक स्पष्ट फोकस बॉर्डर
+                                borderSide: BorderSide(
+                                  color: Colors.blue,
+                                  width: 2,
+                                ), // अधिक स्पष्ट फोकस बॉर्डर
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade400),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade400,
+                                ),
                               ),
-                              contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12), // बेहतर padding
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 12,
+                              ), // बेहतर padding
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return AppStrings.invalidEmail;
                               }
-                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                              if (!RegExp(
+                                r'^[^@]+@[^@]+\.[^@]+',
+                              ).hasMatch(value)) {
                                 return AppStrings.invalidEmail;
                               }
                               return null;
                             },
 
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           const SizedBox(height: 15),
                           TextFormField(
@@ -266,7 +307,8 @@ class _LoginPageState extends State<LoginPageDemo> {
                             decoration: InputDecoration(
                               prefixIcon: const Icon(
                                 CupertinoIcons.phone,
-                                color: Colors.black, // आइकन का रंग बेहतर किया गया
+                                color:
+                                    Colors.black, // आइकन का रंग बेहतर किया गया
                               ),
                               hintText: 'Phone',
                               hintStyle: TextStyle(
@@ -274,19 +316,32 @@ class _LoginPageState extends State<LoginPageDemo> {
                                 fontSize: 16,
                               ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12), // बॉर्डर को अधिक स्मूथ किया
-                                borderSide: BorderSide(color: Colors.blueAccent),
+                                borderRadius: BorderRadius.circular(
+                                  12,
+                                ), // बॉर्डर को अधिक स्मूथ किया
+                                borderSide: BorderSide(
+                                  color: Colors.blueAccent,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue, width: 2), // अधिक स्पष्ट फोकस बॉर्डर
+                                borderSide: BorderSide(
+                                  color: Colors.blue,
+                                  width: 2,
+                                ), // अधिक स्पष्ट फोकस बॉर्डर
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade400),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade400,
+                                ),
                               ),
-                              contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12), // बेहतर padding
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 12,
+                              ), // बेहतर padding
                             ),
+
                             // validator: (value) {
                             //   if (value == null || value.isEmpty) {
                             //     return AppStrings.invalidEmail;
@@ -296,8 +351,10 @@ class _LoginPageState extends State<LoginPageDemo> {
                             //   }
                             //   return null;
                             // },
-
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
 
                           // Email Input
@@ -353,7 +410,8 @@ class _LoginPageState extends State<LoginPageDemo> {
                             decoration: InputDecoration(
                               prefixIcon: const Icon(
                                 CupertinoIcons.padlock_solid,
-                                color: Colors.black, // आइकन का रंग बेहतर किया गया
+                                color:
+                                    Colors.black, // आइकन का रंग बेहतर किया गया
                               ),
                               hintText: AppStrings.password,
                               hintStyle: TextStyle(
@@ -365,7 +423,8 @@ class _LoginPageState extends State<LoginPageDemo> {
                                   _isPasswordVisible
                                       ? CupertinoIcons.eye_slash_fill
                                       : CupertinoIcons.eye_solid,
-                                  color: Colors.black, // आँख का आइकन भी स्टाइलिश बनाया गया
+                                  color: Colors
+                                      .black, // आँख का आइकन भी स्टाइलिश बनाया गया
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -374,18 +433,30 @@ class _LoginPageState extends State<LoginPageDemo> {
                                 },
                               ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12), // बॉर्डर को अधिक स्मूथ किया
-                                borderSide: BorderSide(color: Colors.blueAccent),
+                                borderRadius: BorderRadius.circular(
+                                  12,
+                                ), // बॉर्डर को अधिक स्मूथ किया
+                                borderSide: BorderSide(
+                                  color: Colors.blueAccent,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue, width: 2), // अधिक स्पष्ट फोकस बॉर्डर
+                                borderSide: BorderSide(
+                                  color: Colors.blue,
+                                  width: 2,
+                                ), // अधिक स्पष्ट फोकस बॉर्डर
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade400),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade400,
+                                ),
                               ),
-                              contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12), // बेहतर padding
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 12,
+                              ), // बेहतर padding
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -393,7 +464,10 @@ class _LoginPageState extends State<LoginPageDemo> {
                               }
                               return null;
                             },
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           const SizedBox(height: 10),
 
@@ -403,7 +477,8 @@ class _LoginPageState extends State<LoginPageDemo> {
                             decoration: InputDecoration(
                               prefixIcon: const Icon(
                                 CupertinoIcons.padlock_solid,
-                                color: Colors.black, // आइकन का रंग बेहतर किया गया
+                                color:
+                                    Colors.black, // आइकन का रंग बेहतर किया गया
                               ),
                               hintText: 'Confirm Password ',
                               hintStyle: TextStyle(
@@ -415,7 +490,8 @@ class _LoginPageState extends State<LoginPageDemo> {
                                   _isPasswordVisible
                                       ? CupertinoIcons.eye_slash_fill
                                       : CupertinoIcons.eye_solid,
-                                  color: Colors.black, // आँख का आइकन भी स्टाइलिश बनाया गया
+                                  color: Colors
+                                      .black, // आँख का आइकन भी स्टाइलिश बनाया गया
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -424,18 +500,30 @@ class _LoginPageState extends State<LoginPageDemo> {
                                 },
                               ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12), // बॉर्डर को अधिक स्मूथ किया
-                                borderSide: BorderSide(color: Colors.blueAccent),
+                                borderRadius: BorderRadius.circular(
+                                  12,
+                                ), // बॉर्डर को अधिक स्मूथ किया
+                                borderSide: BorderSide(
+                                  color: Colors.blueAccent,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.blue, width: 2), // अधिक स्पष्ट फोकस बॉर्डर
+                                borderSide: BorderSide(
+                                  color: Colors.blue,
+                                  width: 2,
+                                ), // अधिक स्पष्ट फोकस बॉर्डर
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey.shade400),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade400,
+                                ),
                               ),
-                              contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12), // बेहतर padding
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 12,
+                              ), // बेहतर padding
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -443,7 +531,10 @@ class _LoginPageState extends State<LoginPageDemo> {
                               }
                               return null;
                             },
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           // Row(
@@ -476,13 +567,22 @@ class _LoginPageState extends State<LoginPageDemo> {
                           //     const Text(AppStrings.rememberMe),
                           //   ],
                           // ),
-                           SizedBox(height: 20.sp),
-                          if (_isLoading) const CircularProgressIndicator() else  Padding(
-                            padding:  EdgeInsets.only(left: 18.sp,right: 18.sp),
-                            child: CustomLoginButton(onPressed: () {
-                              _login();
-                            }, title: 'Register'.toUpperCase(),),
-                          ),
+                          SizedBox(height: 20.sp),
+                          if (_isLoading)
+                            const CircularProgressIndicator()
+                          else
+                            Padding(
+                              padding: EdgeInsets.only(
+                                left: 18.sp,
+                                right: 18.sp,
+                              ),
+                              child: CustomLoginButton(
+                                onPressed: () {
+                                  _login();
+                                },
+                                title: 'Register'.toUpperCase(),
+                              ),
+                            ),
 
                           //   SizedBox(
                           //   width: double.infinity,
@@ -512,14 +612,11 @@ class _LoginPageState extends State<LoginPageDemo> {
                           //   ),
                           // ),
                           // SizedBox(height: 50.sp),
-
-
                         ],
                       ),
                     ),
                   ),
                 ),
-
 
                 // Center(
                 //   child: SingleChildScrollView(
@@ -710,7 +807,6 @@ class _LoginPageState extends State<LoginPageDemo> {
                 //     ),
                 //   ),
                 // ),
-
               ],
             ),
           ),
@@ -720,13 +816,14 @@ class _LoginPageState extends State<LoginPageDemo> {
   }
 }
 
-
-
-
 class CustomLoginButton extends StatefulWidget {
   final VoidCallback onPressed;
   final String title;
-  const CustomLoginButton({super.key, required this.onPressed, required this.title});
+  const CustomLoginButton({
+    super.key,
+    required this.onPressed,
+    required this.title,
+  });
 
   @override
   _CustomLoginButtonState createState() => _CustomLoginButtonState();
@@ -754,18 +851,18 @@ class _CustomLoginButtonState extends State<CustomLoginButton> {
           borderRadius: BorderRadius.circular(30),
           gradient: LinearGradient(
             colors: isPressed
-                ? [ HexColor('#3a1e0d'), HexColor('#3a1e0d'),]
-                : [  HexColor('#3a1e0d'), HexColor('#3a1e0d'),],
+                ? [HexColor('#3a1e0d'), HexColor('#3a1e0d')]
+                : [HexColor('#3a1e0d'), HexColor('#3a1e0d')],
           ),
           boxShadow: isPressed
               ? []
               : [
-            BoxShadow(
-              color: HexColor('#3a1e0d').withOpacity(0.5),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
+                  BoxShadow(
+                    color: HexColor('#3a1e0d').withOpacity(0.5),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ],
         ),
         child: Center(
           child: Text(
