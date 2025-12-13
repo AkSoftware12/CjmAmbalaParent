@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class StudentAttendanceScreen extends StatefulWidget {
   final int id;
@@ -45,9 +46,12 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
 
 
   Future<void> fetchProfileData(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('teachertoken');
+    print("Token: $token");
     final response = await http.get(
       Uri.parse('${ApiRoutes.getTeacherStudentsProfile}$id'),
-      headers: {'Authorization': 'Bearer ${''}'},
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (!mounted) return; // ✅ Prevent running code after dispose

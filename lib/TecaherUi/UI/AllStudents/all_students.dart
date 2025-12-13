@@ -47,6 +47,7 @@ class _AllStudentsState extends State<AllStudents> {
   Future<void> loadInitial() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('teachertoken');
+    print('$token');
 
     final url = Uri.parse(
         ApiRoutes.getTeacherAllStudents);
@@ -59,8 +60,8 @@ class _AllStudentsState extends State<AllStudents> {
     final data = jsonDecode(response.body);
 
     classes = data["data"]["classes"];
-    selectedClassId=data["data"]["classes"][0]['class_id'];
-    selectedSectionId=data["data"]["classes"][0]['section_id'];
+    selectedClassId=data["data"]["classes"][0]['class_section_id'];
+    // selectedSectionId=data["data"]["classes"][0]['section_id'];
     loadStudents();
 
     setState(() {
@@ -74,7 +75,8 @@ class _AllStudentsState extends State<AllStudents> {
 
   // 3️⃣ Load actual students
   Future<void> loadStudents() async {
-    if (selectedClassId == null || selectedSectionId == null) return;
+    // if (selectedClassId == null || selectedSectionId == null) return;
+    if (selectedClassId == null) return;
 
     setState(() => studentsLoading = true);
 
@@ -82,7 +84,7 @@ class _AllStudentsState extends State<AllStudents> {
     String? token = prefs.getString('teachertoken');
 
     final url = Uri.parse(
-        "${ApiRoutes.getTeacherAllStudents1}?class=$selectedClassId&section=$selectedSectionId");
+        "${ApiRoutes.getTeacherAllStudents1}?class_section_id=$selectedClassId");
 
     final response = await http.get(url, headers: {
       "Authorization": "Bearer $token",
@@ -111,9 +113,9 @@ class _AllStudentsState extends State<AllStudents> {
     String q = query.toLowerCase();
     setState(() {
       filteredStudents = students.where((stu) {
-        String name = stu["student_name"]?.toString().toLowerCase() ?? "";
-        String roll = stu["roll_no"]?.toString().toLowerCase() ?? "";
-        String adm = stu["adm_no"]?.toString().toLowerCase() ?? "";
+        String name = stu['student']["student_name"]?.toString().toLowerCase() ?? "";
+        String roll = stu['student']["roll_no"]?.toString().toLowerCase() ?? "";
+        String adm = stu['student']["adm_no"]?.toString().toLowerCase() ?? "";
         return name.contains(q) || roll.contains(q) || adm.contains(q);
       }).toList();
     });
@@ -135,13 +137,13 @@ class _AllStudentsState extends State<AllStudents> {
     // Sorting logic
     filteredStudents.sort((a, b) {
       if (sortBy == "roll") {
-        return int.parse(a["roll_no"].toString())
-            .compareTo(int.parse(b["roll_no"].toString()));
+        return int.parse(a['student']["roll_no"].toString())
+            .compareTo(int.parse(b['student']["roll_no"].toString()));
       } else if (sortBy == "adm_no") {
-        return int.parse(a["adm_no"].toString())
-            .compareTo(int.parse(b["adm_no"].toString()));
+        return int.parse(a['student']["adm_no"].toString())
+            .compareTo(int.parse(b['student']["adm_no"].toString()));
       } else {
-        return a["student_name"].compareTo(b["student_name"]);
+        return a['student']["student_name"].compareTo(b['student']["student_name"]);
       }
     });
 
@@ -203,6 +205,7 @@ class _AllStudentsState extends State<AllStudents> {
                 // ---------------- TOP TABS ----------------
                 if (classes.isNotEmpty)
                   Container(
+                    width: double.infinity,
                     color: Colors.grey.shade200,
                     padding: const EdgeInsets.only(bottom: 0),
                     child: SingleChildScrollView(
@@ -215,8 +218,8 @@ class _AllStudentsState extends State<AllStudents> {
                             onTap: () {
                               setState(() {
                                 selectedTab = index;
-                                selectedClassId = item["class_id"];
-                                selectedSectionId = item["section_id"];
+                                selectedClassId = item["class_section_id"];
+                                // selectedSectionId = item["section_id"];
                               });
                               loadStudents();
                             },
@@ -277,7 +280,7 @@ class _AllStudentsState extends State<AllStudents> {
                 // const SizedBox(height: 10),
 
                 // ---------------- SORT BUTTONS ----------------
-                if (selectedSectionId != null)
+                // if (selectedSectionId != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 10),
                     child: Row(
@@ -286,7 +289,7 @@ class _AllStudentsState extends State<AllStudents> {
                         const SizedBox(width: 8),
                         sortButton("Admission No", "adm_no"),
                         const SizedBox(width: 8),
-                        sortButton("Name", "name"),
+                        sortButton("Name", "student_name"),
                       ],
                     ),
                   ),
@@ -324,7 +327,7 @@ class _AllStudentsState extends State<AllStudents> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) {
-                                  return  StudentAttendanceScreen(id:   stu["stu_id"],);
+                                  return  StudentAttendanceScreen(id:   stu['student']["id"],);
                                 },
                               ),
                             );
@@ -349,7 +352,7 @@ class _AllStudentsState extends State<AllStudents> {
                                   ),
                                   child: ClipOval(
                                     child: CachedNetworkImage(
-                                      imageUrl: stu["photo"] ??
+                                      imageUrl: stu['student']["picture_data"] ??
                                           "https://cdn-icons-png.flaticon.com/512/149/149071.png",
 
                                       fit: BoxFit.cover,
@@ -386,15 +389,15 @@ class _AllStudentsState extends State<AllStudents> {
                                 const SizedBox(height: 10),
 
                                 Text(
-                                  stu["student_name"],
+                                  stu['student']["student_name"].toString(),
                                   style: const TextStyle(
                                       fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
 
                                 const SizedBox(height: 6),
 
-                                Text("Admission No.: ${stu['adm_no']}"),
-                                Text("Roll No : ${stu['roll_no']}"),
+                                Text("Admission No.: ${stu['student']['adm_no']}"),
+                                Text("Roll No : ${stu['student']['roll_no']}"),
                               ],
                             ),
                           ),
