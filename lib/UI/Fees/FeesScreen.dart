@@ -1120,7 +1120,8 @@ class PaymentCard extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.print),
               onPressed: () async {
-                final Uri uri = Uri.parse('${ApiRoutes.downloadUrl}$id');
+                // final Uri uri = Uri.parse('${ApiRoutes.downloadUrl}$id');
+                final Uri uri = Uri.parse("${ApiRoutes.downloadUrl}student/fee-receipt/$id");
                 try {
                   if (!await launchUrl(uri,
                       mode: LaunchMode.externalApplication)) {
