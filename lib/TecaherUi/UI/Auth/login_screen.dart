@@ -32,7 +32,9 @@ class _LoginPageState extends State<LoginPage> {
     print('Device id: $deviceToken');
     if (!_formKey.currentState!.validate()) return;
 
-    print('${AppStrings.apiLoginUrl}${ApiRoutes.login}'); // Debug: Print the API URL
+    print(
+      '${AppStrings.apiLoginUrl}${ApiRoutes.login}',
+    ); // Debug: Print the API URL
     setState(() {
       _isLoading = true;
     });
@@ -45,15 +47,17 @@ class _LoginPageState extends State<LoginPage> {
           'password': _passwordController.text,
           'fcm': deviceToken,
         },
-        options: Options(
-          headers: {'Content-Type': 'application/json'},
-        ),
+        options: Options(headers: {'Content-Type': 'application/json'}),
       );
 
       print(' Device token : - $deviceToken');
 
-      print('${AppStrings.responseStatusDebug}${response.statusCode}'); // Debug: Print status code
-      print('${AppStrings.responseDataDebug}${response.data}'); // Debug: Print the response data
+      print(
+        '${AppStrings.responseStatusDebug}${response.statusCode}',
+      ); // Debug: Print status code
+      print(
+        '${AppStrings.responseDataDebug}${response.data}',
+      ); // Debug: Print the response data
 
       if (response.statusCode == 200) {
         final responseData = response.data;
@@ -62,33 +66,45 @@ class _LoginPageState extends State<LoginPage> {
           // Save token in SharedPreferences
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', responseData['token']);
-          print('${AppStrings.tokenSaved}${responseData['token']}'); // Debug: Print the saved token
+          print(
+            '${AppStrings.tokenSaved}${responseData['token']}',
+          ); // Debug: Print the saved token
 
           // Retrieve the token
           String? token = prefs.getString('token');
-          print('${AppStrings.tokenRetrieved}$token'); // Debug: Print retrieved token
+          print(
+            '${AppStrings.tokenRetrieved}$token',
+          ); // Debug: Print retrieved token
 
           // Navigate to the BottomNavBarScreen with the token
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => BottomNavBarScreen(initialIndex: 0,),
+              builder: (context) => BottomNavBarScreen(initialIndex: 0),
             ),
           );
         } else {
-          print('${AppStrings.loginFailedDebug}${responseData['message']}'); // Debug: Print failure message
+          print(
+            '${AppStrings.loginFailedDebug}${responseData['message']}',
+          ); // Debug: Print failure message
           _showErrorDialog(responseData['message']);
         }
       } else {
-        print('${AppStrings.loginFailedMessage} ${response.statusCode}'); // Debug: Unexpected status code
+        print(
+          '${AppStrings.loginFailedMessage} ${response.statusCode}',
+        ); // Debug: Unexpected status code
         _showErrorDialog(AppStrings.loginFailedMessage);
       }
     } on DioException catch (e) {
-      print('${AppStrings.dioExceptionDebug}${e.message}'); // Debug: Print DioException message
+      print(
+        '${AppStrings.dioExceptionDebug}${e.message}',
+      ); // Debug: Print DioException message
 
       String errorMessage = AppStrings.unexpectedError;
       if (e.response != null) {
-        print('${AppStrings.errorResponseDebug}${e.response?.data}'); // Debug: Print error response data
+        print(
+          '${AppStrings.errorResponseDebug}${e.response?.data}',
+        ); // Debug: Print error response data
 
         if (e.response?.data is Map<String, dynamic>) {
           errorMessage = e.response?.data['message'] ?? errorMessage;
@@ -136,7 +152,6 @@ class _LoginPageState extends State<LoginPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-
               const SizedBox(height: 20),
               Container(
                 width: 350,
@@ -163,8 +178,8 @@ class _LoginPageState extends State<LoginPage> {
                             height: 110.sp,
                             width: 180.sp,
                             decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(10.sp)
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(10.sp),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
@@ -173,9 +188,7 @@ class _LoginPageState extends State<LoginPage> {
                                 child: SizedBox(
                                   height: 90.sp,
                                   width: 90.sp,
-                                  child: Image.asset(
-                                    AppAssets.cjmlogo,
-                                  ),
+                                  child: Image.asset(AppAssets.cjmlogo),
                                 ),
                               ),
                             ),
@@ -217,7 +230,9 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
                         decoration: InputDecoration(
-                          prefixIcon: const Icon(CupertinoIcons.lock_shield_fill),
+                          prefixIcon: const Icon(
+                            CupertinoIcons.lock_shield_fill,
+                          ),
                           hintText: AppStrings.password,
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -245,7 +260,7 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          CupertinoSwitch (
+                          CupertinoSwitch(
                             value: _rememberMe,
                             onChanged: (value) {
                               setState(() {
@@ -257,44 +272,49 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      if (_isLoading) const CircularProgressIndicator() else SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                      if (_isLoading)
+                        const CircularProgressIndicator()
+                      else
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(vertical: 15),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              _login();
+                              // var token = "123"; // Define the token
+                              // Navigator.pushReplacement(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => BottomNavBarScreen(token: token), // Pass the token directly
+                              //   ),
+                              // );
+                            },
+                            child: Text(
+                              AppStrings.login,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.textblack,
+                              ),
                             ),
                           ),
-                          onPressed: () {
-
-                            _login();
-                            // var token = "123"; // Define the token
-                            // Navigator.pushReplacement(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => BottomNavBarScreen(token: token), // Pass the token directly
-                            //   ),
-                            // );
-                          },
-                          child:  Text(
-                            AppStrings.login,
-                            style: TextStyle(fontSize: 16, color: AppColors.textblack),
-                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
               ),
 
-               Column(
+              Column(
                 children: [
-
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text('Provider by AVI-SUN',
+                    child: Text(
+                      'Provider by AVI-SUN',
                       style: GoogleFonts.montserrat(
                         textStyle: Theme.of(context).textTheme.displayLarge,
                         fontSize: 14,
@@ -303,8 +323,7 @@ class _LoginPageState extends State<LoginPage> {
                         color: AppColors.textblack,
                       ),
                     ),
-                  )
-
+                  ),
                 ],
               ),
             ],
