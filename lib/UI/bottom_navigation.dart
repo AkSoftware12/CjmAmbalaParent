@@ -15,6 +15,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'Auth/login_screen.dart';
 import 'Auth/login_student_userlist.dart';
+import 'EbooksScreen/Ebooks/ebooks.dart' hide ApiRoutes;
 import 'Fees/FeesScreen.dart';
 import 'Gallery/Album/album.dart' show GalleryScreen;
 import 'Help/help.dart';
@@ -784,6 +785,47 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 );
                               },
                             ),
+
+                            Padding(
+                              padding: EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                              ),
+                            ),
+                            ListTile(
+                              title: Text(
+                                'E Books',
+                                style: GoogleFonts.cabin(
+                                  textStyle: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child: Image.asset(
+                                  'assets/ebook.png',
+                                  height: 80, // Adjust the size as needed
+                                  width: 80,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return EbooksScreen();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
                             Padding(
                               padding: EdgeInsets.only(left: 8, right: 8),
                               child: Divider(
@@ -840,7 +882,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               title: Text(
                                 'Help',
                                 style: GoogleFonts.cabin(
-                                  textStyle: TextStyle(
+                                  textStyle: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
@@ -994,7 +1036,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               title: Text(
                                 'Logout',
                                 style: GoogleFonts.cabin(
-                                  textStyle: TextStyle(
+                                  textStyle: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
@@ -1004,7 +1046,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               trailing: Container(
                                 height: 20,
                                 width: 20,
-                                child: Icon(
+                                child: const Icon(
                                   Icons.logout,
                                   color: Colors.white,
                                 ),

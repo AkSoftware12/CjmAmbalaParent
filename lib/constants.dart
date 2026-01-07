@@ -12,6 +12,8 @@ class AppColors {
 
 
 
+
+
   static const Color grey = Color(0xFFAAAEB2); // Secondary color (gray)
   static const Color background = Color(0xFFF8F9FA); // Light background color
   static const Color textblack = Color(0xFF212529); // Dark text color
@@ -125,6 +127,7 @@ class ApiRoutes {
   static const String getAllMessages = "$baseUrl/messages";
   static const String getUserMessagesConversation = "$baseUrl/messages/conversation/";
   static const String sendMessage = "$baseUrl/messages";
+  static const String getEbooks = "$baseUrl/ebooks";
 
 
 

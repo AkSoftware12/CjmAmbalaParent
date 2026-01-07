@@ -12,22 +12,14 @@ import 'package:scrollable_clean_calendar/utils/enums.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:html/parser.dart' as html_parser;
 import '../../constants.dart';
 import '../Assignment/assignment.dart';
-import '../Auth/login_screen.dart';
-import '../../NewUserBottombarPage/documents.dart';
 import '../Gallery/Album/album.dart' show GalleryScreen;
-import '../Gallery/gallery_tab.dart';
-import '../HomeWork/home_work.dart';
 import '../Leaves/leaves_tab.dart';
 import '../Message/message.dart';
 import '../Notice/notice.dart';
-import '../Report/report_card.dart';
-import '../Subject/subject.dart';
 import '../TimeTable/time_table.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-
 import '../bottom_navigation.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -41,28 +33,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? studentData;
   List assignments = []; // Declare a list to hold API data
   bool isLoading = true;
-  double attendancePercent=0;
+  double attendancePercent = 0;
   int? messageViewPermissionsApp;
   int? messageSendPermissionsApp;
   late CleanCalendarController calendarController;
   final List<Map<String, String>> items = [
-    {
-      'name': 'Assignments',
-      'image': 'assets/assignments.png',
-    },
-    {
-      'name': 'Time Table',
-      'image': 'assets/watch.png',
-    },
-    {
-      'name': 'Messages',
-      'image': 'assets/message_home.png',
-
-    },
-    {
-      'name': 'Attendance',
-      'image': 'assets/calendar_attendance.png',
-    },
+    {'name': 'Assignments', 'image': 'assets/assignments.png'},
+    {'name': 'Time Table', 'image': 'assets/watch.png'},
+    {'name': 'Messages', 'image': 'assets/message_home.png'},
+    {'name': 'Attendance', 'image': 'assets/calendar_attendance.png'},
     // {
     //   'name': 'Subject',
     //   'image': 'assets/physics.png',
@@ -71,19 +50,13 @@ class _HomeScreenState extends State<HomeScreen> {
     //   'name': 'Leaves',
     //   'image': 'assets/deadline.png',
     // },
-    {
-      'name': 'Activity Calendar',
-      'image': 'assets/calendar_activity.png',
-    },
-    {
-      'name': 'Gallery',
-      'image': 'assets/gallery.png',
-    },
+    {'name': 'Activity Calendar', 'image': 'assets/calendar_activity.png'},
+    {'name': 'Gallery', 'image': 'assets/gallery.png'},
+
     // {
     //   'name': 'Report Card',
     //   'image': 'assets/report.png',
     // },
-
   ];
 
   @override
@@ -128,7 +101,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> fetchData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final url = Uri.parse(ApiRoutes.getDashboard); // Ensure ApiRoutes.getDashboard is valid
+    final url = Uri.parse(
+      ApiRoutes.getDashboard,
+    ); // Ensure ApiRoutes.getDashboard is valid
 
     try {
       final response = await http.get(
@@ -142,150 +117,39 @@ class _HomeScreenState extends State<HomeScreen> {
           // Handle attendance_percent as double to support decimal values
           // attendancePercent = (data['attendance_percent'] as num?)?.toDouble() ?? 0.0;
           // Uncomment and fix if permissions are needed
-          messageViewPermissionsApp = (data['permisions']?[0]['app_status'] as num?)?.toInt() ?? 0;
-          messageSendPermissionsApp = (data['permisions']?[1]['app_status'] as num?)?.toInt() ?? 0;
-
+          messageViewPermissionsApp =
+              (data['permisions']?[0]['app_status'] as num?)?.toInt() ?? 0;
+          messageSendPermissionsApp =
+              (data['permisions']?[1]['app_status'] as num?)?.toInt() ?? 0;
         });
       } else {
-        setState(() {
-
-        });
+        setState(() {});
       }
     } catch (e) {
       setState(() {
         // attendancePercent = 0.0; // Default value for error case
-
       });
       // Optionally log the error for debugging
       debugPrint('Error fetching data: $e');
     }
   }
 
-
-  // Future<void> fetchDasboardData() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final token = prefs.getString('token');
-  //   print("Token: $token");
-  //
-  //   if (token == null) {
-  //     // _showLoginDialog();
-  //     return;
-  //   }
-  //
-  //   final response = await http.get(
-  //     Uri.parse(ApiRoutes.getDashboard),
-  //     headers: {'Authorization': 'Bearer $token'},
-  //   );
-  //
-  //   if (response.statusCode == 200) {
-  //     final data = json.decode(response.body);
-  //     setState(() {
-  //       assignments = data['data']['assignments'];
-  //       isLoading = false;
-  //       print(assignments);
-  //     });
-  //   } else {
-  //     // _showLoginDialog();
-  //   }
-  // }
-
-  void _showLoginDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Session Expired'),
-        content: const Text('Please log in again to continue.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.secondary,
-
-      // appBar: AppBar(
-      //   backgroundColor: AppColors.secondary,
-      //   title: Column(
-      //     children: [
-      //       _buildAppBar(),
-      //     ],
-      //   ),
-      //   actions: [
-      //     Padding(
-      //       padding: const EdgeInsets.all(15.0),
-      //       child: GestureDetector(
-      //           onTap: () {},
-      //           child: Icon(
-      //             Icons.notification_add,
-      //             size: 26,
-      //             color: Colors.white,
-      //           )),
-      //     )
-      //
-      //     // Container(child: Icon(Icons.ice_skating)),
-      //   ],
-      // ),
       body: isLoading
-          ? const Center(
-              child: CupertinoActivityIndicator(radius: 20),
-            )
+          ? const Center(child: CupertinoActivityIndicator(radius: 20))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(0.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CarouselExample(),
-                  SizedBox(height: 10),
-
-                  // CarouselFees(
-                  //   status: 'due',
-                  //   dueDate: '',
-                  //   onPayNow: () {
-                  //     // print("Processing payment for ₹${fess[index]['to_pay_amount']}");
-                  //
-                  //     // Navigator.push(
-                  //     //   context,
-                  //     //   MaterialPageRoute(builder: (context) => HomeGateway()),
-                  //     // );
-                  //   },
-                  //   custFirstName: studentData?['student_name']?? '',
-                  //   custLastName: 'N/A',
-                  //   mobile: studentData?['contact_no']??'',
-                  //   email:studentData?['contact_mail']??'',
-                  //   address: studentData?['address']??'',
-                  //   payDate: '',
-                  //   dueAmount: '0',
-                  //
-                  // ),
-
-                  // _buildsellAll('Promotions', 'See All'),
-
-                  // PromotionCard(),
-                  // _buildWelcomeHeader(),
                   const SizedBox(height: 20),
-                  // _buildsellAll('Promotions', 'See All'),
-
                   _buildsellAll('Category', ''),
-
                   _buildGridview(),
                   const SizedBox(height: 10),
-
-                  // _buildsellAll('Assignment', ''),
-                  // _buildListView(),
-
                   Container(
                     height: 220,
                     width: double.infinity,
@@ -295,111 +159,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  Divider(
-                    thickness: 1.sp,
-                    color: Colors.grey,
-                  ),
+                  Divider(thickness: 1.sp, color: Colors.grey),
                 ],
               ),
             ),
     );
   }
 
-  Widget _buildWelcomeHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: AppColors.secondary,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundImage: studentData!['photo'] != null
-                ? NetworkImage(studentData!['photo'])
-                : null,
-            child: studentData!['photo'] == null
-                ? Image.asset(AppAssets.logo, fit: BoxFit.cover)
-                : null,
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Welcome',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textwhite,
-                ),
-              ),
-              Text(
-                studentData!['student_name'] ?? 'Student',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textwhite,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildAppBar() {
-    return Row(
-      children: [
-        CircleAvatar(
-          backgroundColor: Colors.white,
-          radius: 20,
-          backgroundImage: studentData?['photo'] != null
-              ? NetworkImage(studentData!['photo'])
-              : null,
-          child: studentData?['photo'] == null
-              ? Image.asset(AppAssets.logo, fit: BoxFit.cover)
-              : null,
-        ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome !',
-              style: GoogleFonts.montserrat(
-                textStyle: Theme.of(context).textTheme.displayLarge,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                fontStyle: FontStyle.normal,
-                color: AppColors.textwhite,
-              ),
-            ),
-            Text(
-              studentData?['student_name'] ?? 'Student',
-              // Fallback to 'Student' if null
-              style: GoogleFonts.montserrat(
-                textStyle: Theme.of(context).textTheme.displayLarge,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                fontStyle: FontStyle.normal,
-                color: AppColors.textwhite,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
   Widget _buildGridview() {
     return Padding(
@@ -426,15 +193,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                 );
-              } else if (items[index]['name'] == 'Subject') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return SubjectScreen();
-                    },
-                  ),
-                );
               } else if (items[index]['name'] == 'Gallery') {
                 Navigator.push(
                   context,
@@ -458,20 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) {
-                      return AttendanceCalendarScreen(title: 'Attendance',);
-                    },
-                  ),
-                );
-              }
-
-
-
-              else if (items[index]['name'] == 'Report Card') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return ReportCardScreen();
+                      return AttendanceCalendarScreen(title: 'Attendance');
                     },
                   ),
                 );
@@ -480,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) {
-                      return CalendarScreen(title: 'Activity Calendar',);
+                      return CalendarScreen(title: 'Activity Calendar');
                     },
                   ),
                 );
@@ -498,7 +243,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) {
-                      return MesssageListScreen(messageSendPermissionsApp: messageSendPermissionsApp,);
+                      return MesssageListScreen(
+                        messageSendPermissionsApp: messageSendPermissionsApp,
+                      );
                     },
                   ),
                 );
@@ -519,9 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 50, // Adjust the size as needed
                       width: 50,
                     ),
-                    SizedBox(
-                      height: 20,
-                    ),
+                    SizedBox(height: 20),
                     Padding(
                       padding: EdgeInsets.only(left: 10.0, right: 10),
                       child: Align(
@@ -538,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -548,7 +293,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 
   Widget _buildsellAll(String title, String see) {
     return Padding(
@@ -582,7 +326,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-
 class CarouselExample extends StatefulWidget {
   @override
   _CarouselExampleState createState() => _CarouselExampleState();
@@ -595,14 +338,6 @@ class _CarouselExampleState extends State<CarouselExample> {
     'https://cjmambala.in/slider/Slider2025_7.png',
     'https://cjmambala.in/images/building.png',
   ];
-
-  // final List<String> imgList = [
-  //   'https://www.cjmshimla.org/Images/sld1.jpg',
-  //   'https://www.cjmshimla.org/Images/sld3.jpg',
-  //   'https://www.cjmshimla.org/Images/sld4.jpg',
-  //   'https://www.cjmshimla.org/Images/sld5.jpg',
-  //
-  // ];
 
   int _currentIndex = 0;
   final CarouselSliderController _controller = CarouselSliderController();
@@ -648,14 +383,13 @@ class _CarouselExampleState extends State<CarouselExample> {
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Center(
-                            child:
-                                CircularProgressIndicator( color: Colors.white,)); // Show loader while loading
+                          child: CircularProgressIndicator(color: Colors.white),
+                        ); // Show loader while loading
                       },
                       errorBuilder: (context, error, stackTrace) {
                         return Center(
-                            child: Icon(Icons.error,
-                                color: Colors
-                                    .red)); // Show error icon if image fails
+                          child: Icon(Icons.error, color: Colors.red),
+                        ); // Show error icon if image fails
                       },
                     ),
                   ),
@@ -700,23 +434,35 @@ class CarouselFees extends StatelessWidget {
   final List<Map<String, String>> imgList = [
     {
       'image': 'https://cjmambala.in/images/building.png',
-      'text': 'Welcome to CJM Ambala'
+      'text': 'Welcome to CJM Ambala',
     },
     {
       'image': 'https://cjmambala.in/images/building.png',
-      'text': 'Best School for Excellence'
+      'text': 'Best School for Excellence',
     },
     {
       'image': 'https://cjmambala.in/images/building.png',
-      'text': 'Learn, Grow & Succeed'
+      'text': 'Learn, Grow & Succeed',
     },
     {
       'image': 'https://cjmambala.in/images/building.png',
-      'text': 'Join Our Community'
+      'text': 'Join Our Community',
     },
   ];
 
-   CarouselFees({super.key, required this.dueAmount, required this.onPayNow, required this.status, required this.dueDate, required this.payDate, required this.custFirstName, required this.custLastName, required this.mobile, required this.email, required this.address});
+  CarouselFees({
+    super.key,
+    required this.dueAmount,
+    required this.onPayNow,
+    required this.status,
+    required this.dueDate,
+    required this.payDate,
+    required this.custFirstName,
+    required this.custLastName,
+    required this.mobile,
+    required this.email,
+    required this.address,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -736,7 +482,7 @@ class CarouselFees extends StatelessWidget {
             scrollDirection: Axis.horizontal,
           ),
           items: imgList.map((item) {
-            return  DueAmountCard(
+            return DueAmountCard(
               dueAmount: '0',
               status: 'due',
               dueDate: '',
@@ -745,8 +491,8 @@ class CarouselFees extends StatelessWidget {
               custFirstName: '',
               lastName: 'N/A',
               mobile: '',
-              email:  '',
-              address:  '',
+              email: '',
+              address: '',
             );
 
             //   GestureDetector(
@@ -832,7 +578,11 @@ class DueAmountCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Image.asset('assets/due_fees_amount.png', height: 40.sp, width: 40.sp),
+                Image.asset(
+                  'assets/due_fees_amount.png',
+                  height: 40.sp,
+                  width: 40.sp,
+                ),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -873,4 +623,3 @@ class DueAmountCard extends StatelessWidget {
     );
   }
 }
-

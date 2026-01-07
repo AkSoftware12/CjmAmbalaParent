@@ -12,7 +12,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../CommonCalling/data_not_found.dart';
 import '../../../CommonCalling/progressbarWhite.dart';
 import '../../../constants.dart';
-import '../Auth/login_screen.dart';
 import 'package:html/parser.dart' as html_parser;
 
 
@@ -50,10 +49,6 @@ class _AssignmentListScreenState extends State<HomeWorkScreen> {
     final token = prefs.getString('teachertoken');
     print("Token: $token");
 
-    if (token == null) {
-      _showLoginDialog();
-      return;
-    }
 
     final response = await http.get(
       Uri.parse(ApiRoutes.getTeacherAssignments),
@@ -68,34 +63,12 @@ class _AssignmentListScreenState extends State<HomeWorkScreen> {
 // Update state with fetched data
       });
     } else {
-      _showLoginDialog();
       setState(() {
         isLoading = false;
       });
     }
   }
 
-  void _showLoginDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Session Expired'),
-        content: const Text('Please log in again to continue.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

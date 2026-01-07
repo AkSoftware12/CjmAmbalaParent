@@ -16,7 +16,6 @@ import '../../../UI/Dashboard/HomeScreen .dart';
 import '../../../UI/Gallery/Album/album.dart';
 import '../../../constants.dart';
 import '../Assignment/assignment.dart';
-import '../Auth/login_screen.dart';
 import '../HomeWork/home_work.dart';
 import '../Notice/notice.dart';
 import '../Subject/subject.dart';
@@ -82,11 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final token = prefs.getString('teachertoken');
     print("Token: $token");
 
-    if (token == null) {
-      _showLoginDialog();
-      return;
-    }
-
     final response = await http.get(
       Uri.parse(ApiRoutes.getTeacheProfile),
       headers: {'Authorization': 'Bearer $token'},
@@ -100,7 +94,6 @@ class _HomeScreenState extends State<HomeScreen> {
         print(teacherData);
       });
     } else {
-      _showLoginDialog();
     }
   }
 
@@ -137,27 +130,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _showLoginDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Session Expired'),
-        content: const Text('Please log in again to continue.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -271,49 +243,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAppBar() {
-    return Row(
-      children: [
-        CircleAvatar(
-          backgroundColor: Colors.white,
-          radius: 20,
-          backgroundImage: teacherData?['photo'] != null
-              ? NetworkImage(teacherData!['photo'])
-              : null,
-          child: teacherData?['photo'] == null
-              ? Image.asset(AppAssets.logo, fit: BoxFit.cover)
-              : null,
-        ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome !',
-              style: GoogleFonts.montserrat(
-                textStyle: Theme.of(context).textTheme.displayLarge,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                fontStyle: FontStyle.normal,
-                color: AppColors2.textblack,
-              ),
-            ),
-            Text(
-              teacherData?['student_name'] ?? 'Student',
-              // Fallback to 'Student' if null
-              style: GoogleFonts.montserrat(
-                textStyle: Theme.of(context).textTheme.displayLarge,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                fontStyle: FontStyle.normal,
-                color: AppColors2.textblack,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
   Widget _buildGridview() {
     return Padding(

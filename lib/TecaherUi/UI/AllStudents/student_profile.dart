@@ -443,8 +443,8 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
                         infoItem(Icons.home_work, "House", studentData?['house'] ?? 'N/A'),
                         infoItem(Icons.directions_bus, "Transport", studentData?['transport'] ?? 'N/A'),
                         infoItem(Icons.bloodtype, "Blood Group", studentData?['blood_group'] ?? 'N/A'),
-                        infoItem(Icons.category, "Category", studentData?['social_category'] ?? 'N/A'),
-                        infoItem(Icons.people, "Caste", studentData?['social_category'] ?? 'N/A'),
+                        infoItem(Icons.email, "Email", studentData?['email'] ?? 'N/A'),
+
                       ],
                     ),
                   ),
@@ -469,7 +469,6 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
                         const SizedBox(height: 14),
 
                         infoItem(Icons.phone, "Contact No.", studentData?['contact_no'] ?? 'N/A'),
-                        infoItem(Icons.email, "Email", studentData?['email'] ?? 'N/A'),
                       ],
                     ),
                   ),

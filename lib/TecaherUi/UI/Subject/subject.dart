@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../../../HexColorCode/HexColor.dart';
 import '../../../constants.dart';
-import '../Auth/login_screen.dart';
 
 class SubjectScreen extends StatefulWidget {
   const SubjectScreen({super.key});
@@ -36,11 +35,6 @@ class _TimeTableScreenState extends State<SubjectScreen> {
     final token = prefs.getString('teachertoken');
     print("Token: $token");
 
-    if (token == null) {
-      _showLoginDialog();
-      return;
-    }
-
     final response = await http.get(
       Uri.parse(ApiRoutes.getTeacherSubject),
       headers: {'Authorization': 'Bearer $token'},
@@ -52,31 +46,9 @@ class _TimeTableScreenState extends State<SubjectScreen> {
         subject = jsonResponse['data']; // Update state with fetched data
       });
     } else {
-      _showLoginDialog();
     }
   }
 
-  void _showLoginDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Session Expired'),
-        content: const Text('Please log in again to continue.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

@@ -183,7 +183,7 @@ class GalleryNotifier extends StateNotifier<AsyncValue<List<Album>>> {
   int get lastPage => _lastPage;
 }
 
-// Gallery Screen
+// Gallery EbooksScreen
 class GalleryScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<GalleryScreen> createState() => _GalleryScreenState();

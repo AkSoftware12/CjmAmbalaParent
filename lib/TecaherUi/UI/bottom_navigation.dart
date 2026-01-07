@@ -5,8 +5,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../UI/Auth/login_screen.dart';
 import '../../UI/Auth/login_student_userlist.dart';
+import '../../UI/EbooksScreen/Ebooks/ebooks.dart';
 import '../../UI/Gallery/Album/album.dart';
+import '../../UI/Library/LibraryScreen.dart' show LibraryScreen;
 import '../../constants.dart';
 import '../../strings.dart';
 import '../UI/Dashboard/HomeScreen%20.dart';
@@ -15,12 +18,9 @@ import 'Assignment/assignment.dart';
 import 'Attendance/AttendanceScreen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'Auth/login_screen.dart';
-import 'Library/LibraryScreen.dart';
 import 'Notice/notice.dart';
 import 'Notification/notification.dart';
 import 'Profile/ProfileScreen.dart';
-import 'Report/report_card.dart';
 import 'TeacherMessage/message.dart';
 import 'TimeTable/time_table_teacher.dart';
 
@@ -44,8 +44,6 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
   final List<Widget> _screens = [
     HomeScreen(),
     AttendanceTabScreen(),
-    // AttendanceScreen(),//
-    // AttendanceCalendar(),
     LibraryScreen(),
     ProfileScreen(),
   ];
@@ -112,11 +110,6 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
     final token = prefs.getString('teachertoken');
     print("Token: $token");
 
-    if (token == null) {
-      _showLoginDialog();
-      return;
-    }
-
     final response = await http.get(
       Uri.parse(ApiRoutes.getTeacheProfile),
       headers: {'Authorization': 'Bearer $token'},
@@ -131,31 +124,9 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
 
       });
     } else {
-      _showLoginDialog();
     }
   }
 
-  void _showLoginDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Session Expired'),
-        content: const Text('Please log in again to continue.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
   Widget _buildAppBar() {
     return Row(
       children: [
@@ -679,9 +650,50 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
-                                    return CalendarScreen(
+                                    return const CalendarScreen(
                                       title: 'Activity Calendar',
                                     );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
+
+                          ListTile(
+                            title: Text(
+                              'E Books',
+                              style: GoogleFonts.cabin(
+                                textStyle: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            trailing: Container(
+                              height: 20,
+                              width: 20,
+                              color: AppColors.primary,
+                              child: Image.asset(
+                                'assets/ebook.png',
+                                height: 80, // Adjust the size as needed
+                                width: 80,
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return EbooksScreen();
                                   },
                                 ),
                               );

@@ -46,10 +46,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final token = prefs.getString('token');
     print("Token: $token");
 
-    if (token == null) {
-      _showLoginDialog();
-      return;
-    }
+
 
     final response = await http.get(
       Uri.parse(ApiRoutes.events),
@@ -101,7 +98,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
       });
       isLoading = false; // Stop progress bar
     } else {
-      _showLoginDialog();
       setState(() {
         isLoading = true; // Show progress bar
       });
@@ -207,27 +203,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  void _showLoginDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Session Expired'),
-        content: const Text('Please log in again to continue.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

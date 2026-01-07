@@ -14,7 +14,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../CommonCalling/data_not_found.dart';
 import '../../../constants.dart';
 import '../../../utils/textSize.dart';
-import '../Auth/login_screen.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import 'assinment_detail.dart';
@@ -51,11 +50,6 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
     final token = prefs.getString('teachertoken');
     print("Token: $token");
 
-    if (token == null) {
-      _showLoginDialog();
-      return;
-    }
-
     final response = await http.get(
       Uri.parse(ApiRoutes.getTeacherAssignments),
       headers: {'Authorization': 'Bearer $token'},
@@ -71,113 +65,19 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
 // Update state with fetched data
       });
     } else {
-      _showLoginDialog();
       setState(() {
         isLoading = false;
       });
     }
   }
 
-  void _showLoginDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Session Expired'),
-        content: const Text('Please log in again to continue.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: AppColors2.secondary,
 
-      // appBar: AppBar(
-      //   iconTheme: IconThemeData(color: AppColors2.textwhite),
-      //     backgroundColor: AppColors2.secondary,
-      //
-      //     title: Text('Assignments',
-      //         style: GoogleFonts.poppins(
-      //         textStyle: Theme.of(context).textTheme.displayLarge,
-      //   fontSize: 20,
-      //   fontWeight: FontWeight.w600,
-      //   fontStyle: FontStyle.normal,
-      //   color: AppColors2.textwhite,
-      // ),
-      //     ),
-      //   actions: [
-      //     Padding(
-      //       padding:  EdgeInsets.only(right: 8.sp),
-      //       child:Container(
-      //         height: 30.sp,
-      //         decoration: BoxDecoration(
-      //           gradient: const LinearGradient(
-      //             colors: [Colors.blue, Colors.purple], // Gradient colors
-      //             begin: Alignment.topLeft,
-      //             end: Alignment.bottomRight,
-      //           ),
-      //           borderRadius: BorderRadius.circular(20.sp), // Optional: Rounded corners
-      //         ),
-      //         child:
-      //         ElevatedButton.icon(
-      //           style: ElevatedButton.styleFrom(
-      //             backgroundColor: Colors.transparent, // Make button transparent
-      //             shadowColor: Colors.transparent, // Remove shadow
-      //             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-      //           ),
-      //           onPressed: () {
-      //             Navigator.push(
-      //               context,
-      //               PageRouteBuilder(
-      //                 transitionDuration: Duration(milliseconds: 500), // Animation Speed
-      //                 pageBuilder: (context, animation, secondaryAnimation) => AssignmentUploadScreen(onReturn: _refresh),
-      //                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      //                   var begin = Offset(1.0, 0.0); // Right to Left
-      //                   var end = Offset.zero;
-      //                   var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: Curves.easeInOut));
-      //
-      //                   return SlideTransition(
-      //                     position: animation.drive(tween),
-      //                     child: child,
-      //                   );
-      //                 },
-      //               ),
-      //             );
-      //           },
-      //           icon: Icon(Icons.cloud_upload_outlined,size: 16.sp,color: Colors.white,), // Upload icon
-      //           label: Text('Create Task',
-      //             style: GoogleFonts.poppins(
-      //               textStyle: Theme.of(context).textTheme.displayLarge,
-      //               fontSize: 12.sp,
-      //               fontWeight: FontWeight.w700,
-      //               fontStyle: FontStyle.normal,
-      //               color: AppColors2.textwhite,
-      //             ),
-      //           ),
-      //         ),
-      //       )
-      //
-      //
-      //     ),
-      //
-      //
-      //   ],
-      // ),
       body: Stack(
         children: [
           Container(

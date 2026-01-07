@@ -415,7 +415,7 @@ class NotificationService {
 
   /// **🔹 Handle Notification Click**
   static void _onMessageOpenedApp(RemoteMessage message) {
-    // **Navigate to a Specific Screen**
+    // **Navigate to a Specific EbooksScreen**
     // Navigator.push(
     //   context,
     //   MaterialPageRoute(builder: (context) => NotificationScreen()),

@@ -13,7 +13,7 @@ class DataNotFoundWidget extends StatelessWidget {
     return SingleChildScrollView(
       child: Container(
         constraints: BoxConstraints(
-          minHeight: 100.sp, // Minimum height to ensure visibility
+          minHeight: MediaQuery.of(context).size.height*0.5, // Minimum height to ensure visibility
         ),
         padding: EdgeInsets.all(16.sp),
         child: Column(
@@ -23,7 +23,7 @@ class DataNotFoundWidget extends StatelessWidget {
             Icon(
               Icons.info_outline,
               size: 40.sp,
-              color: Colors.white,
+              color: Colors.redAccent,
             ),
             SizedBox(height: 10.sp),
             Text(
@@ -31,7 +31,7 @@ class DataNotFoundWidget extends StatelessWidget {
               style: GoogleFonts.montserrat(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: Colors.redAccent,
               ),
               textAlign: TextAlign.center,
             ),
