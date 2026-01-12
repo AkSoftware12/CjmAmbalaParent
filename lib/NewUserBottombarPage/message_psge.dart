@@ -103,24 +103,37 @@ class _MessageListScreenState extends State<MessageListScreen> {
               String year = dateTime.year.toString();
               String hour = dateTime.hour.toString().padLeft(2, '0');
               String minute = dateTime.minute.toString().padLeft(2, '0');
+              bool isNew = msg['read_at'] == null;
+
 
               return '$day-$month-$year $hour:$minute';
             } catch (e) {
               return '';
             }
           }
+          bool isNew = msg['read_at'] == null;
+
 
           return Card(
             color: Colors.white,
             elevation: 5,
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor:AppColors.secondary,
+                backgroundColor: AppColors.secondary,
                 foregroundColor: Colors.white,
-                child: Text(msg['title']![0]),
+                child: Text(
+                  msg['title']![0],
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
-              title: Text(msg['title']!,
-                style:  TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold, color: AppColors.textblack),
+
+              title: Text(
+                msg['title']!,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textblack,
+                ),
               ),
 
               subtitle: Text(
@@ -129,10 +142,39 @@ class _MessageListScreenState extends State<MessageListScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
 
-              trailing: Icon(CupertinoIcons.right_chevron,color: Colors.black,),
+              /// 🔥 NEW badge + arrow
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isNew)
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        "NEW",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+
+                  SizedBox(width: 6.w),
+
+                  Icon(
+                    CupertinoIcons.right_chevron,
+                    color: Colors.black,
+                    size: 18,
+                  ),
+                ],
+              ),
+
               onTap: () async {
                 try {
-                  // Token load from SharedPreferences
                   final prefs = await SharedPreferences.getInstance();
                   final token = prefs.getString('newusertoken');
 
@@ -143,66 +185,43 @@ class _MessageListScreenState extends State<MessageListScreen> {
                     return;
                   }
 
-                  // API URL
-                  const String apiUrl = ApiRoutes.msgMarkSeenNewUser;
-
-                  // API Body
-                  final body = {
-                    "message_id": msg['id'].toString(),
-                  };
-
-                  // API Call
-                  final response = await http.post(
-                    Uri.parse(apiUrl),
+                  await http.post(
+                    Uri.parse(ApiRoutes.msgMarkSeenNewUser),
                     headers: {
                       "Content-Type": "application/json",
                       "Authorization": "Bearer $token",
                     },
-                    body: jsonEncode(body),
+                    body: jsonEncode({
+                      "message_id": msg['id'].toString(),
+                    }),
                   );
 
-                  if (response.statusCode == 200) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MessageDetailScreen(
-                          name: msg['title']!,
-                          message: msg['message']!,
-                          time:  formatDateTime(msg['created_at'] ?? ''),
-                        ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MessageDetailScreen(
+                        name: msg['title']!,
+                        message: msg['message']!,
+                        time: formatDateTime(msg['created_at'] ?? ''),
                       ),
-                    );
-
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MessageDetailScreen(
-                          name: msg['title']!,
-                          message: msg['message']!,
-                          time:  formatDateTime(msg['created_at'] ?? '')!,
-                        ),
-                      ),
-                    );
-
-                  }
+                    ),
+                  );
                 } catch (e) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => MessageDetailScreen(
+                      builder: (_) => MessageDetailScreen(
                         name: msg['title']!,
                         message: msg['message']!,
-                        time:  formatDateTime(msg['updated_at'] ?? '')!,
+                        time: formatDateTime(msg['created_at'] ?? ''),
                       ),
                     ),
                   );
-
                 }
-
               },
             ),
           );
+
         },
       ),
     );
