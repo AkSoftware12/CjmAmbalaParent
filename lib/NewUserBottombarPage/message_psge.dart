@@ -21,28 +21,7 @@ class MessageListScreen extends StatefulWidget {
 }
 
 class _MessageListScreenState extends State<MessageListScreen> {
-  // final List<Map<String, String>> messages = [
-  //   {
-  //     'name': 'Alice',
-  //     'message': 'Hey! I hope you re doing well. I just wanted to check in and see how things are going on your end. It s been a while since we last spoke, and I thought it would be a good idea to catch up. Things have been a bit hectic here with work and some personal projects I’ve been trying to complete. I’ve been learning a lot about time management lately, and its helping me balance things better. By the way, I finally started reading that book you recommended last month — its fantastic! The writing style is so engaging, and I find myself highlighting something on almost every page. I’d love to hear your thoughts on it once I’m done. Also, I was thinking it would be great to meet up sometime soon. Maybe this weekend if youre free? We can grab a coffee or lunch, just like old times. Let me know what works best for you. I really miss our random conversations and the good laughs. Anyway, no rush — reply when you get the chance. Take care of yourself and stay safe. Looking forward to hearing from you soon!',
-  //     'time': '10:30 AM',
-  //   },
-  //   {
-  //     'name': 'Bob',
-  //     'message': 'Did you check the file I sent yesterday? Let me know your feedback.',
-  //     'time': '10:45 AM',
-  //   },
-  //   {
-  //     'name': 'Charlie',
-  //     'message': 'Let\'s meet tomorrow at 5 PM to discuss further.',
-  //     'time': '11:00 AM',
-  //   },
-  //   {
-  //     'name': 'Daisy',
-  //     'message': 'I sent the documents you requested. Please confirm.',
-  //     'time': '11:20 AM',
-  //   },
-  // ];
+
 
   List<dynamic>? messages;
 

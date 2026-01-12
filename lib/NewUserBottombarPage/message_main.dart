@@ -20,6 +20,7 @@ class _MessageListScreenState extends State<MessageMainScreen> {
   Map<String, dynamic>? instruction;
   bool isLoading = true;
   final staticAnchorKey = GlobalKey();
+  int? noRead;
 
   @override
   void initState() {
@@ -40,9 +41,10 @@ class _MessageListScreenState extends State<MessageMainScreen> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       setState(() {
-        messages = data['messages'];
+        // messages = data['messages'];
         studentData = data['student'];
         instruction = data['instruction'];
+        noRead = data['non-read'];
         isLoading = false;
         print('${ApiRoutes.getProfileNewUser}');
       });
@@ -263,7 +265,7 @@ class _MessageListScreenState extends State<MessageMainScreen> {
                                   borderRadius: BorderRadius.circular(12.r),
                                 ),
                                 child:Text(
-                                  '${messages?.length ?? 0} ',
+                                  '${noRead ?? 0} ',
                                   style: GoogleFonts.montserrat(
                                     fontSize: 20.sp,
                                     fontWeight: FontWeight.w900,
