@@ -1159,7 +1159,7 @@ class PaymentCard extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Receipts",
+                                    "Fee Receipt",
                                     style: GoogleFonts.montserrat(
                                       fontSize: 15.sp,
                                       fontWeight: FontWeight.w800,
@@ -1195,15 +1195,7 @@ class PaymentCard extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                      SizedBox(width: 8.sp),
-                                      Text(
-                                        "(${receipts.length})",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 11.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
+
                                     ],
                                   ),
                                 ],
@@ -1291,7 +1283,7 @@ class PaymentCard extends StatelessWidget {
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                "Receipt #$receiptNo",
+                                                "Receipt No. #$receiptNo",
                                                 style: GoogleFonts.montserrat(
                                                   fontSize: 13.sp,
                                                   fontWeight: FontWeight.w800,
@@ -1580,7 +1572,7 @@ class PaymentCard extends StatelessWidget {
                           Icon(Icons.receipt, size: 16.sp, color: Colors.black54),
                           SizedBox(width: 6.sp),
                           Text(
-                            "Receipts (${receipts.length})",
+                            "Fee Receipt",
                             style: GoogleFonts.montserrat(
                               fontSize: 11.sp,
                               fontWeight: FontWeight.w700,
