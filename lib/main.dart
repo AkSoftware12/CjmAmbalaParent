@@ -148,8 +148,6 @@ class UpdateChecker {
     return false;
   }
 
-
-
   static void _showUpdateDialog(BuildContext context, String apkUrl) {
     showDialog(
       context: context,
@@ -214,9 +212,7 @@ class UpdateChecker {
                     children: [
                       Image.asset(
                         'assets/rocket_update.png',
-                        height: 130.sp,
-                      ),
-                    ],
+                        height: 130.sp),                    ],
                   ),
                 ),
               ],
@@ -226,6 +222,7 @@ class UpdateChecker {
       },
     );
   }
+
   // For iOS app updates
   static void _showIOSUpdateDialog(BuildContext context) {
     showDialog(
@@ -415,7 +412,7 @@ class NotificationService {
 
   /// **🔹 Handle Notification Click**
   static void _onMessageOpenedApp(RemoteMessage message) {
-    // **Navigate to a Specific EbooksScreen**
+    // **Navigate to a Specific Screen**
     // Navigator.push(
     //   context,
     //   MaterialPageRoute(builder: (context) => NotificationScreen()),
