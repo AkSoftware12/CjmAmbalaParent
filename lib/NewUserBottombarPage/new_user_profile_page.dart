@@ -1,4 +1,5 @@
 import 'package:avi/HexColorCode/HexColor.dart';
+import 'package:avi/utils/date_time_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -271,7 +272,7 @@ class _ProfileScreenState extends State<NewUserProfileScreen>
                       buildProfileRow('Name', studentData!['name'] ?? ''),
                       buildProfileRow(
                         'Date of Birth',
-                        studentData!['dob'] ?? '',
+                        AppDateTimeUtils.date( studentData!['dob'] ?? ''),
                       ),
                       buildProfileRow(
                         'Gender',

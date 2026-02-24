@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import '../../../CommonCalling/data_not_found.dart';
 import '../../../constants.dart';
+import '../../../utils/date_time_utils.dart';
 import '../ImageList/image_list.dart' show ImageListScreen;
 
 
@@ -358,7 +359,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                 SizedBox(height: 2.h),
                                 _buildInfoRow(
                                   Icons.calendar_today,
-                                  'Event Date: ${albums[index].eventDate}',
+                                  // 'Event Date: ${albums[index].eventDate}',
+                                  'Event Date: ${AppDateTimeUtils.date(albums[index].eventDate)}',
                                 ),
                                 _buildInfoRow(
                                   Icons.photo_library,

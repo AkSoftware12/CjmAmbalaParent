@@ -33,6 +33,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? teacherData;
   List assignments = []; // Declare a list to hold API data
+  List<dynamic> banners = [];
+
   bool isLoading = true;
   int? messageViewPermissionsApp;
   int? messageSendPermissionsApp;
@@ -76,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // fetchDasboardData();
   }
 
+
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('teachertoken');
@@ -111,6 +114,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body)['data'];
         setState(() {
+          banners = data['banners'] ?? [];
+
           messageViewPermissionsApp = (data['permisions']?[0]['app_status'] as num?)?.toInt() ?? 0;
           messageSendPermissionsApp = (data['permisions']?[1]['app_status'] as num?)?.toInt() ?? 0;
 
@@ -135,29 +140,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors2.primary,
-
-      // appBar: AppBar(
-      //   backgroundColor: AppColors2.secondary,
-      //   title: Column(
-      //     children: [
-      //       _buildAppBar(),
-      //     ],
-      //   ),
-      //   actions: [
-      //     Padding(
-      //       padding: const EdgeInsets.all(15.0),
-      //       child: GestureDetector(
-      //           onTap: () {},
-      //           child: Icon(
-      //             Icons.notification_add,
-      //             size: 26,
-      //             color: Colors.white,
-      //           )),
-      //     )
-      //
-      //     // Container(child: Icon(Icons.ice_skating)),
-      //   ],
-      // ),
       body: isLoading
           ? const Center(
               child: CupertinoActivityIndicator(radius: 20),
@@ -167,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CarouselExample(),
+                  CarouselExample(banners: banners,),
                   SizedBox(height: 10),
 
                   _buildsellAll('Category', ''),

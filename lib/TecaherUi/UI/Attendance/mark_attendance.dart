@@ -272,7 +272,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(DateFormat('yyyy-MM-dd').format(selectedDate)),
+                    Text(DateFormat('dd-MM-yyyy').format(selectedDate)),
                     Icon(Icons.calendar_today, color: Colors.blueAccent),
                   ],
                 ),
@@ -367,129 +367,185 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             // **Attendance List**
             Expanded(
               child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Container(
-                  padding:
-                  EdgeInsets.all(10), // Add padding around the table
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.grey.shade300,
-                          blurRadius: 5,
-                          spreadRadius: 2),
-                    ],
-                  ),
-                  child: DataTable(
-                    columnSpacing: 25.0,
-                    // Increase spacing
-                    headingRowHeight: 50.0,
-                    // Adjust heading height
-                    dataRowHeight: 55.0,
-                    // Adjust row height
-                    headingRowColor: MaterialStateColor.resolveWith(
-                            (states) => Colors.blue.shade100),
-                    // Light blue header
-                    border: TableBorder.all(color: Colors.grey.shade300),
-                    // Add border to table
-                    columns: const [
-                      DataColumn(
-                        label: Text('Student ID',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16)),
-                      ),
-                      DataColumn(
-                        label: Text('Roll No',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16)),
-                      ),
-                      DataColumn(
-                        label: Text('Name',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16)),
-                      ),
-                      DataColumn(
-                        label: Text('Attendance',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16)),
-                      ),
-                    ],
-                    rows: students.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      var student = entry.value;
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Builder(
+                    builder: (context) {
 
-                      return DataRow(
-                        color: MaterialStateColor.resolveWith((states) =>
-                        index.isEven
-                            ? Colors.white
-                            : Colors.grey.shade100),
-                        // Alternate row color
-                        cells: [
-                          DataCell(
-                            Text(
-                              student['student_id'].toString(),
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                          DataCell(
-                            Text(
-                              student['roll_no'].toString(),
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                          DataCell(
-                            Text(
-                              student['student_name'].toString(),
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                          DataCell(
-                            Row(
-                              mainAxisAlignment:
-                              MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _attendanceRadioButton(
-                                    student['student_id'].toString(),
-                                    1,
-                                    "P",
-                                    Colors.green),
-                                _attendanceRadioButton(
-                                    student['student_id'].toString(),
-                                    2,
-                                    "A",
-                                    Colors.red),
-                                _attendanceRadioButton(
-                                    student['student_id'].toString(),
-                                    3,
-                                    "L",
-                                    Colors.blue),
-                                _attendanceRadioButton(
-                                    student['student_id'].toString(),
-                                    4,
-                                    "H",
-                                    Colors.orange),
-                              ],
-                            ),
-                          ),
-                        ],
+                      // ✅ Roll No wise sorting
+                      final List<Map<String, dynamic>> sortedStudents =
+                      List<Map<String, dynamic>>.from(students);
+
+                      int rollToInt(dynamic v) {
+                        if (v == null) return 999999;
+                        return int.tryParse(v.toString()) ?? 999999;
+                      }
+
+                      sortedStudents.sort(
+                            (a, b) => rollToInt(a['roll_no'])
+                            .compareTo(rollToInt(b['roll_no'])),
                       );
-                    }).toList(),
+
+                      return Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.grey.shade300,
+                                blurRadius: 5,
+                                spreadRadius: 2),
+                          ],
+                        ),
+                        child: DataTable(
+                          columnSpacing: 25.0,
+                          headingRowHeight: 50.0,
+                          dataRowHeight: 55.0,
+                          headingRowColor: MaterialStateColor.resolveWith(
+                                  (states) => Colors.blue.shade100),
+                          border: TableBorder.all(color: Colors.grey.shade300),
+
+                          // ✅ UPDATED COLUMNS
+                          columns: const [
+                            // DataColumn(
+                            //   label: Text('Student ID',
+                            //       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            // ),
+                            DataColumn(
+                              label: Text('Roll No',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                            DataColumn(
+                              label: Text('Admission No',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                            DataColumn(
+                              label: Text('Name',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                            DataColumn(
+                              label: Text('Father Name',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                            DataColumn(
+                              label: Text('Mother Name',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                            DataColumn(
+                              label: Text('Attendance',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            ),
+                          ],
+
+                          // ✅ UPDATED ROWS
+                          rows: sortedStudents.asMap().entries.map((entry) {
+                            int index = entry.key;
+                            var student = entry.value;
+
+                            final admissionNo = (student['adm_no'] ??
+                                student['admissionNumber'] ??
+                                student['admission'] ??
+                                "-")
+                                .toString();
+
+                            final fatherName = (student['father_name'] ??
+                                student['fatherName'] ??
+                                student['fathers'] ??
+                                "-")
+                                .toString();
+
+                            final motherName = (student['mother_name'] ??
+                                student['motherName'] ??
+                                student['mother'] ??
+                                "-")
+                                .toString();
+
+                            return DataRow(
+                              color: MaterialStateColor.resolveWith((states) =>
+                              index.isEven ? Colors.white : Colors.grey.shade100),
+                              cells: [
+                                // DataCell(
+                                //   Text(
+                                //     student['student_id'].toString(),
+                                //     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                                //   ),
+                                // ),
+                                DataCell(
+                                  Text(
+                                    student['roll_no'].toString(),
+                                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+
+                                // ✅ Admission No
+                                DataCell(
+                                  Text(
+                                    admissionNo,
+                                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+
+                                DataCell(
+                                  Text(
+                                    student['student_name'].toString(),
+                                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+
+                                // ✅ Father Name
+                                DataCell(
+                                  Text(
+                                    fatherName,
+                                    style: TextStyle(fontSize: 15),
+                                  ),
+                                ),
+
+                                // ✅ Mother Name
+                                DataCell(
+                                  Text(
+                                    motherName,
+                                    style: TextStyle(fontSize: 15),
+                                  ),
+                                ),
+
+                                DataCell(
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _attendanceRadioButton(
+                                          student['student_id'].toString(),
+                                          1,
+                                          "P",
+                                          Colors.green),
+                                      _attendanceRadioButton(
+                                          student['student_id'].toString(),
+                                          2,
+                                          "A",
+                                          Colors.red),
+                                      _attendanceRadioButton(
+                                          student['student_id'].toString(),
+                                          3,
+                                          "L",
+                                          Colors.blue),
+                                      _attendanceRadioButton(
+                                          student['student_id'].toString(),
+                                          4,
+                                          "H",
+                                          Colors.orange),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
-            ),
-
+            )
             // **Submit Button**
 
           ],

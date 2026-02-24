@@ -6,11 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../constants.dart';
+import '../../utils/date_time_utils.dart';
 import '../Auth/login_student_userlist.dart';
 import '/UI/Auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final String appBar;
+  const ProfileScreen({super.key, required this.appBar});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -95,6 +97,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.secondary,
+      appBar: widget.appBar.isNotEmpty? AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: AppColors.secondary,
+        title: Text('Profile',style: TextStyle(color: Colors.white),),
+      ):null,
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.red,
         icon: const Icon(Icons.logout, color: Colors.white),
@@ -229,7 +236,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               const SizedBox(height: 20),
               _buildAnimatedSection('Personal Information', [
                 buildProfileRow('Name', studentData!['student_name']??''),
-                buildProfileRow('Date of Birth', studentData!['dob']??''),
+                buildProfileRow('Date of Birth',AppDateTimeUtils.date(studentData!['dob']),
+                ),
                 buildProfileRow(
                   'Gender',
                   studentData!['gender'] == '1' ? 'Male' : 'Female',

@@ -1,17 +1,16 @@
+import 'dart:convert';
+
+import 'package:avi/utils/date_time_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../HexColorCode/HexColor.dart';
-import '../../../constants.dart';
-import 'package:avi/utils/date_time_utils.dart';
 
-
+import '../../HexColorCode/HexColor.dart';
+import '../../constants.dart';
 
 class CalendarScreen extends StatefulWidget {
   final String title;

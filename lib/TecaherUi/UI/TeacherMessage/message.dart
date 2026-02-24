@@ -59,7 +59,7 @@ class _AssignmentListScreenState extends State<TeacherMesssageListScreen> {
 
     // Append currentPage to the API URL as a query parameter
     final response = await http.get(
-      Uri.parse('${ApiRoutes.getAllTeacherMessages}?page=$currentPage'),
+      Uri.parse('${ApiRoutes.getAllTeacherConversations}?page=$currentPage'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -127,7 +127,7 @@ class _AssignmentListScreenState extends State<TeacherMesssageListScreen> {
         backgroundColor: Colors.red,
         icon: const Icon(Icons.chat, color: Colors.white),
         label: const Text(
-          'New Message',
+          'Compose Message',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         onPressed: () async {
@@ -394,8 +394,7 @@ class _AssignmentListScreenState extends State<TeacherMesssageListScreen> {
                                   CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      // '${assignment['partner_name'].toString().toUpperCase()} ${index+1}',
-                                      '${assignment['partner_name'].toString().toUpperCase()}',
+                                      assignment['partner_name'].toString().toUpperCase(),
                                       style: GoogleFonts.montserrat(
                                         fontSize: 13.sp,
                                         fontWeight: FontWeight.w700,
@@ -403,7 +402,8 @@ class _AssignmentListScreenState extends State<TeacherMesssageListScreen> {
                                       ),
                                     ),
                                     Text(
-                                      'Class: ${assignment['partnerclass'] ?? 'N/A'} , Section: ${assignment['partnersection'] ?? 'N/A'}',
+                                      '${assignment['partnerclass'] ?? 'N/A'}'
+                                          '${assignment['partnersection'] != null && assignment['partnersection'].toString().isNotEmpty ? ' (${assignment['partnersection']})' : ''}',
                                       style: GoogleFonts.montserrat(
                                         fontSize: 11.sp,
                                         fontWeight: FontWeight.w700,

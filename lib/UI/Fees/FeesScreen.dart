@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../HexColorCode/HexColor.dart';
 import '../../constants.dart';
+import '../../utils/date_time_utils.dart';
 // import 'package:flutter/services.dart';
 
 
@@ -618,22 +619,23 @@ class _FeesScreenState extends State<FeesScreen> {
                       monthName = DateFormat('MMMM').format(parsedDate);
                     }
 
-                    return PaymentCard(
+                     return PaymentCard(
                       amount: fees[index]['to_pay_amount'].toString(),
-                      status: fees[index]['pay_status'],
+                      status: fees[index]['pay_status'].toString(),
                       dueDate: fees[index]['due_date'].toString(),
                       payDate: fees[index]['pay_date'].toString(),
                       id: fees[index]['id'],
-                      isSelected: selectedFees1.contains(
-                          fees[index]['installment_id'].toString()),
+                      receipts: (fees[index]['receipts'] as List?) ?? [], // ✅ ADD
+                      finalAmount: fees[index]['final_amount'].toString(), // ✅ optional (nice)
+                      isSelected: selectedFees1.contains(fees[index]['installment_id'].toString()),
                       onSelect: (bool selected) {
                         _toggleSelection(
-                            fees[index]['installment_id'],
-                            double.parse(
-                                fees[index]['to_pay_amount'].toString()));
-                        print(selectedFees1);
+                          fees[index]['installment_id'],
+                          double.parse(fees[index]['to_pay_amount'].toString()),
+                        );
                       },
                       month: monthName,
+                      name: fees[index]['name'].toString(),
                     );
                   },
                 ),
@@ -1029,11 +1031,16 @@ class PaymentCard extends StatelessWidget {
   final String dueDate;
   final String payDate;
   final String month;
+  final String name;
   final int id;
   final bool isSelected;
   final ValueChanged<bool> onSelect;
 
-  PaymentCard({
+  final List receipts;         // ✅ ADD
+  final String finalAmount;    // ✅ optional ADD (for display)
+
+  const PaymentCard({
+    super.key,
     required this.amount,
     required this.status,
     required this.dueDate,
@@ -1042,122 +1049,580 @@ class PaymentCard extends StatelessWidget {
     required this.isSelected,
     required this.onSelect,
     required this.month,
+    required this.name,
+    required this.receipts,
+    required this.finalAmount,
   });
 
+  bool get isPaid => status.toLowerCase() == 'paid';
+  bool get isPartial => status.toLowerCase() == 'partial';
+  bool get isActive => status.toLowerCase() == 'active';
+
+  String get statusLabel {
+    if (isPaid) return "PAID";
+    if (isPartial) return "PARTIAL";
+    return "DUE"; // active / due / pending sab yahi
+  }
+
+  List<Color> get badgeColors {
+    if (isPaid) return [const Color(0xFF00C853), const Color(0xFF64DD17)];
+    if (isPartial) return [const Color(0xFF2962FF), const Color(0xFF00B0FF)];
+    return [const Color(0xFFD50000), const Color(0xFFFF6D00)];
+  }
+
+  IconData get badgeIcon {
+    if (isPaid) return Icons.check_circle;
+    if (isPartial) return Icons.timelapse;
+    return Icons.error;
+  }
+
+  Future<void> _openReceiptsSheet(BuildContext context) async {
+    final String installmentName = name; // PaymentCard ka name (e.g. July -September)
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.72,
+          minChildSize: 0.45,
+          maxChildSize: 0.92,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: EdgeInsets.all(12.sp),
+                  child: Column(
+                    children: [
+                      // drag handle
+                      Container(
+                        height: 4,
+                        width: 46,
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.black12,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                      ),
+
+                      // ✅ RED PREMIUM HEADER (NO TOTAL)
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(14.sp),
+                        decoration: BoxDecoration(
+                          gradient:  LinearGradient(
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primary,
+
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.28),
+                              blurRadius: 14,
+                              spreadRadius: 1,
+                            )
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              height: 42.sp,
+                              width: 42.sp,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.16),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.22),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.receipt_long,
+                                color: Colors.white,
+                                size: 22.sp,
+                              ),
+                            ),
+                            SizedBox(width: 12.sp),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Receipts",
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(height: 6.sp),
+                                  Row(
+                                    children: [
+                                      // ✅ Month/Installment Name Chip
+                                      Expanded(
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 10.w,
+                                            vertical: 5.h,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.18),
+                                            borderRadius: BorderRadius.circular(30),
+                                            border: Border.all(
+                                              color: Colors.white.withOpacity(0.25),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            installmentName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 10.5.sp,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 8.sp),
+                                      Text(
+                                        "(${receipts.length})",
+                                        style: GoogleFonts.montserrat(
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 12.sp),
+
+                      // ✅ Content
+                      Expanded(
+                        child: receipts.isEmpty
+                            ? Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(14.sp),
+                            child: Text(
+                              "No receipts found.",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 13.sp,
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        )
+                            : ListView.separated(
+                          controller: scrollController,
+                          itemCount: receipts.length,
+                          separatorBuilder: (_, __) => SizedBox(height: 10.sp),
+                          itemBuilder: (context, i) {
+                            final r =
+                                (receipts[i] as Map?)?.cast<String, dynamic>() ?? {};
+
+                            final receiptNo =
+                            (r['receipt_no'] ?? 'N/A').toString();
+                            final receiptDate =
+                            (r['receipt_date'] ?? '').toString();
+                            final receiptName =
+                            (r['name'] ?? installmentName).toString(); // ✅ month/name
+                            final paidAmount =
+                            (r['paid_amount'] ?? '0').toString();
+                            final remark = (r['remark'] ?? '').toString();
+                            final url = (r['url'] ?? '').toString();
+
+                            return Container(
+                              padding: EdgeInsets.all(12.sp),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.grey.shade200),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 10,
+                                    spreadRadius: 1,
+                                  )
+                                ],
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Left icon container (red tint)
+                                  Container(
+                                    height: 42.sp,
+                                    width: 42.sp,
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withOpacity(0.10),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Icon(
+                                      Icons.receipt,
+                                      size: 22.sp,
+                                      color: Colors.green.shade700,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.sp),
+
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                "Receipt #$receiptNo",
+                                                style: GoogleFonts.montserrat(
+                                                  fontSize: 13.sp,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ),
+
+                                            // ✅ Paid amount chip (RED)
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 10.w,
+                                                vertical: 5.h,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.shade50,
+                                                borderRadius:
+                                                BorderRadius.circular(30),
+                                                border: Border.all(
+                                                  color: Colors.green.shade100,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                "₹$paidAmount",
+                                                style: GoogleFonts.montserrat(
+                                                  fontSize: 11.sp,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: Colors.green.shade700,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 6.sp),
+
+                                        // ✅ Month/Installment name line
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.calendar_month,
+                                              size: 14.sp,
+                                              color: Colors.black45,
+                                            ),
+                                            SizedBox(width: 6.sp),
+                                            Expanded(
+                                              child: Text(
+                                                receiptName,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: GoogleFonts.montserrat(
+                                                  fontSize: 11.5.sp,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 4.sp),
+
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              "Date: ${receiptDate.isEmpty ? 'N/A' : AppDateTimeUtils.date(receiptDate)}",
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 11.sp,
+                                                color: Colors.black54,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            if (url.isNotEmpty)
+                                              Container(
+                                                height: 30.sp,
+                                                width: 30.sp,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.grey.shade200,
+                                                    borderRadius: BorderRadius.all(Radius.circular(10))
+                                                ),
+
+                                                child: Center(
+                                                  child: IconButton(
+                                                    icon: Icon(Icons.download, size: 18.sp),
+
+                                                    onPressed: () async {
+                                                      final uri = Uri.parse(url);
+                                                      if (!await launchUrl(
+                                                        uri,
+                                                        mode: LaunchMode.externalApplication,
+                                                      )) {
+                                                        ScaffoldMessenger.of(context).showSnackBar(
+                                                          const SnackBar(
+                                                            content:
+                                                            Text('Could not open receipt URL'),
+                                                          ),
+                                                        );
+                                                      }
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+
+                                        if (remark.trim().isNotEmpty) ...[
+                                          SizedBox(height: 6.sp),
+                                          Container(
+                                            width: double.infinity,
+                                            padding: EdgeInsets.all(10.sp),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade50,
+                                              borderRadius:
+                                              BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: Colors.grey.shade200,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              "Remark: $remark",
+                                              style: GoogleFonts.montserrat(
+                                                fontSize: 11.sp,
+                                                color: Colors.black54,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+
+
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                      SizedBox(height: 10.sp),
+
+                      // ✅ Bottom action (red)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: EdgeInsets.symmetric(vertical: 12.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            "Close",
+                            style: GoogleFonts.montserrat(
+                              fontSize: 13.5.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
   @override
   Widget build(BuildContext context) {
+    final showCheckbox = !isPaid; // ✅ PAID me checkbox lock, PARTIAL/ACTIVE me allow
+
     return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      margin: EdgeInsets.all(5),
-      child: ListTile(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+      child: Padding(
+        padding: EdgeInsets.all(8.sp),
+        child: Row(
           children: [
-            Container(
-              height: 50.sp,
-              width: 50.sp,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${month.substring(0, 3).toUpperCase()}',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12.sp), // Optional styling
+            /// LEFT
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    "assets/fees.jpg",
+                    height: 42.sp,
+                    width: 42.sp,
+                    // fit: BoxFit.cover,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+
+                /// ✅ STATUS BADGE (PAID / PARTIAL / DUE)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: badgeColors),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(badgeIcon, size: 10.sp, color: Colors.white),
+                      SizedBox(width: 3.w),
+                      Text(
+                        statusLabel,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 8.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(width: 10.w),
+
+            /// CENTER
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_month, size: 14.sp, color: Colors.blueAccent),
+                      SizedBox(width: 4.w),
+                      Expanded(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13.sp,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 2.h),
+
+                  /// ✅ amount (remaining / to_pay)
+                  Text(
+                    "₹${isPaid ? finalAmount : amount}", // ✅ paid => full amount show
+                    style: GoogleFonts.montserrat(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
                     ),
-                    Text(
-                      status.toLowerCase() == 'paid' ? 'Paid' : 'Due',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 8.sp,
-                        fontWeight: FontWeight.w700,
-                        color: status.toLowerCase() == 'paid'
-                            ? Colors.green
-                            : Colors.red,
+                  ),
+
+                  SizedBox(height: 2.h),
+
+                  /// ✅ date text
+                  Text(
+                    isPaid
+                        ? AppDateTimeUtils.date(payDate)
+                        : AppDateTimeUtils.date(dueDate),
+                    style: GoogleFonts.montserrat(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: isPaid
+                          ? Colors.green
+                          : (isPartial ? Colors.blue : Colors.red),
+                    ),
+                  ),
+
+                  /// ✅ receipts button (show list)
+                  if (receipts.isNotEmpty) ...[
+                    SizedBox(height: 6.sp),
+                    InkWell(
+                      onTap: () => _openReceiptsSheet(context),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.receipt, size: 16.sp, color: Colors.black54),
+                          SizedBox(width: 6.sp),
+                          Text(
+                            "Receipts (${receipts.length})",
+                            style: GoogleFonts.montserrat(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
+            ),
+
+            /// RIGHT
+            showCheckbox
+                ? Checkbox(
+              value: isSelected,
+              onChanged: (value) {
+                if (value != null) onSelect(value);
+              },
             )
-          ],
-        ),
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "₹$amount",
-              style: GoogleFonts.montserrat(
-                fontSize: 15.sp,
-                fontWeight: FontWeight.bold,
-              ),
+                : Column(
+              children: [
+                /// ✅ PAID me receipts sheet open
+                IconButton(
+                  icon: Icon(Icons.receipt_long, size: 20.sp),
+                  onPressed: receipts.isEmpty ? null : () => _openReceiptsSheet(context),
+                ),
+                Checkbox(
+                  value: true,
+                  onChanged: (_) {},
+                  activeColor: Colors.green,
+                ),
+              ],
             ),
           ],
-        ),
-        subtitle: Text(
-          status.toLowerCase() == 'paid'
-              ? (payDate.length >= 10 ? payDate.substring(0, 10) : payDate)
-              : '$dueDate',
-          style: GoogleFonts.montserrat(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w700,
-            color: status.toLowerCase() == 'paid' ? Colors.green : Colors.red,
-          ),
-        ),
-        trailing: status.toLowerCase() == 'paid'
-            ? Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: Icon(Icons.print),
-              onPressed: () async {
-                // final Uri uri = Uri.parse('${ApiRoutes.downloadUrl}$id');
-                final Uri uri = Uri.parse("${ApiRoutes.downloadUrl}student/fee-receipt/$id");
-                try {
-                  if (!await launchUrl(uri,
-                      mode: LaunchMode.externalApplication)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Could not open URL')),
-                    );
-                  }
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
-              },
-            ),
-            Checkbox(
-              onChanged: (bool? value) {
-                if (value != null) {}
-              },
-              value: true,
-              activeColor: Colors.green,
-            ),
-          ],
-        )
-            : Checkbox(
-          value: isSelected,
-          onChanged: (bool? value) {
-            if (value != null) {
-              onSelect(value);
-            }
-          },
         ),
       ),
     );
   }
 }
-
 class _CooldownDialog extends StatefulWidget {
   final int remainingSeconds;
 
@@ -1386,13 +1851,6 @@ class _PaymentWebViewState extends State<PaymentWebView> {
                             if (jsonInput["payInstrument"]["responseDetails"]["statusCode"] == 'OTS0000') {
                               debugPrint("Transaction success and close");
                               transactionResult = "Transaction Success";
-                              // ScaffoldMessenger.of(context).showSnackBar(
-                              //   SnackBar(
-                              //     content: Text("Transaction Successful!"),
-                              //     duration: Duration(seconds: 3),
-                              //     backgroundColor: Colors.green,
-                              //   ),
-                              // );
                             } else {
                               debugPrint("Transaction failed");
                               transactionResult = "Transaction Failed";
@@ -1406,18 +1864,6 @@ class _PaymentWebViewState extends State<PaymentWebView> {
                       }
                     }
                   }),
-              // onLoadStop: (controller, url) async {
-              //           print("onLoadStop");
-              //           print(url);
-              //           setState(() {
-              //             progress = 1.0;
-              //           });
-              //
-              //           if (url != null && url.toString().contains("/mobilesdk/param")) {
-              //             print("/mobilesdk/param detected");
-              //             _closeWebView(context, "WebView Closed");
-              //           }
-              //         },
             ),
 
           ],
@@ -1441,25 +1887,7 @@ class _PaymentWebViewState extends State<PaymentWebView> {
       });
     } else if (transactionResult == 'Transaction Cancelled!') {
       _showPaymentCanceledDialog(context);
-      // Fluttertoast.showToast(
-      //   msg: "Transaction Cancelled",
-      //   toastLength: Toast.LENGTH_LONG,
-      //   gravity: ToastGravity.CENTER,
-      //   timeInSecForIosWeb: 1,
-      //   backgroundColor: Colors.red,
-      //   textColor: Colors.white,
-      //   fontSize: 16.0,
-      // );
     } else {
-      // Fluttertoast.showToast(
-      //   msg: "Error",
-      //   toastLength: Toast.LENGTH_LONG,
-      //   gravity: ToastGravity.CENTER,
-      //   timeInSecForIosWeb: 1,
-      //   backgroundColor: Colors.red,
-      //   textColor: Colors.white,
-      //   fontSize: 16.0,
-      // );
     }
 
 
@@ -1495,86 +1923,6 @@ class _PaymentWebViewState extends State<PaymentWebView> {
     return Future.value(true);
   }
 
-  void _showPaymentSuccessDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          titlePadding: EdgeInsets.zero,
-          contentPadding: EdgeInsets.zero,
-          content: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.green.shade400, Colors.green.shade700],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20.0),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 20),
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: Colors.white,
-                  size: 80,
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Payment Successful',
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22.sp,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text(
-                    'Your payment has been processed successfully!',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
-                      color: Colors.white70,
-                      fontSize: 16.sp,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.green.shade700,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    'OK',
-                    style: GoogleFonts.montserrat(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.sp,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   void _showPaymentCanceledDialog(BuildContext context) {
     showDialog(

@@ -116,7 +116,7 @@ class _AssignmentListScreenState extends State<MesssageListScreen> {
         backgroundColor: Colors.red,
         icon: const Icon(Icons.chat, color: Colors.white),
         label: const Text(
-          'New Message',
+          'Compose Message',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         onPressed: () async {

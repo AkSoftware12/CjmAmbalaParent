@@ -1,3 +1,4 @@
+import 'package:avi/utils/date_time_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -56,10 +57,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors2.primary,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           'Notifications',
           style: GoogleFonts.poppins(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -122,7 +124,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          notification['date'] ?? '',
+                          // notification['date'] ?? '',
+                          AppDateTimeUtils.date(notification['date'] ?? ''),
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             color: Colors.grey,

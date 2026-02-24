@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cryptography/cryptography.dart';
 import '../HexColorCode/HexColor.dart';
 import '../strings.dart';
+import '../utils/date_time_utils.dart';
 
 
 
@@ -676,93 +677,7 @@ class _NewUserPaymentScreenState extends State<NewUserPaymentScreen> {
     }
   }
 
-  // Future<void> initiatePayment() async {
-  //   setState(() {
-  //     isLoading = true;
-  //     // currentTxnId =
-  //     // 'Invoice${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
-  //   });
-  //
-  //   try {
-  //     final String txnDate = DateTime.now().toString().split('.')[0];
-  //     const String amount = "1";
-  //     const String userEmailId = "test.user@atomtech.in";
-  //     const String userContactNo = "8888888888";
-  //
-  //     String jsonData =
-  //         '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"$merchId","userId":"","password":"$merchPass","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"$amount","product":"$prodId","custAccNo":"213232323","txnCurrency":"INR"},"custDetails":{"custEmail":"$userEmailId","custMobile":"$userContactNo"},  "extras": {"udf1":"udf1","udf2":"udf2","udf3":"udf3","udf4":"udf4","udf5":"udf5"}}}';
-  //
-  //     final String encDataR = await encrypt(jsonData);
-  //     final response = await http.post(
-  //       Uri.parse(authUrl),
-  //       headers: {
-  //         'content-type': 'application/x-www-form-urlencoded',
-  //       },
-  //       body: {
-  //         'encData': encDataR,
-  //         'merchId': merchId,
-  //       },
-  //     );
-  //     if (response.statusCode == 200) {
-  //       debugPrint("Response received: Status code 200");
-  //       final responseData = response.body.split('&');
-  //       if (responseData.length > 1) {
-  //         final encDataPart = responseData
-  //             .firstWhere((element) => element.startsWith('encData'));
-  //         final encryptedData = encDataPart.split('=')[1];
-  //         final extractedData = ['encData', encryptedData];
-  //         final decryptedData = await decrypt(extractedData[1]);
-  //         final jsonResponse = json.decode(decryptedData);
-  //         if (jsonResponse['responseDetails']['txnStatusCode'] == 'OTS0000') {
-  //           setState(() async {
-  //             atomTokenId = jsonResponse['atomTokenId'].toString();
-  //
-  //                           final result = await Navigator.push(
-  //                               context,
-  //                               MaterialPageRoute(
-  //                                   builder: (context) => PaymentWebView(
-  //                                     atomTokenId:
-  //                                     jsonResponse['atomTokenId'].toString(),
-  //                                     merchId: merchId,
-  //                                     currentTxnId: createOrderId,
-  //                                     onReturn: _refresh,
-  //                                     userEmail: studentData!['email'].toString(),
-  //                                     userContact:
-  //                                     studentData!['contact'].toString(),
-  //                                   )));
-  //             if (result != null) {
-  //               setState(() {
-  //                 // Expect result to be a Map with status and response
-  //                 if (result is Map<String, dynamic>) {
-  //                   transactionStatus = result['status'] as String;
-  //                   if (result['status'] == "Transaction Success") {
-  //                     fullResponse = result['response'] as String;
-  //                     sendResponseToApi(fullResponse!);
-  //
-  //                   }
-  //                 }
-  //               });
-  //             }
-  //             isLoading = false;
-  //             transactionStatus = "Payment Initiated";
-  //           });
-  //         } else {
-  //           throw Exception('Payment initialization failed');
-  //         }
-  //       } else {
-  //         throw Exception('Invalid response data format');
-  //       }
-  //     } else {
-  //       throw Exception('Failed to connect to the server');
-  //     }
-  //   } catch (e) {
-  //     setState(() {
-  //       isLoading = false;
-  //       transactionStatus = "Initialization Failed: $e";
-  //     });
-  //     showError('Payment initialization failed: $e');
-  //   }
-  // }
+
 
 
 
@@ -1072,7 +987,8 @@ class _NewUserPaymentScreenState extends State<NewUserPaymentScreen> {
                                 ),
 
                                 Text(
-                                  '${fee['txn_date']??''}',
+                                  // '${fee['txn_date']??''}',
+                                  AppDateTimeUtils.date( fee['txn_date']??''),
                                   style: TextStyle(
                                     fontSize: 11.sp,
                                     fontWeight: FontWeight.normal,

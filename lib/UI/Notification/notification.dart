@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import '../../CommonCalling/data_not_found.dart';
 import '../../CommonCalling/progressbarWhite.dart';
+import '../../utils/date_time_utils.dart';
 import '../Auth/login_screen.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -36,11 +37,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final token = prefs.getString('token');
     print("Token: $token");
 
-    if (token == null) {
-      _showLoginDialog();
-      return;
-    }
-
     final response = await http.get(
       Uri.parse(ApiRoutes.notifications),
       headers: {'Authorization': 'Bearer $token'},
@@ -53,34 +49,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
         isLoading = false;
       });
     } else {
-      _showLoginDialog();
+      // _showLoginDialog();
       setState(() {
         isLoading = false;
       });
     }
   }
 
-  void _showLoginDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Session Expired'),
-        content: const Text('Please log in again to continue.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +124,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         style: GoogleFonts.poppins(fontSize: 11.sp),
                       ),
                       Text(
-                        notification['date'] ?? '',
+                        AppDateTimeUtils.date( notification['date']?? ''),
                         style: GoogleFonts.poppins(
                           fontSize: 9.sp,
                           color: Colors.grey,

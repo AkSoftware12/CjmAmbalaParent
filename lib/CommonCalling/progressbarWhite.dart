@@ -9,8 +9,8 @@ class  WhiteCircularProgressWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child:  CupertinoActivityIndicator(radius: 30,color: Colors.white,),// Show progress bar here
+    return const Center(
+      child:  CupertinoActivityIndicator(radius: 20,color: Colors.white,),// Show progress bar here
     );
   }
 }

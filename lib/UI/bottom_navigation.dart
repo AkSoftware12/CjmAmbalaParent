@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../UI/Dashboard/HomeScreen%20.dart';
 import '../constants.dart';
 import '../strings.dart';
+import 'Achievements/achievements.dart';
 import 'Assignment/assignment.dart';
 import 'Attendance/AttendanceScreen.dart';
 import 'package:http/http.dart' as http;
@@ -19,11 +20,15 @@ import 'EbooksScreen/Ebooks/ebooks.dart' hide ApiRoutes;
 import 'Fees/FeesScreen.dart';
 import 'Gallery/Album/album.dart' show GalleryScreen;
 import 'Help/help.dart';
+import 'KnowYourTeacher/know_your_teacher.dart';
 import 'Library/LibraryScreen.dart';
 import 'Message/message.dart';
+import 'ActivityCalendar/activity_calendar.dart';
 import 'Notice/notice.dart';
 import 'Profile/ProfileScreen.dart';
 import 'TimeTable/time_table.dart';
+import 'TransactionLibrary/transaction_library.dart';
+import 'Videos/video_screen.dart';
 
 class BottomNavBarScreen extends StatefulWidget {
   // final String token;
@@ -50,7 +55,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     // AttendanceCalendar(),
     LibraryScreen(),
     FeesScreen(),
-    ProfileScreen(),
+    ProfileScreen(appBar: '',),
   ];
 
 
@@ -351,11 +356,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
                 GestureDetector(
                   onTap: () {
-                    // Navigator.pop(context);
-                    // setState(() {
-                    //   _selectedIndex =
-                    //   4; // Profile screen index in _screens
-                    // });
+
                   },
                   child: CircleAvatar(
                     radius: 40,
@@ -483,7 +484,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               ),
                             ),
 
-
                             ListTile(
                               title: Text(
                                 'Attendance',
@@ -520,6 +520,170 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 //     },
                                 //   ),
                                 // );
+                              },
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                              ),
+                            ),
+
+
+                            ListTile(
+                              title: Text(
+                                'Notice',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child: Icon(
+                                  CupertinoIcons.bell,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return NoticeScreen();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                              ),
+                            ),
+
+
+
+                            ListTile(
+                              title: Text(
+                                'My Profile',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child: Icon(
+                                  CupertinoIcons.person,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return ProfileScreen(appBar: 'app',);
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                              ),
+                            ),
+
+                            ListTile(
+                              title: Text(
+                                'Know Your Teacher',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child: Icon(
+                                  CupertinoIcons.person_2_alt,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return TeacherListPremiumScreen();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                              ),
+                            ),
+
+
+                            ListTile(
+                              title: Text(
+                                'Library Transaction',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child: Icon(
+                                  CupertinoIcons.creditcard,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return IssuedBooksScreen();
+                                    },
+                                  ),
+                                );
                               },
                             ),
                             Padding(
@@ -666,53 +830,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               ),
                             ),
 
-                            // ListTile(
-                            //   title: Text(
-                            //     'Report Card',
-                            //     style: GoogleFonts.cabin(
-                            //       textStyle: TextStyle(
-                            //           color: Colors.white,
-                            //           fontSize: 15,
-                            //           fontWeight: FontWeight.normal),
-                            //     ),
-                            //   ),
-                            //   trailing: Container(
-                            //     height: 20,
-                            //     width: 20,
-                            //     color: AppColors.primary,
-                            //     child: Icon(Icons.report,color: Colors.white,)
-                            //
-                            //     // Image.asset(
-                            //     //   'assets/gallery.png',
-                            //     //   height: 80, // Adjust the size as needed
-                            //     //   width: 80,
-                            //     // ),
-                            //
-                            //   ),
-                            //   onTap: () {
-                            //     Navigator.pop(context);
-                            //     Navigator.push(
-                            //       context,
-                            //       MaterialPageRoute(
-                            //         builder: (context) {
-                            //           return ReportCardScreen();
-                            //         },
-                            //       ),
-                            //     );
-                            //
-                            //   },
-                            // ),
-                            // Padding(
-                            //   padding:
-                            //   EdgeInsets.only(left: 8, right: 8),
-                            //   child: Divider(
-                            //     height: 1,
-                            //     color: Colors.grey.shade300,
-                            //     thickness: 1,
-                            //   ),
-                            // ),
-
-
                             ListTile(
                               title: Text(
                                 'Messages',
@@ -755,7 +872,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                             ),
                             ListTile(
                               title: Text(
-                                'Gallery',
+                                ' Photo Gallery',
                                 style: GoogleFonts.cabin(
                                   textStyle: TextStyle(
                                     color: Colors.white,
@@ -794,6 +911,88 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 thickness: 1,
                               ),
                             ),
+
+
+
+                            ListTile(
+                              title: Text(
+                                'Video Gallery',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child:Icon(CupertinoIcons.video_camera, color: Colors.white)
+                                ,
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return VideoGallery();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+
+                            Padding(
+                              padding: EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                              ),
+                            ),
+
+                            ListTile(
+                              title: Text(
+                                'Achievement Gallery',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child:Icon(CupertinoIcons.rosette, color: Colors.white)
+                                ,
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return AchievementsWaveScreen();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+
+                            Padding(
+                              padding: EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                              ),
+                            ),
+
+
                             ListTile(
                               title: Text(
                                 'E Books',

@@ -135,7 +135,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                                           Navigator.pop(context);
                                         },
                                         icon: Icon(Icons.arrow_back_ios,
-                                            size: 20.sp, color: Colors.black),
+                                            size: 20.sp, color: Colors.white),
                                       ),
                                       SizedBox(
                                         width: 10.sp,
@@ -302,9 +302,9 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                                     String startDate = DateFormat('dd-MM-yyyy')
                                         .format(DateTime.parse(
                                             assignment['start_date']));
-                                    // String endDate = DateFormat('dd-MM-yyyy')
-                                    //     .format(DateTime.parse(
-                                    //         assignment['end_date']));
+                                    String endDate = DateFormat('dd-MM-yyyy')
+                                        .format(DateTime.parse(
+                                            assignment['end_date']));
 
                                     return GestureDetector(
                                       onTap: () {
@@ -418,27 +418,13 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                                                           'Start',
                                                           startDate,
                                                           Icons.calendar_today),
-                                                      // _buildDateInfo(
-                                                      //     'End',
-                                                      //     endDate,
-                                                      //     Icons.calendar_today),
+                                                      _buildDateInfo(
+                                                          'End',
+                                                          endDate,
+                                                          Icons.calendar_today),
 
 
-                                                      /// **Marks**
-                                                      // Row(
-                                                      //   children: [
-                                                      //     Icon(Icons.numbers, color: Colors.black54,size: 16, ),
-                                                      //     SizedBox(width: 8),
-                                                      //     Text(
-                                                      //       'Marks: ${assignment['total_marks']}',
-                                                      //       style: GoogleFonts.poppins(
-                                                      //         fontSize: 14,
-                                                      //         fontWeight: FontWeight.w600,
-                                                      //         color: Colors.black87,
-                                                      //       ),
-                                                      //     ),
-                                                      //   ],
-                                                      // ),
+
                                                     ],
                                                   ),
 

@@ -41,6 +41,7 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
   bool selectAllTeachers = false;
   bool selectAllStudents = false;
   PlatformFile? selectedFile;
+  bool isSending = false;
 
   List<Map<String, dynamic>> classes = [];
   List<Map<String, dynamic>> section = [];
@@ -197,9 +198,10 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       if (_tabController.index == 0) {
         filteredMessages = messsage.where((assignment) {
           final name = assignment['first_name']?.toString().toLowerCase() ?? '';
-          final designation =
-              assignment['designation']?['title']?.toString().toLowerCase() ??
-              '';
+          final designation = assignment['designation']?.toString().toLowerCase() ?? '';
+          // final designation =
+          //     assignment['designation']?['title']?.toString().toLowerCase() ??
+          //     '';
           return name.contains(query) || designation.contains(query);
         }).toList();
       } else {
@@ -216,6 +218,8 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
 
 
   Future<void> _sendMessage() async {
+    if (isSending) return; // ✅ double tap block
+
     if (messageController.text.trim().isEmpty && selectedFile == null) {
       _showErrorSnackBar('Please enter a message or select a file');
       return;
@@ -234,21 +238,17 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       return;
     }
 
+    setState(() => isSending = true); // ✅ start loader
+
     try {
       final uri = Uri.parse(ApiRoutes.sendTeacherMessage);
       final request = http.MultipartRequest('POST', uri);
 
       request.headers['Authorization'] = 'Bearer $token';
 
-      // ✅ Yaha pe array bana ke JSON encode karna hai
       List<String> receivers = [...selectedTeachers, ...selectedStudents];
-      print('Send Msg receivers $receivers');
-
-      request.fields['receivers'] = jsonEncode(receivers); // 👈 important change
+      request.fields['receivers'] = jsonEncode(receivers);
       request.fields['body'] = messageController.text.trim();
-
-      print('Send Msg jsonEncode ${jsonEncode(receivers)}');
-
 
       if (selectedFile != null && selectedFile!.path != null) {
         request.files.add(
@@ -263,8 +263,8 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       }
 
       final response = await request.send();
-      print('Send Msg response ${response}');
 
+      if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         messageController.clear();
@@ -275,23 +275,17 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
           selectAllTeachers = false;
           selectAllStudents = false;
         });
-        // AwesomeDialog(
-        //   context: context,
-        //   dialogType: DialogType.success,
-        //   animType: AnimType.scale,
-        //   title: 'Success',
-        //   desc: 'Message sent successfully!',
-        //   btnOkOnPress: () {},
-        //   btnOkColor: Colors.green,
-        // ).show();
+
+        _showSuccessPopup(context);
       } else {
         _showErrorSnackBar('Failed to send message: ${response.statusCode}');
       }
     } catch (e) {
-      _showErrorSnackBar('Error sending message: $e');
+      if (mounted) _showErrorSnackBar('Error sending message: $e');
+    } finally {
+      if (mounted) setState(() => isSending = false); // ✅ stop loader
     }
   }
-
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
@@ -440,6 +434,84 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
     }
   }
 
+  void _showSuccessPopup(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ✅ Success Icon
+                Container(
+                  height: 70,
+                  width: 70,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.green.withOpacity(0.1),
+                  ),
+                  child: Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 50,
+                  ),
+                ),
+
+                SizedBox(height: 15),
+
+                // ✅ Title
+                Text(
+                  "Success 🎉",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                SizedBox(height: 10),
+
+                // ✅ Message
+                Text(
+                  "Message sent successfully!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+
+                SizedBox(height: 20),
+
+                // ✅ Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text("OK",style: TextStyle(color: Colors.white),),
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -468,7 +540,7 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
             width: MediaQuery.of(context).size.width * 0.95,
             height: 30.sp,
             child: AnimatedSearchBar(
-              label: 'New Messages',
+              label: 'Compose Messages',
               controller: _searchController,
               labelStyle: GoogleFonts.montserrat(
                 textStyle: Theme.of(context).textTheme.displayLarge,
@@ -745,59 +817,71 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                     Expanded(
                                       child: DropdownButtonHideUnderline(
                                         child: DropdownButtonFormField<int?>(
-                                          value:
-                                              section.isNotEmpty &&
-                                                  section.any(
-                                                    (s) =>
-                                                        s["id"] == selectedSection,
-                                                  )
+                                          isExpanded: true, // ✅ very important
+                                          value: (section.isNotEmpty &&
+                                              section.any((s) => s["id"] == selectedSection))
                                               ? selectedSection
                                               : null,
                                           decoration: const InputDecoration(
                                             hintText: "Select Section",
                                             border: InputBorder.none,
-                                            contentPadding: EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 0,
-                                            ),
+                                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                                           ),
-                                          icon: const SizedBox.shrink(),
+                                          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20,), // ✅ keep a small icon
+                                          selectedItemBuilder: (context) {
+                                            if (section.isEmpty) {
+                                              return [
+                                                const Align(
+                                                  alignment: Alignment.centerLeft,
+                                                  child: Text(
+                                                    "No Sections Available",
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ];
+                                            }
+                                            return section.map<Widget>((s) {
+                                              return Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  (s["title"] ?? "Unknown").toString(),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  softWrap: false,
+                                                ),
+                                              );
+                                            }).toList();
+                                          },
                                           items: section.isNotEmpty
                                               ? section.map((s) {
-                                                  return DropdownMenuItem<int>(
-                                                    value: s["id"],
-                                                    child: Text(
-                                                      s["title"]?.toString() ??
-                                                          'Unknown',
-                                                    ),
-                                                  );
-                                                }).toList()
-                                              : [
-                                                  const DropdownMenuItem<int>(
-                                                    value: null,
-                                                    child: Text(
-                                                      "No Sections Available",
-                                                    ),
-                                                  ),
-                                                ],
+                                            return DropdownMenuItem<int>(
+                                              value: s["id"],
+                                              child: Text(
+                                                (s["title"] ?? "Unknown").toString(),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis, // ✅ menu text bhi safe
+                                              ),
+                                            );
+                                          }).toList()
+                                              : const [
+                                            DropdownMenuItem<int?>(
+                                              value: null,
+                                              child: Text("No Sections Available"),
+                                            ),
+                                          ],
                                           onChanged: section.isNotEmpty
                                               ? (value) {
-                                                  setState(() {
-                                                    selectedSection = value;
-                                                    fetchAssignmentsData();
-                                                  });
-                                                }
+                                            setState(() {
+                                              selectedSection = value;
+                                            });
+                                            fetchAssignmentsData();
+                                          }
                                               : null,
                                         ),
                                       ),
                                     ),
-                                    const Center(
-                                      child: Icon(
-                                        Icons.arrow_drop_down,
-                                        size: 24,
-                                        color: Colors.black,
-                                      ),
-                                    ),
+
                                   ],
                                 ),
                               ),
@@ -811,59 +895,6 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
               ),
             ),
           ),
-          // Card(
-          //   color: Colors.transparent,
-          //   margin: EdgeInsets.zero,
-          //   elevation: 10,
-          //   shape: RoundedRectangleBorder(
-          //     borderRadius: BorderRadius.circular(0.0), // Rounded corners
-          //   ),
-          //   child: SizedBox(
-          //     height: 50.sp,
-          //     child: Padding(
-          //       padding: EdgeInsets.symmetric(horizontal: 8.sp, vertical: 5.sp),
-          //       child: TextField(
-          //         controller: _searchController,
-          //         decoration: InputDecoration(
-          //           hintText: 'Search',
-          //           hintStyle: TextStyle(
-          //             color: Colors.grey[400],
-          //             fontSize: 12.sp,
-          //           ),
-          //           filled: true,
-          //           fillColor: Colors.white,
-          //           contentPadding: EdgeInsets.symmetric(
-          //             horizontal: 10.sp,
-          //             vertical: 5.sp,
-          //           ),
-          //           border: OutlineInputBorder(
-          //             borderRadius: BorderRadius.circular(12),
-          //             borderSide: BorderSide.none,
-          //           ),
-          //           prefixIcon: Icon(
-          //             Icons.search,
-          //             color: Colors.grey,
-          //             size: 18.sp,
-          //           ),
-          //           suffixIcon: _searchController.text.isNotEmpty
-          //               ? IconButton(
-          //                   icon: Icon(
-          //                     Icons.clear,
-          //                     color: Colors.grey,
-          //                     size: 18.sp,
-          //                   ),
-          //                   onPressed: () {
-          //                     _searchController.clear();
-          //                     _filterMessages();
-          //                   },
-          //                 )
-          //               : null,
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
           SizedBox(
             height: 10.sp,
           ),
@@ -971,7 +1002,7 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                           ),
                                           const SizedBox(height: 1),
                                           Text(
-                                            '(${assignment['designation']?['title']?.toString().toUpperCase() ?? 'NO DESIGNATION'})',
+                                            '(${assignment['designation'].toString().toUpperCase() ?? 'NO DESIGNATION'})',
                                             style: GoogleFonts.montserrat(
                                               fontSize: 11.sp,
                                               fontWeight: FontWeight.w600,
@@ -1036,7 +1067,7 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '${assignment['student_name']?.toString().toUpperCase() ?? 'UNKNOWN'}',
+                                            assignment['student_name']?.toString().toUpperCase() ?? 'UNKNOWN',
                                             style: GoogleFonts.montserrat(
                                               fontSize: 13.sp,
                                               fontWeight: FontWeight.w700,
@@ -1045,7 +1076,7 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                           ),
                                           const SizedBox(height: 1),
                                           Text(
-                                            '${assignment['class_name']?.toString().toUpperCase() ?? 'NO CLASS'} (${assignment['current_enrolled']['section']['title']?.toString().toUpperCase() ?? 'NO SECTION'})',
+                                            '${assignment['class']?.toString().toUpperCase()}',
                                             style: GoogleFonts.montserrat(
                                               fontSize: 11.sp,
                                               fontWeight: FontWeight.w600,
@@ -1133,8 +1164,17 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                     CircleAvatar(
                       backgroundColor: AppColors2.primary,
                       child: IconButton(
-                        icon: const Icon(Icons.send, color: Colors.white),
-                        onPressed: _sendMessage,
+                        icon: isSending
+                            ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                            : const Icon(Icons.send, color: Colors.white),
+                        onPressed: isSending ? null : _sendMessage, // ✅ disable while sending
                       ),
                     ),
                   ],

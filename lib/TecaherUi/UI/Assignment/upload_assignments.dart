@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:avi/utils/date_time_utils.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -147,79 +148,145 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen> {
 
 
   Future<void> uploadAssignmentApi() async {
-    if (!_formKey.currentState!.validate()) {
-      // If form validation fails, show an error message
+    debugPrint("========== uploadAssignmentApi START ==========");
+
+    // 1) Form validations
+    final isValid = _formKey.currentState!.validate();
+    debugPrint("Form validate => $isValid");
+
+    if (!isValid) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please fill all fields correctly!")),
+        const SnackBar(content: Text("Please fill all fields correctly!")),
       );
+      debugPrint("STOP: form validation failed");
       return;
     }
 
+    debugPrint("selectedClass => $selectedClass");
+    debugPrint("selectedSubject => $selectedSubject");
+    debugPrint("selectedSection => $selectedSection");
+    debugPrint("startDate => $startDate");
+    debugPrint("endDate => $endDate");
+    debugPrint("title => ${titleController.text}");
+    // debugPrint("total_marks => ${totalMarksController.text}");
+    debugPrint("description => ${descriptionController.text}");
+
     if (selectedClass == null || selectedSubject == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please select a Class and Subject")),
+        const SnackBar(content: Text("Please select a Class and Subject")),
       );
+      debugPrint("STOP: class/subject null");
       return;
     }
 
     if (startDate == null || endDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please select start and end date")),
+        const SnackBar(content: Text("Please select start and end date")),
       );
+      debugPrint("STOP: startDate/endDate null");
       return;
     }
 
     if (selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please attach a file before submitting")),
+        const SnackBar(content: Text("Please attach a file before submitting")),
       );
+      debugPrint("STOP: selectedFile null");
       return;
     }
 
+    debugPrint("selectedFile path => ${selectedFile!.path}");
+    debugPrint("selectedFile name => ${selectedFile!.path.split('/').last}");
+
     try {
-      setState(() {
-        isLoading = true; // Show loader before API call
-      });
+      setState(() => isLoading = true);
+
+      // 2) Token
+
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('teachertoken');
-      print("Token: $token");
 
-      String apiUrl = '${ApiRoutes.uploadAssignment}';
-      var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
+      debugPrint("teachertoken(raw) => $token");
+      debugPrint("teachertoken(isNull) => ${token == null}");
+      debugPrint("teachertoken(isEmpty) => ${token?.isEmpty}");
 
-      // Add Headers
+      // IMPORTANT: token null/empty => 401 fix yahi hai
+      if (token == null || token.isEmpty) {
+        setState(() => isLoading = false);
+        debugPrint("STOP: Token missing. Login again / save token properly.");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Token missing. Please login again.")),
+        );
+        return;
+      }
+
+      // 3) URL
+      final apiUrl = ApiRoutes.uploadTeacherAssignment;
+      debugPrint("API URL => $apiUrl");
+
+      final request = http.MultipartRequest('POST', Uri.parse(apiUrl));
+
+      // 4) Headers
       request.headers['Authorization'] = 'Bearer $token';
-      request.headers['Content-Type'] = 'multipart/form-data';
+      // ❌ DO NOT set content-type manually for MultipartRequest
+      // request.headers['Content-Type'] = 'multipart/form-data';
 
-      // Add Form Fields
-      request.fields['class'] = selectedClass.toString() ?? "";
-      request.fields['subject'] = selectedSubject.toString() ?? "";
+      debugPrint("Request headers BEFORE send => ${request.headers}");
+
+      // 5) Fields
+      request.fields['class'] = selectedClass.toString();
+      request.fields['subject'] = selectedSubject.toString();
       request.fields['title'] = titleController.text;
-      request.fields['section'] = selectedSection.toString() ?? "";
-      request.fields['total_marks'] = totalMarksController.text;
-      request.fields['start_date'] = startDate?.toString().split(' ')[0] ?? "";
-      request.fields['end_date'] = endDate?.toString().split(' ')[0] ?? "";
+      request.fields['section'] = selectedSection?.toString() ?? "";
+      // request.fields['total_marks'] = '0';
+      request.fields['start_date'] = startDate!.toString().split(' ')[0];
+      request.fields['end_date'] = endDate!.toString().split(' ')[0];
       request.fields['description'] = descriptionController.text;
 
-      // Attach File
+      debugPrint("Request fields => ${request.fields}");
+
+      // 6) File attach
+      final fileFieldName = 'attach'; // confirm backend expects this exact key
+      final filePath = selectedFile!.path;
+      final fileName = filePath.split('/').last;
+
       request.files.add(
         await http.MultipartFile.fromPath(
-          'attach',
-          selectedFile!.path,
-          filename: selectedFile!.path.split('/').last,
+          fileFieldName,
+          filePath,
+          filename: fileName,
         ),
       );
 
-      // Send Request
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-      var jsonResponse = jsonDecode(responseData);
+      debugPrint("Files count => ${request.files.length}");
+      for (final f in request.files) {
+        debugPrint("File => field:${f.field}, filename:${f.filename}, length:${f.length}");
+      }
 
+      // 7) Send
+      debugPrint("SENDING REQUEST...");
+      final streamedResponse = await request.send();
 
-      setState(() {
-        isLoading = false; // Hide loader after API call
-      });
-      if (response.statusCode == 200) {
+      debugPrint("Response statusCode => ${streamedResponse.statusCode}");
+      debugPrint("Response headers => ${streamedResponse.headers}");
+
+      final responseBody = await streamedResponse.stream.bytesToString();
+      debugPrint("Response body(raw) => $responseBody");
+
+      // 8) Decode safely
+      dynamic jsonResponse;
+      try {
+        jsonResponse = jsonDecode(responseBody);
+        debugPrint("Response body(json) => $jsonResponse");
+      } catch (e) {
+        debugPrint("JSON decode failed: $e");
+        jsonResponse = {"message": responseBody};
+      }
+
+      setState(() => isLoading = false);
+
+      if (streamedResponse.statusCode == 200) {
+        debugPrint("✅ SUCCESS: Assignment Uploaded");
 
         widget.onReturn();
 
@@ -233,29 +300,34 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen> {
           fontSize: 22.0,
         );
 
-        // Navigate back after a short delay
-        Future.delayed(Duration(seconds: 1), () {
+        Future.delayed(const Duration(seconds: 1), () {
           Navigator.pop(context);
-
         });
-
       } else {
-        print("Failed to Upload: ${response.statusCode} - $jsonResponse");
+        debugPrint("❌ FAILED: ${streamedResponse.statusCode} => $jsonResponse");
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to upload assignment: ${jsonResponse['message']}")),
+          SnackBar(
+            content: Text(
+              "Failed: ${jsonResponse['message'] ?? 'Unknown error'}",
+            ),
+          ),
         );
       }
-    } catch (e) {
-      print("Error Uploading File: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to upload assignment")),
-      );
-      setState(() {
-        isLoading = false; // Hide loader on error
-      });
+
+      debugPrint("========== uploadAssignmentApi END ==========");
+    } catch (e, st) {
+      debugPrint("🔥 EXCEPTION => $e");
+      debugPrint("STACKTRACE => $st");
+
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to upload assignment")),
+        );
+      }
     }
   }
-
 
   @override
   void initState() {
@@ -432,7 +504,7 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen> {
                               items: subject.map((c) {
                                 return DropdownMenuItem<int>(
                                   value: c["id"],
-                                  child: Text(c["subject_name"]),
+                                  child: Text(c["title"].toString()),
                                 );
                               }).toList(),
                               onChanged: (value) {
@@ -475,6 +547,7 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen> {
                       padding: EdgeInsets.all(0),
                       child: Row(
                         children: [
+
                           Expanded(
                             child: _buildDateTile("Start Date", startDate, () => pickDate(context, true)),
                           ),
@@ -718,7 +791,8 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen> {
       child: ListTile(
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         title: Text(
-          date != null ? date.toString().split(' ')[0] : label,
+          // date != null ? date.toString().split(' ')[0] : label,
+          date != null ? AppDateTimeUtils.date( date.toString().split(' ')[0]) : label,
           style: TextStyle(
             color: Colors.black,
             fontSize: 13.sp,

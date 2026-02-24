@@ -29,7 +29,7 @@ class AttendanceTabScreen extends StatelessWidget {
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicatorWeight: 3,
                 labelColor: Colors.blueAccent,
-                unselectedLabelColor: Colors.black,
+                unselectedLabelColor: Colors.white,
                 labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 tabs: [
                   Tab(text: "Mark Attendance".toUpperCase()),

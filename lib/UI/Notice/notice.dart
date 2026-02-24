@@ -1,428 +1,614 @@
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../../CommonCalling/data_not_found.dart';
-import '../../CommonCalling/progressbarWhite.dart';
-import '../../HexColorCode/HexColor.dart';
 import '../../constants.dart';
-import '../Auth/login_screen.dart';
 
-class CalendarScreen extends StatefulWidget {
-  final String title;
-  const CalendarScreen({super.key, required this.title});
+// ✅ apna AppColors wala import lagao (aapke project me already hai)
+/// import 'package:your_app/utils/app_colors.dart';
+
+class NoticeScreen extends StatefulWidget {
+  const NoticeScreen({super.key});
 
   @override
-  _CalendarScreenState createState() => _CalendarScreenState();
+  State<NoticeScreen> createState() => _NoticeScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
-  late CalendarFormat _calendarFormat;
-  DateTime _selectedDay = DateTime.now();
-  DateTime _focusedDay = DateTime.now();
-  Map<DateTime, List<Map<String, dynamic>>> _events = {};
-  Set<DateTime> _highlightedDays = {}; // Store all event dates
-  List<Map<String, dynamic>> _monthlyEvents = []; // Unique events in the current month
+class _NoticeScreenState extends State<NoticeScreen> {
   bool isLoading = false;
+  List<dynamic> notices = [];
 
   @override
   void initState() {
     super.initState();
-    _calendarFormat = CalendarFormat.month;
-    _fetchEvents();
+    noticeApi();
   }
 
-  Future<void> _fetchEvents() async {
-    setState(() {
-      isLoading = true; // Show progress bar
-    });
+  Future<void> noticeApi() async {
+    setState(() => isLoading = true);
+
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    print("Token: $token");
 
+    final studentToken = prefs.getString('token');
+    final teacherToken = prefs.getString('teachertoken');
 
+    // ✅ jo token mile wahi use hoga
+    final activeToken = studentToken ?? teacherToken;
 
-    final response = await http.get(
-      Uri.parse(ApiRoutes.events),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      Map<String, dynamic> data = json.decode(response.body);
-      List<dynamic> events = data['events'];
+    if (activeToken == null || activeToken.isEmpty) {
+      setState(() => isLoading = false);
+      _toast("No token found. Please login again.");
+      return;
+    }
 
-      Map<DateTime, List<Map<String, dynamic>>> tempEvents = {};
-      Set<DateTime> tempHighlightedDays = {};
-      Set<int> uniqueEventIds = {}; // Set to track unique events for the month
-      List<Map<String, dynamic>> tempMonthlyEvents = [];
+    try {
+      final url = Uri.parse(ApiRoutes.notice);
 
-      for (var event in events) {
-        DateTime startDate = DateTime.parse(event['start_date']).toLocal();
-        DateTime endDate = DateTime.parse(event['end_date']).toLocal();
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $activeToken',
+          'Accept': 'application/json',
+        },
+      );
 
-        // Normalize dates (remove time)
-        startDate = DateTime(startDate.year, startDate.month, startDate.day);
-        endDate = DateTime(endDate.year, endDate.month, endDate.day);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-        // Add all event days to highlighted set
-        for (DateTime date = startDate;
-        date.isBefore(endDate.add(Duration(days: 1)));
-        date = date.add(Duration(days: 1))) {
-          DateTime normalizedDate = DateTime(date.year, date.month, date.day);
-          tempHighlightedDays.add(normalizedDate);
+        // ✅ flexible keys handle
+        final list =
+        (data['notices'] ?? data['notice'] ?? data['data'] ?? []) as List;
 
-          if (tempEvents[normalizedDate] == null) {
-            tempEvents[normalizedDate] = [];
-          }
-          tempEvents[normalizedDate]!.add(event);
-        }
-
-        // Add only unique events to the monthly events list
-        if (startDate.month == _focusedDay.month && startDate.year == _focusedDay.year) {
-          if (!uniqueEventIds.contains(event['id'])) {
-            uniqueEventIds.add(event['id']);
-            tempMonthlyEvents.add(event);
-          }
-        }
+        setState(() {
+          notices = list;
+          isLoading = false;
+        });
+      } else {
+        setState(() => isLoading = false);
+        _toast("Server error: ${response.statusCode}");
       }
-
-      setState(() {
-        _events = tempEvents;
-        _highlightedDays = tempHighlightedDays;
-        _monthlyEvents = tempMonthlyEvents; // Only unique events will be stored
-      });
-      isLoading = false; // Stop progress bar
-    } else {
-      setState(() {
-        isLoading = true; // Show progress bar
-      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      _toast("Error fetching notices");
+      debugPrint("Notice API error: $e");
     }
   }
 
-  List<Map<String, dynamic>> _getEventsForDay(DateTime day) {
-    return _events[DateTime(day.year, day.month, day.day)] ?? [];
+  void _toast(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+    );
   }
 
-  void _updateMonthlyEvents(DateTime newMonth) {
-    Set<int> uniqueEventIds = {};
-    List<Map<String, dynamic>> tempMonthlyEvents = [];
+  // -------------------- Helpers --------------------
 
-    _events.forEach((date, events) {
-      if (date.month == newMonth.month && date.year == newMonth.year) {
-        for (var event in events) {
-          if (!uniqueEventIds.contains(event['id'])) {
-            uniqueEventIds.add(event['id']);
-            tempMonthlyEvents.add(event);
-          }
-        }
-      }
-    });
+  String _safeStr(dynamic v) => (v == null) ? "" : v.toString();
 
-    setState(() {
-      _monthlyEvents = tempMonthlyEvents;
-    });
+  String _formatDate(dynamic raw) {
+    final s = _safeStr(raw);
+    if (s.isEmpty) return "";
+    try {
+      // supports "2026-02-16", "2026-02-16 10:20:00", ISO, etc.
+      final dt = DateTime.parse(s.replaceAll(' ', 'T'));
+      return DateFormat("dd-MM-yyyy, hh:mm a").format(dt);
+    } catch (_) {
+      return s; // fallback: show as-is
+    }
   }
 
-  void _showEventDetails(BuildContext context, List<Map<String, dynamic>> events) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-            widget.title,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          content: Container(
-            width: double.maxFinite,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: events.map((event) {
-                  // Determine colors based on event type
-                  Color cardColor = event['type'] == 'Academic' ? Colors.green[50]! : Colors.red[50]!;
-                  Color iconColor = event['type'] == 'Academic' ? Colors.green[600]! : Colors.red[600]!;
-                  Color textColor = event['type'] == 'Academic' ? Colors.green[800]! : Colors.red[800]!;
-                  Color subtitleColor = event['type'] == 'Academic' ? Colors.green[700]! : Colors.red[700]!;
+  bool _isImageUrl(String url) {
+    final u = url.toLowerCase();
+    return u.endsWith(".jpg") ||
+        u.endsWith(".jpeg") ||
+        u.endsWith(".png") ||
+        u.endsWith(".webp") ||
+        u.endsWith(".gif");
+  }
 
-                  return Card(
-                    elevation: 4,
-                    margin: EdgeInsets.symmetric(vertical: 3.sp),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    color: cardColor,
-                    child: ListTile(
-                      contentPadding: EdgeInsets.all(3.sp),
-                      leading: Icon(Icons.event, color: iconColor),
-                      title: Text(
-                        event['name'],
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 5),
-                        child: Text(
-                          "📅 ${event['start_date']} - ${event['end_date']}\n📌 Type: ${event['type']}",
-                          style: TextStyle(color: subtitleColor, fontSize: 14),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
+  bool _isPdf(String url) => url.toLowerCase().endsWith(".pdf");
+
+  bool _isExcel(String url) {
+    final u = url.toLowerCase();
+    return u.endsWith(".xls") || u.endsWith(".xlsx") || u.endsWith(".csv");
+  }
+
+  IconData _fileIcon(String url) {
+    if (_isPdf(url)) return CupertinoIcons.doc_richtext;
+    if (_isExcel(url)) return CupertinoIcons.table;
+    return CupertinoIcons.doc;
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return _toast("Invalid file url");
+
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok) _toast("Unable to open");
+  }
+
+  Future<void> _downloadFile({required String url, String? fileName}) async {
+    try {
+      final dio = Dio();
+
+      final dir = await getApplicationDocumentsDirectory();
+      final name = (fileName != null && fileName.trim().isNotEmpty)
+          ? fileName.trim()
+          : url.split('/').last.split('?').first;
+
+      final savePath = "${dir.path}/$name";
+
+      double progress = 0;
+
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => StatefulBuilder(
+          builder: (ctx, setLocal) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            title: const Text("Downloading..."),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LinearProgressIndicator(value: progress == 0 ? null : progress),
+                const SizedBox(height: 12),
+                Text(
+                  progress == 0
+                      ? "Starting..."
+                      : "${(progress * 100).toStringAsFixed(0)}%",
+                ),
+              ],
             ),
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-                backgroundColor: Colors.blueAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+        ),
+      );
+
+      await dio.download(
+        url,
+        savePath,
+        onReceiveProgress: (received, total) {
+          if (total > 0) {
+            progress = received / total;
+
+            if (mounted) {
+              // ✅ simple refresh: close & reopen dialog
+              Navigator.of(context).maybePop();
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  title: const Text("Downloading..."),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      LinearProgressIndicator(value: progress),
+                      const SizedBox(height: 12),
+                      Text("${(progress * 100).toStringAsFixed(0)}%"),
+                    ],
+                  ),
                 ),
-              ),
-              child: Text("Close"),
-            )
+              );
+            }
+          }
+        },
+      );
+
+      if (mounted) Navigator.of(context).maybePop(); // close dialog
+
+      _toast("Downloaded: $name");
+      await OpenFilex.open(savePath);
+    } catch (e) {
+      if (mounted) Navigator.of(context).maybePop();
+      _toast("Download failed");
+      debugPrint("Download error: $e");
+    }
+  }
+
+  /// ✅ FIXED: attachments can be List / String / Map / comma-separated string
+  List<Map<String, String>> _parseAttachments(Map<String, dynamic> n) {
+    final rawAtt =
+        n['attachments'] ??
+        n['files'] ??
+        n['attachment'] ??
+        n['file'] ??
+        n['file_url'] ??
+        n['notice_file'];
+
+    final List<Map<String, String>> attachments = [];
+
+    void addAttachment(dynamic a) {
+      if (a == null) return;
+
+      // ✅ single string url
+      if (a is String) {
+        final url = _safeStr(a).trim();
+        if (url.isEmpty) return;
+
+        // ✅ comma-separated urls handle
+        if (url.contains(',')) {
+          for (final part in url.split(',')) {
+            final u = part.trim();
+            if (u.isNotEmpty) {
+              attachments.add({
+                "url": u,
+                "name": u.split('/').last.split('?').first,
+              });
+            }
+          }
+          return;
+        }
+
+        attachments.add({
+          "url": url,
+          "name": url.split('/').last.split('?').first,
+        });
+        return;
+      }
+
+      // ✅ map object
+      if (a is Map) {
+        final url = _safeStr(
+          a['url'] ?? a['file'] ?? a['path'] ?? a['file_url'],
+        ).trim();
+        if (url.isEmpty) return;
+        final name = _safeStr(a['name'] ?? a['file_name'] ?? a['title']).trim();
+        attachments.add({
+          "url": url,
+          "name": name.isNotEmpty ? name : url.split('/').last.split('?').first,
+        });
+        return;
+      }
+    }
+
+    if (rawAtt is List) {
+      for (final a in rawAtt) {
+        addAttachment(a);
+      }
+    } else {
+      addAttachment(rawAtt);
+    }
+
+    return attachments;
+  }
+
+  // -------------------- UI --------------------
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F7FB),
+      appBar: AppBar(
+        elevation: 0,
+        centerTitle: false,
+        backgroundColor: AppColors.primary,
+        // ✅ your primary
+        title: const Text(
+          "Notices",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: RefreshIndicator(
+        onRefresh: noticeApi,
+        child: isLoading
+            ? _loadingList()
+            : (notices.isEmpty ? _emptyState() : _noticeList()),
+      ),
+    );
+  }
+
+  Widget _loadingList() {
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(12),
+      itemCount: 6,
+      itemBuilder: (_, __) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        height: 140,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 18,
+              color: Colors.black.withOpacity(0.06),
+              offset: const Offset(0, 8),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: const [
+        SizedBox(height: 120),
+        Center(
+          child: Column(
+            children: [
+              Icon(CupertinoIcons.bell_slash, size: 60, color: Colors.grey),
+              SizedBox(height: 10),
+              Text(
+                "No notices found",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 6),
+              Text(
+                "Pull down to refresh",
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _noticeList() {
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(12),
+      itemCount: notices.length,
+      itemBuilder: (context, index) {
+        final n = notices[index] as Map<String, dynamic>? ?? {};
+
+        final title = _safeStr(n['title'] ?? n['notice_title'] ?? n['name']);
+        final desc = _safeStr(n['description'] ?? n['desc'] ?? n['message']);
+        final date = _formatDate(
+          n['date'] ?? n['created_at'] ?? n['publish_date'],
+        );
+
+        final attachments = _parseAttachments(n);
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 18,
+                color: Colors.black.withOpacity(0.06),
+                offset: const Offset(0, 10),
+              ),
+            ],
+            border: Border.all(color: const Color(0xFFEDEFF6)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // title + date
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 42,
+                    width: 42,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary, // ✅ your primary
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.bell_fill,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title.isEmpty ? "Notice" : title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (date.isNotEmpty)
+                          Row(
+                            children: [
+                              const Icon(
+                                CupertinoIcons.time,
+                                size: 14,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  date,
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              if (desc.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  desc,
+                  style: TextStyle(
+                    color: Colors.black.withOpacity(0.72),
+                    fontSize: 13.5,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+
+              if (attachments.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  "Attachments",
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 8),
+                ...attachments
+                    .map((a) => _attachmentTile(a['url']!, a['name']!))
+                    .toList(),
+              ],
+            ],
+          ),
         );
       },
     );
   }
 
+  Widget _attachmentTile(String url, String name) {
+    final isImg = _isImageUrl(url);
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.secondary,
-      appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
-        title: Text(
-          widget.title,
-          style: GoogleFonts.montserrat(
-            fontSize: 15.sp,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: AppColors.secondary,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        // color: const Color(0xFFF7F8FD),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE7EAF6)),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(5.sp),
-        child: Column(
-          children: [
-            Card(
-              color: Colors.white,
-              elevation: 10,
-              child: TableCalendar(
-                focusedDay: _focusedDay,
-                firstDay: DateTime(2025, 1, 1),
-                lastDay: DateTime(2025, 12, 31),
-                calendarFormat: _calendarFormat,
-                eventLoader: _getEventsForDay,
-                selectedDayPredicate: (day) {
-                  return isSameDay(_selectedDay, day);
-                },
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
-
-                  List<Map<String, dynamic>> selectedEvents = _getEventsForDay(selectedDay);
-                  if (selectedEvents.isNotEmpty) {
-                    _showEventDetails(context, selectedEvents);
-                  }
-                },
-                onPageChanged: (focusedDay) {
-                  setState(() {
-                    _focusedDay = focusedDay;
-                  });
-                  _updateMonthlyEvents(focusedDay);
-                },
-                calendarBuilders: CalendarBuilders(
-                  defaultBuilder: (context, date, _) {
-                    bool isHighlighted = _highlightedDays.contains(DateTime(date.year, date.month, date.day));
-                    List<Map<String, dynamic>> dayEvents = _getEventsForDay(date);
-                    Color? bgColor;
-                    if (isHighlighted) {
-                      // Check if any event is Academic
-                      bool hasAcademic = dayEvents.any((event) => event['type'] == 'Academic');
-                      bgColor = hasAcademic ? Colors.green.shade300 : Colors.red.shade300;
-                    }
-
-                    return Container(
-                      margin: EdgeInsets.all(4),
-                      child: Card(
-                        elevation: isHighlighted ? 3 : 0,
-                        color: bgColor ?? Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(2.sp),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                '${date.day}',
-                                style: TextStyle(
-                                  color: bgColor != null ? Colors.white : Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12.sp,
-                                ),
-                              ),
-                              if (isHighlighted)
-                                Expanded(
-                                  child: Column(
-                                    children: dayEvents.take(2).map((event) {
-                                      // Truncate event name to avoid overflow
-                                      String eventName = event['name'].toString();
-                                      if (eventName.length > 10) {
-                                        eventName = '${eventName.substring(0, 8)}...';
-                                      }
-                                      return Text(
-                                        eventName,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 8.sp,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        maxLines: 1,
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+      child: Column(
+        children: [
+          if (isImg)
+            ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(14),
+                topRight: Radius.circular(14),
               ),
-            ),
-            SizedBox(height: 0.sp),
-            Card(
-              color: HexColor('#f0afb2'),
-              child: Center(
-                child: Text(
-                  "Events in ${_focusedDay.month}/${_focusedDay.year}",
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red[800],
+              child: CachedNetworkImage(
+                imageUrl: url,
+                height: 180,
+                width: double.infinity,
+                placeholder: (_, __) => Container(
+                  height: 180,
+                  alignment: Alignment.center,
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  height: 180,
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    CupertinoIcons.photo,
+                    size: 40,
+                    color: Colors.grey,
                   ),
                 ),
               ),
             ),
-            isLoading
-                ? Center(
-                child: Container(
-                    height: MediaQuery.of(context).size.height * 0.3,
-                    child: CupertinoActivityIndicator(radius: 25, color: Colors.white)))
-                : _monthlyEvents.isEmpty
-                ? Center(
-                child: Container(
-                  height: MediaQuery.of(context).size.height * 0.3,
-                  child: Container(
-                    child: Center(
-                        child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10.sp),
-                            child: Column(
-                              children: [
-                                Stack(
-                                  children: [
-                                    Container(
-                                        height: MediaQuery.of(context).size.height * 0.3,
-                                        child: Center(
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              crossAxisAlignment: CrossAxisAlignment.center,
-                                              children: [
-                                                SizedBox(
-                                                    height: 100.sp,
-                                                    child: Image.asset('assets/no_attendance.png')),
-                                                Center(
-                                                    child: Padding(
-                                                      padding: EdgeInsets.only(top: 0.sp),
-                                                      child: Text(
-                                                        'Event Not Available.',
-                                                        style: GoogleFonts.radioCanada(
-                                                          textStyle: TextStyle(
-                                                            fontSize: 12.sp,
-                                                            fontWeight: FontWeight.bold,
-                                                            color: Colors.black,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ))
-                                              ],
-                                            )))
-                                  ],
-                                ),
-                              ],
-                            ))),
-                  ),
-                ))
-                : Expanded(
-              child: ListView.builder(
-                itemCount: _monthlyEvents.length,
-                padding: EdgeInsets.symmetric(horizontal: 3.sp, vertical: 0.sp),
-                itemBuilder: (context, index) {
-                  var event = _monthlyEvents[index];
-                  // Determine colors based on event type
-                  Color cardColor = event['type'] == 'Academic' ? Colors.green[50]! : Colors.red[50]!;
-                  Color iconColor = event['type'] == 'Academic' ? Colors.green[600]! : Colors.red[600]!;
-                  Color textColor = event['type'] == 'Academic' ? Colors.green[800]! : Colors.red[800]!;
-                  Color subtitleColor = event['type'] == 'Academic' ? Colors.green[700]! : Colors.red[700]!;
+          Container(
+            decoration: BoxDecoration(
+                color: Color(0xFFF7F8FD),
+                borderRadius: BorderRadius.all(Radius.circular(14))
+            ),
 
-                  return Card(
-                    elevation: 4,
-                    margin: EdgeInsets.symmetric(vertical: 3.sp),
-                    shape: RoundedRectangleBorder(
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                    ),
-                    color: cardColor,
-                    child: ListTile(
-                      contentPadding: EdgeInsets.all(3.sp),
-                      leading: Icon(Icons.event, color: iconColor),
-                      title: Text(
-                        event['name'].toString().toUpperCase(),
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 12,
+                          color: Colors.black.withOpacity(0.06),
+                          offset: const Offset(0, 6),
                         ),
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 5),
-                        child: Text(
-                          "📅 ${event['start_date']} - ${event['end_date']}\n📌 Type: ${event['type']}",
-                          style: TextStyle(color: subtitleColor, fontSize: 14),
-                        ),
-                      ),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 18, color: subtitleColor),
-                      onTap: () => _showEventDetails(context, [event]),
+                      ],
                     ),
-                  );
-                },
+                    child: Icon(
+                      isImg ? CupertinoIcons.photo_fill : _fileIcon(url),
+                      color: AppColors.primary, // ✅ your primary
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _miniBtn(
+                    icon: CupertinoIcons.eye,
+                    label: "Open",
+                    onTap: () => _openUrl(url),
+                  ),
+                  const SizedBox(width: 8),
+                  _miniBtn(
+                    icon: CupertinoIcons.arrow_down_to_line,
+                    label: "Download",
+                    onTap: () => _downloadFile(url: url, fileName: name),
+                  ),
+                ],
               ),
-            )
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniBtn({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primary, // ✅ your primary
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 16),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
       ),

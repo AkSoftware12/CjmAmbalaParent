@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:avi/HexColorCode/HexColor.dart';
 import 'package:avi/UI/Attendance/AttendanceScreen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider_plus/carousel_slider_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,17 +9,16 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:scrollable_clean_calendar/controllers/clean_calendar_controller.dart';
-import 'package:scrollable_clean_calendar/scrollable_clean_calendar.dart';
-import 'package:scrollable_clean_calendar/utils/enums.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shimmer/shimmer.dart';
+import '../../TecaherUi/UI/Notice/notice.dart';
 import '../../constants.dart';
 import '../Assignment/assignment.dart';
 import '../Gallery/Album/album.dart' show GalleryScreen;
 import '../Leaves/leaves_tab.dart';
 import '../Message/message.dart';
-import '../Notice/notice.dart';
 import '../TimeTable/time_table.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../bottom_navigation.dart';
@@ -32,6 +33,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? studentData;
   List assignments = []; // Declare a list to hold API data
+  List<dynamic> banners = [];
+
   bool isLoading = true;
   double attendancePercent = 0;
   int? messageViewPermissionsApp;
@@ -42,22 +45,10 @@ class _HomeScreenState extends State<HomeScreen> {
     {'name': 'Time Table', 'image': 'assets/watch.png'},
     {'name': 'Messages', 'image': 'assets/message_home.png'},
     {'name': 'Attendance', 'image': 'assets/calendar_attendance.png'},
-    // {
-    //   'name': 'Subject',
-    //   'image': 'assets/physics.png',
-    // },
-    // {
-    //   'name': 'Leaves',
-    //   'image': 'assets/deadline.png',
-    // },
     {'name': 'Activity Calendar', 'image': 'assets/calendar_activity.png'},
     {'name': 'Gallery', 'image': 'assets/gallery.png'},
-
-    // {
-    //   'name': 'Report Card',
-    //   'image': 'assets/report.png',
-    // },
   ];
+
 
   @override
   void initState() {
@@ -68,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
       maxDate: DateTime.now().add(const Duration(days: 365)),
     );
     fetchStudentData();
-    // fetchDasboardData();
+
   }
 
   Future<void> fetchStudentData() async {
@@ -101,9 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> fetchData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final url = Uri.parse(
-      ApiRoutes.getDashboard,
-    ); // Ensure ApiRoutes.getDashboard is valid
+    final url = Uri.parse(ApiRoutes.getDashboard);
 
     try {
       final response = await http.get(
@@ -113,26 +102,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body)['data'];
+
         setState(() {
-          // Handle attendance_percent as double to support decimal values
-          // attendancePercent = (data['attendance_percent'] as num?)?.toDouble() ?? 0.0;
-          // Uncomment and fix if permissions are needed
+          /// ✅ banners store karo
+          banners = data['banners'] ?? [];
+
+          /// ✅ permissions
           messageViewPermissionsApp =
               (data['permisions']?[0]['app_status'] as num?)?.toInt() ?? 0;
+
           messageSendPermissionsApp =
               (data['permisions']?[1]['app_status'] as num?)?.toInt() ?? 0;
         });
-      } else {
-        setState(() {});
       }
     } catch (e) {
-      setState(() {
-        // attendancePercent = 0.0; // Default value for error case
-      });
-      // Optionally log the error for debugging
       debugPrint('Error fetching data: $e');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CarouselExample(),
+                  CarouselExample(banners: banners,),
                   const SizedBox(height: 20),
                   _buildsellAll('Category', ''),
                   _buildGridview(),
@@ -326,71 +313,95 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+
+
+
+
+
+
 class CarouselExample extends StatefulWidget {
+  final List<dynamic> banners; // ✅ parent se aayega
+  const CarouselExample({super.key, required this.banners});
+
   @override
-  _CarouselExampleState createState() => _CarouselExampleState();
+  State<CarouselExample> createState() => _CarouselExampleState();
 }
 
 class _CarouselExampleState extends State<CarouselExample> {
   final List<String> imgList = [
-    'https://cjmambala.in/slider/Slider2025_2.png',
-    'https://cjmambala.in/slider/Slider2025_5.png',
-    'https://cjmambala.in/slider/Slider2025_7.png',
-    'https://cjmambala.in/images/building.png',
+    'https://apiweb.ksadmission.in/upload/banners/1766826226_PDS_5934.jpg',
+    'https://apiweb.ksadmission.in/upload/banners/1766826226_PDS_6054.jpg',
   ];
 
   int _currentIndex = 0;
   final CarouselSliderController _controller = CarouselSliderController();
 
+  /// ✅ effective banners (API → fallback)
+  List<String> get effectiveBanners {
+    if (widget.banners.isNotEmpty) {
+      final list = widget.banners
+          .map<String>((e) => e['image_url']?.toString() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList();
+      if (list.isNotEmpty) return list;
+    }
+    return imgList;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // ✅ Precache first 2 banners (perceived fast load)
+    final list = effectiveBanners;
+    for (int i = 0; i < list.length && i < 2; i++) {
+      precacheImage(CachedNetworkImageProvider(list[i]), context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bannerList = effectiveBanners;
+
+    // ✅ optimize decode size (fast + less RAM)
+    final screenW = MediaQuery.of(context).size.width;
+    final cacheW = (screenW * MediaQuery.of(context).devicePixelRatio).round();
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Carousel
         SizedBox(
-          width: MediaQuery.of(context).size.width, // Ensure proper width
+          width: screenW,
           child: CarouselSlider(
             controller: _controller,
             options: CarouselOptions(
-              height: 170,
-              autoPlay: true,
+              height: 180.sp,
+              autoPlay: bannerList.length > 1,
               viewportFraction: 1,
-              enableInfiniteScroll: true,
-              autoPlayInterval: Duration(seconds: 2),
-              autoPlayAnimationDuration: Duration(milliseconds: 800),
+              enableInfiniteScroll: bannerList.length > 1,
+              autoPlayInterval: const Duration(seconds: 2),
+              autoPlayAnimationDuration: const Duration(milliseconds: 800),
               autoPlayCurve: Curves.fastOutSlowIn,
-              scrollDirection: Axis.horizontal,
               onPageChanged: (index, reason) {
-                setState(() {
-                  _currentIndex = index;
-                });
+                setState(() => _currentIndex = index);
               },
             ),
-            items: imgList.map((item) {
+            items: bannerList.map((url) {
               return Padding(
                 padding: const EdgeInsets.all(5.0),
-                child: GestureDetector(
-                  onTap: () {
-                    print('Image Clicked: $item');
-                  },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Image.network(
-                      item,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        ); // Show loader while loading
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Icon(Icons.error, color: Colors.red),
-                        ); // Show error icon if image fails
-                      },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.fill, // ✅ correct fit
+                    width: double.infinity,
+                    memCacheWidth: cacheW, // ✅ fast decode
+                    placeholder: (context, _) =>
+                    const BannerShimmer(radius: 8),
+                    errorWidget: (context, _, __) => Container(
+                      color: Colors.grey.shade200,
+                      alignment: Alignment.center,
+                      child: const Icon(Icons.broken_image_outlined),
                     ),
                   ),
                 ),
@@ -398,26 +409,46 @@ class _CarouselExampleState extends State<CarouselExample> {
             }).toList(),
           ),
         ),
-
-        // Dots Indicator
-        SizedBox(height: 1),
+        const SizedBox(height: 6),
         AnimatedSmoothIndicator(
           activeIndex: _currentIndex,
-          count: imgList.length,
+          count: bannerList.length,
           effect: ExpandingDotsEffect(
             dotHeight: 8,
             dotWidth: 8,
             activeDotColor: Colors.redAccent,
             dotColor: Colors.grey.shade400,
           ),
-          onDotClicked: (index) {
-            _controller.animateToPage(index);
-          },
+          onDotClicked: (index) => _controller.animateToPage(index),
         ),
       ],
     );
   }
 }
+
+/// ✅ Premium shimmer placeholder (progress bar ki jagah)
+class BannerShimmer extends StatelessWidget {
+  final double radius;
+  const BannerShimmer({super.key, this.radius = 8});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      ),
+    );
+  }
+}
+
+
 
 class CarouselFees extends StatelessWidget {
   final String dueAmount;

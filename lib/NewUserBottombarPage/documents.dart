@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../HexColorCode/HexColor.dart';
+import '../utils/date_time_utils.dart';
 
 
 
@@ -105,60 +106,7 @@ class _NewUserPaymentScreenState extends State<DocumentsScreen> {
         ),
         backgroundColor: AppColors.secondary,
         actions: [
-          // Card(
-          //   // elevation: 4,
-          //   shape: RoundedRectangleBorder(
-          //     borderRadius: BorderRadius.circular(12),
-          //   ),
-          //   child: InkWell(
-          //     onTap: () async {
-          //       final Uri uri = Uri.parse(
-          //         '${ApiRoutes.admissionDownload}${studentData!['id']}',
-          //       );
-          //       try {
-          //         if (!await launchUrl(
-          //           uri,
-          //           mode: LaunchMode.externalApplication,
-          //         )) {
-          //           ScaffoldMessenger.of(context).showSnackBar(
-          //             SnackBar(content: Text('Could not open URL')),
-          //           );
-          //         }
-          //       } catch (e) {
-          //         ScaffoldMessenger.of(
-          //           context,
-          //         ).showSnackBar(SnackBar(content: Text('Error: $e')));
-          //       }
-          //     },
-          //     borderRadius: BorderRadius.circular(12),
-          //     child: Ink(
-          //       decoration: BoxDecoration(
-          //         gradient: LinearGradient(
-          //           colors: [HexColor('61045F'), HexColor('AA076B')],
-          //           begin: Alignment.topLeft,
-          //           end: Alignment.bottomRight,
-          //         ),
-          //         borderRadius: BorderRadius.circular(12),
-          //       ),
-          //       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          //       child: Row(
-          //         mainAxisSize: MainAxisSize.min,
-          //         children: [
-          //           Icon(Icons.print, color: Colors.white),
-          //           SizedBox(width: 8),
-          //           Text(
-          //             'Admission Form Print',
-          //             style: TextStyle(
-          //               color: Colors.white,
-          //               fontSize: 13.sp,
-          //               fontWeight: FontWeight.w600,
-          //             ),
-          //           ),
-          //         ],
-          //       ),
-          //     ),
-          //   ),
-          // ),
+
         ],
       ),
 
@@ -305,7 +253,8 @@ class _NewUserPaymentScreenState extends State<DocumentsScreen> {
                                       ),
 
                                       Text(
-                                        '${fee['txn_date']??''}',
+                                        // '${fee['txn_date']??''}',
+                                        AppDateTimeUtils.date( fee['txn_date']??''),
                                         style: TextStyle(
                                           fontSize: 11.sp,
                                           fontWeight: FontWeight.normal,

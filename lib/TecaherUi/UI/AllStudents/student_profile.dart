@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:avi/utils/date_time_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:lottie/lottie.dart';
@@ -302,7 +303,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
                             Text("DOJ: ",
                                 style: GoogleFonts.poppins(color: Colors.grey.shade700,fontWeight: FontWeight.bold)),
                             Text(
-                                "${ studentData?['date_of_joining']??''}",
+                                AppDateTimeUtils.date(studentData?['date_of_joining'] ?? ''),
                                 style: GoogleFonts.poppins(color: Colors.black,fontWeight: FontWeight.bold)),
                           ],
                         ),
@@ -438,7 +439,8 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         infoItem(Icons.person, "Gender", studentData?['gender'] ?? ''),
-                        infoItem(Icons.cake, "Date of Birth", studentData?['dob'] ?? ''),
+                        // infoItem(Icons.cake, "Date of Birth", studentData?['dob'] ?? ''),
+                        infoItem(Icons.cake, "Date of Birth", AppDateTimeUtils.date(studentData?['dob'] ?? '')),
                         infoItem(Icons.confirmation_number, "Roll No", studentData?['roll_no'] ?? ''),
                         infoItem(Icons.home_work, "House", studentData?['house'] ?? 'N/A'),
                         infoItem(Icons.directions_bus, "Transport", studentData?['transport'] ?? 'N/A'),

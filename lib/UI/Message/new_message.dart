@@ -294,7 +294,7 @@ class _AssignmentListScreenState extends State<NewMesssageScreen> {
         iconTheme: const IconThemeData(color: AppColors.textwhite),
         backgroundColor: AppColors.secondary,
         title: Text(
-          'New Messages',
+          'Compose Messages',
           style: GoogleFonts.montserrat(
             textStyle: Theme.of(context).textTheme.displayLarge,
             fontSize: 15.sp,

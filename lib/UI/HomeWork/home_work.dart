@@ -1,3 +1,4 @@
+import 'package:avi/utils/date_time_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -212,7 +213,7 @@ class _AssignmentListScreenState extends State<HomeWorkScreen> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Text(
-                              'Start : ${startDate}',
+                              'Start : ${AppDateTimeUtils.date(startDate)}',
                               style: GoogleFonts.montserrat(
                                 textStyle: Theme.of(context).textTheme.displayLarge,
                                 fontSize: 12,
@@ -222,7 +223,7 @@ class _AssignmentListScreenState extends State<HomeWorkScreen> {
                               ),
                             ),
                             Text(
-                              'Due : ${endDate}',
+                              'Due : ${AppDateTimeUtils.date(endDate)}',
                               style: GoogleFonts.montserrat(
                                 textStyle: Theme.of(context).textTheme.displayLarge,
                                 fontSize: 12,

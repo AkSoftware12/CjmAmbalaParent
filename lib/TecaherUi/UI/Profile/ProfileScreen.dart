@@ -1,3 +1,4 @@
+import 'package:avi/utils/date_time_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,7 +11,8 @@ import '../../../constants.dart';
 import '/UI/Auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final String appBar;
+  const ProfileScreen({super.key, required this.appBar});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -57,6 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       final data = json.decode(response.body);
       setState(() {
         teacherData = data['teacher'];
+        print('profileDate $teacherData');
         isLoading = false;
         _controller.forward(); // Start animation once data is loaded
       });
@@ -91,6 +94,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors2.primary,
+      appBar: widget.appBar.isNotEmpty? AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: AppColors.secondary,
+        title: Text('Profile',style: TextStyle(color: Colors.white),),
+      ):null,
+
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.red,
         icon: const Icon(Icons.logout, color: Colors.white),
@@ -140,7 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                         borderRadius: BorderRadius.circular(20),
                         child: Image.network(
                           teacherData?['photo'] ?? '', // Use an empty string if the photo is null
-                          fit: BoxFit.fill,
+                          // fit: BoxFit.fill,
                           errorBuilder: (context, error, stackTrace) {
                             // This widget will be displayed if the image fails to load
                             return Container(
@@ -211,9 +220,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               const SizedBox(height: 20),
               _buildAnimatedSection('Personal Information', [
                 buildProfileRow('Name', '${teacherData?['first_name']??''} ${teacherData?['last_name']??''}'),
-                buildProfileRow('Date of Birth', teacherData?['dob']??''),
+                // buildProfileRow('Date of Birth', teacherData?['dob']??''),
+                buildProfileRow('Date of Birth', AppDateTimeUtils.date( teacherData?['dob']??'')),
                 buildProfileRow('Qualification', teacherData?['qualification']??''),
-                buildProfileRow('Experience', teacherData?['experience']??''),
                 buildProfileRow('Gender', teacherData?['gender'] == '1' ? 'Male' : 'Female',
                 ),
                 buildProfileRow('Nationality', teacherData?['nationality']?? ''),

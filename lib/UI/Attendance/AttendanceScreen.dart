@@ -958,7 +958,7 @@ class _AttendanceCalendarScreenState extends State<AttendanceCalendarScreen> {
                       child: TableCalendar(
                         focusedDay: _focusedDay,
                         firstDay: DateTime(2025, 1, 1),
-                        lastDay: DateTime(2025, 12, 31),
+                        lastDay: DateTime(2030, 12, 31),
                         calendarFormat: _calendarFormat,
                         eventLoader: _getAttendanceForDay,
                         availableCalendarFormats: const {

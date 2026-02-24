@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:file_picker/file_picker.dart'; // Add file_picker package
+
 import '../../constants.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -13,41 +16,115 @@ class ChatScreen extends StatefulWidget {
   final int? messageSendPermissionsApp;
   final String name;
   final String designation;
-  const ChatScreen({super.key, required this.id, required this.messageSendPermissionsApp, required this.name, required this.msgSendId, required this.designation});
+
+  const ChatScreen({
+    super.key,
+    required this.id,
+    required this.messageSendPermissionsApp,
+    required this.name,
+    required this.msgSendId,
+    required this.designation,
+  });
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
-  TextEditingController messageController = TextEditingController();
-  final List<MessageModel> _messages = [];
-  bool isLoading = false;
-  PlatformFile? selectedFile; // Store the selected file
+class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
+  final TextEditingController messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
-  // Replace this with the actual user ID/type from logged-in user
+  final List<MessageModel> _messages = [];
+
+  bool isLoading = false;      // only first-time loader
+  bool isRefreshing = false;   // background refresh flag
+  bool isSending = false;      // prevent multi send
+  bool _isFetching = false;    // prevent overlapping fetch calls
+
+  PlatformFile? selectedFile;
+
+  Timer? _pollTimer;
+  bool _isActive = true; // foreground/background
+
+  // Replace this with actual logged-in user
   final int currentUserId = 1;
   final String currentUserType = "App\\Models\\Student";
 
   @override
   void initState() {
     super.initState();
-    _fetchMessages(widget.id);
+    WidgetsBinding.instance.addObserver(this);
+
+    _fetchMessages(widget.id, initial: true);
+    _startAutoFetch();
   }
 
-  Future<void> _fetchMessages(int id) async {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+
+    _pollTimer?.cancel();
+    _pollTimer = null;
+
+    _scrollController.dispose();
+    messageController.dispose();
+
+    super.dispose();
+  }
+
+  // ✅ Foreground/background detect
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _isActive = state == AppLifecycleState.resumed;
+  }
+
+  void _startAutoFetch() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      if (!_isActive) return;      // background me hit mat karo
+      if (_isFetching) return;     // overlapping avoid
+      if (isSending) return;       // ✅ sending ke time refresh mat karo (optimistic wipe avoid)
+
+      _isFetching = true;
+      try {
+        await _fetchMessages(widget.id);
+      } finally {
+        _isFetching = false;
+      }
+    });
+  }
+
+  void _scrollToBottom() {
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      0, // ✅ reverse:true => bottom is offset 0
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+    );
+  }
+
+  // ✅ fetch with: initial loader + safe empty guard + newest-first
+  Future<void> _fetchMessages(int id, {bool initial = false}) async {
+    if (!mounted) return;
+
     setState(() {
-      isLoading = true;
+      if (initial) {
+        isLoading = true;
+      } else {
+        isRefreshing = true;
+      }
     });
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
     if (token == null) {
-      _showErrorSnackBar('No authentication token found');
+      if (!mounted) return;
       setState(() {
         isLoading = false;
+        isRefreshing = false;
       });
+      _showErrorSnackBar('No authentication token found');
       return;
     }
 
@@ -57,38 +134,70 @@ class _ChatScreenState extends State<ChatScreen> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List messagesJson = data['messages'];
+        final List messagesJson = (data['messages'] ?? []) as List;
+
+        final parsed = messagesJson
+            .map((e) => MessageModel.fromJson((e as Map).cast<String, dynamic>()))
+            .toList();
+
+        // ✅ backend temporary empty => keep old messages
+        if (parsed.isEmpty && _messages.isNotEmpty) {
+          setState(() {
+            isLoading = false;
+            isRefreshing = false;
+          });
+          return;
+        }
+
+        // ✅ keep newest-first (best with reverse:true)
+        final newestFirst = parsed.reversed.toList();
+
+        // ✅ if sending, don't wipe optimistic
+        if (isSending) {
+          setState(() {
+            isLoading = false;
+            isRefreshing = false;
+          });
+          return;
+        }
 
         setState(() {
-          _messages.clear();
-          _messages.addAll(messagesJson.map((json) => MessageModel.fromJson(json)));
+          _messages
+            ..clear()
+            ..addAll(newestFirst);
+
           isLoading = false;
+          isRefreshing = false;
         });
       } else {
-        // _showErrorSnackBar('Failed to load messages: ${response.statusCode}');
         setState(() {
           isLoading = false;
+          isRefreshing = false;
         });
       }
-    } catch (e) {
-      // _showErrorSnackBar('Error fetching messages: $e');
+    } catch (_) {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
+        isRefreshing = false;
       });
     }
   }
 
-  // Function to pick a file
+  // ✅ Pick a file
   Future<void> _pickFile() async {
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.any, // Allow any file type, or restrict as needed (e.g., FileType.image)
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
         allowMultiple: false,
       );
 
       if (result != null && result.files.isNotEmpty) {
+        if (!mounted) return;
         setState(() {
           selectedFile = result.files.first;
         });
@@ -98,8 +207,22 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  // ✅ send wrapper (prevent double click)
+  Future<void> handleSend() async {
+    if (isSending) return;
+    setState(() => isSending = true);
+
+    await _sendMessage();
+
+    if (mounted) {
+      setState(() => isSending = false);
+    }
+  }
+
   Future<void> _sendMessage() async {
-    if (messageController.text.trim().isEmpty && selectedFile == null) {
+    final text = messageController.text.trim();
+
+    if (text.isEmpty && selectedFile == null) {
       _showErrorSnackBar('Please enter a message or select a file');
       return;
     }
@@ -117,46 +240,69 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
+    final fileToSend = selectedFile;
+
+    // ✅ Optimistic UI (instant show)
+    final optimistic = MessageModel(
+      senderId: currentUserId,
+      senderType: currentUserType,
+      senderName: "Me",
+      body: text,
+      attachmentUrl: fileToSend != null ? "uploading" : null, // marker
+      createdAt: DateTime.now().toIso8601String(),
+      seenByReceiver: "0",
+    );
+
+    if (mounted) {
+      setState(() {
+        // ✅ reverse:true => newest at index 0
+        _messages.insert(0, optimistic);
+        messageController.clear();
+        selectedFile = null;
+      });
+      _scrollToBottom();
+    }
+
     try {
       final uri = Uri.parse(ApiRoutes.sendMessage);
       final request = http.MultipartRequest('POST', uri);
 
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Add text fields (form data)
       request.fields['receivers[]'] = 'user_${widget.msgSendId}';
-      request.fields['body'] = messageController.text.trim();
+      request.fields['body'] = text;
 
-      // Add file if selected
-      if (selectedFile != null && selectedFile!.path != null) {
+      if (fileToSend != null && fileToSend.path != null) {
         request.files.add(
           await http.MultipartFile.fromPath(
             'attachment',
-            selectedFile!.path!,
-            filename: selectedFile!.name,
+            fileToSend.path!,
+            filename: fileToSend.name,
           ),
         );
       } else {
-        request.fields['attachment'] = ''; // No file attached
+        request.fields['attachment'] = '';
       }
 
       final response = await request.send();
 
+      if (!mounted) return;
+
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // ✅ after success, fetch latest from server (replace optimistic)
         await _fetchMessages(widget.id);
-        messageController.clear();
-        setState(() {
-          selectedFile = null; // Clear selected file after sending
-        });
       } else {
         _showErrorSnackBar('Failed to send message: ${response.statusCode}');
+        await _fetchMessages(widget.id);
       }
     } catch (e) {
       _showErrorSnackBar('Error sending message: $e');
+      await _fetchMessages(widget.id);
     }
   }
 
   void _showErrorSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -166,8 +312,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessage(MessageModel message, bool isMe) {
+    final isUploading = message.attachmentUrl == "uploading";
+
     return Padding(
-      padding: isMe ?  EdgeInsets.only(left: 25.sp) :  EdgeInsets.only(right: 25.sp),
+      padding: isMe
+          ? EdgeInsets.only(left: 25.sp)
+          : EdgeInsets.only(right: 25.sp),
       child: Align(
         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
@@ -190,7 +340,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
           child: Column(
-            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               Text(
                 message.body,
@@ -199,19 +350,34 @@ class _ChatScreenState extends State<ChatScreen> {
                   fontSize: 16,
                 ),
               ),
-              if (message.attachmentUrl != null && message.attachmentUrl!.isNotEmpty) ...[
+              if (isUploading) ...[
+                const SizedBox(height: 6),
+                Text(
+                  "Uploading...",
+                  style: TextStyle(
+                    color: isMe ? Colors.white70 : Colors.black54,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              if (!isUploading &&
+                  message.attachmentUrl != null &&
+                  message.attachmentUrl!.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: () async {
                     final url = Uri.parse(message.attachmentUrl!);
                     if (await canLaunchUrl(url)) {
-                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                      await launchUrl(url,
+                          mode: LaunchMode.externalApplication);
                     } else {
                       _showErrorSnackBar('Could not open the attachment');
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: isMe ? Colors.grey[200] : Colors.blue[50],
                       borderRadius: BorderRadius.circular(8),
@@ -241,7 +407,9 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
               const SizedBox(height: 4),
               Text(
-                message.createdAt.substring(0, 16), // Show only date and time
+                message.createdAt.length >= 16
+                    ? message.createdAt.substring(0, 16)
+                    : message.createdAt,
                 style: TextStyle(
                   color: isMe ? Colors.white70 : Colors.black54,
                   fontSize: 12,
@@ -259,29 +427,37 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Row(
           children: [
-             Padding(
+            const Padding(
               padding: EdgeInsets.only(right: 5.0),
               child: CircleAvatar(
                 radius: 18,
-                backgroundImage: NetworkImage('https://cdn-icons-png.flaticon.com/512/149/149071.png'),
+                backgroundImage: NetworkImage(
+                  'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+                ),
               ),
             ),
             Expanded(
-
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${widget.name}',
-                    style: TextStyle(color: Colors.white, fontSize: 14.sp,fontWeight: FontWeight.bold),
+                    widget.name,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     '(${widget.designation})',
-                    style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.sp,
+                    ),
                   ),
                 ],
               ),
@@ -291,19 +467,18 @@ class _ChatScreenState extends State<ChatScreen> {
         centerTitle: false,
         backgroundColor: AppColors.primary,
         elevation: 2,
-        actions: [],
       ),
       body: Column(
         children: [
           Expanded(
-            child: isLoading
+            child: (isLoading && _messages.isEmpty)
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
+              controller: _scrollController,
               reverse: true,
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                final reversedIndex = _messages.length - 1 - index;
-                final message = _messages[reversedIndex];
+                final message = _messages[index]; // ✅ fixed (no double reverse)
                 final isMe = message.senderType == currentUserType;
                 return _buildMessage(message, isMe);
               },
@@ -314,12 +489,13 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Card(
                 color: Colors.grey.shade200,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                   child: Row(
                     children: [
                       IconButton(
-                        icon:  Icon(Icons.attach_file, color: AppColors.primary),
-                        onPressed: _pickFile, // Trigger file picker
+                        icon: Icon(Icons.attach_file, color: AppColors.primary),
+                        onPressed: isSending ? null : _pickFile,
                       ),
                       Expanded(
                         child: Container(
@@ -340,6 +516,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               Expanded(
                                 child: TextField(
                                   controller: messageController,
+                                  enabled: !isSending,
                                   decoration: const InputDecoration(
                                     hintText: 'Type a message...',
                                     border: InputBorder.none,
@@ -351,6 +528,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                   padding: const EdgeInsets.only(left: 8.0),
                                   child: Text(
                                     selectedFile!.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       color: Colors.black54,
                                       fontSize: 12,
@@ -364,9 +543,23 @@ class _ChatScreenState extends State<ChatScreen> {
                       const SizedBox(width: 8),
                       CircleAvatar(
                         backgroundColor: AppColors.primary,
-                        child: IconButton(
-                          icon: const Icon(Icons.send, color: Colors.white),
-                          onPressed: _sendMessage,
+                        child: isSending
+                            ? const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation(
+                                  Colors.white),
+                            ),
+                          ),
+                        )
+                            : IconButton(
+                          icon: const Icon(Icons.send,
+                              color: Colors.white),
+                          onPressed: _sendMessage, // ✅ fixed
                         ),
                       ),
                     ],
@@ -402,12 +595,13 @@ class MessageModel {
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(
       senderId: json['sender_id'] ?? 0,
-      senderType: json['sender_type'] ?? '',
-      senderName: json['sender_name'] ?? 'Unknown',
-      body: json['body'] ?? '',
-      attachmentUrl: json['attachment_url'],
-      createdAt: json['created_at'] ?? DateTime.now().toString(),
-      seenByReceiver: json['seen_by_receiver'] ?? '',
+      senderType: (json['sender_type'] ?? '').toString(),
+      senderName: (json['sender_name'] ?? 'Unknown').toString(),
+      body: (json['body'] ?? '').toString(),
+      attachmentUrl: json['attachment_url']?.toString(),
+      createdAt:
+      (json['created_at'] ?? DateTime.now().toIso8601String()).toString(),
+      seenByReceiver: (json['seen_by_receiver'] ?? '').toString(),
     );
   }
 }
