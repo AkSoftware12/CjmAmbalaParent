@@ -237,7 +237,7 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen> {
       request.fields['class'] = selectedClass.toString();
       request.fields['subject'] = selectedSubject.toString();
       request.fields['title'] = titleController.text;
-      request.fields['section'] = selectedSection?.toString() ?? "";
+      // request.fields['section'] = selectedSection?.toString() ?? "";
       // request.fields['total_marks'] = '0';
       request.fields['start_date'] = startDate!.toString().split(' ')[0];
       request.fields['end_date'] = endDate!.toString().split(' ')[0];
@@ -398,7 +398,7 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen> {
                               items: classes.map((c) {
                                 return DropdownMenuItem<int>(
                                   value: c["id"],
-                                  child: Text(c["title"].toString()),
+                                  child: Text('${c["academic_class"]['title'].toString()}${'(${c["section"]['title'].toString()})'}'),
                                 );
                               }).toList(),
                               onChanged: (value) {
@@ -417,57 +417,57 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen> {
                     ),
                   ),
 
-                  SizedBox(height: 10),
-                  Container(
-                    height: 50.sp,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.blue.withOpacity(0.2),
-                          blurRadius: 8,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(0.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child:DropdownButtonFormField<int>(
-                              value: selectedSection,
-                              decoration: InputDecoration(
-                                labelText: "Select Section",
-                                border: InputBorder.none, // Removes the border
-
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                              ),
-
-                              items: section.map((c) {
-                                return DropdownMenuItem<int>(
-                                  value: c["id"],
-                                  child: Text(c["title"].toString()),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedSection = value;
-                                });
-                              },
-                            ),
-
-                          ),
-
-                        ],
-                      ),
-
-
-                    ),
-                  ),
+                  // SizedBox(height: 10),
+                  // Container(
+                  //   height: 50.sp,
+                  //   width: double.infinity,
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.white,
+                  //     borderRadius: BorderRadius.circular(10),
+                  //     boxShadow: [
+                  //       BoxShadow(
+                  //         color: Colors.blue.withOpacity(0.2),
+                  //         blurRadius: 8,
+                  //         spreadRadius: 2,
+                  //         offset: const Offset(0, 1),
+                  //       ),
+                  //     ],
+                  //   ),
+                  //   child: Padding(
+                  //     padding: EdgeInsets.all(0.0),
+                  //     child: Row(
+                  //       children: [
+                  //         Expanded(
+                  //           child:DropdownButtonFormField<int>(
+                  //             value: selectedSection,
+                  //             decoration: InputDecoration(
+                  //               labelText: "Select Section",
+                  //               border: InputBorder.none, // Removes the border
+                  //
+                  //               contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                  //             ),
+                  //
+                  //             items: section.map((c) {
+                  //               return DropdownMenuItem<int>(
+                  //                 value: c["id"],
+                  //                 child: Text(c["title"].toString()),
+                  //               );
+                  //             }).toList(),
+                  //             onChanged: (value) {
+                  //               setState(() {
+                  //                 selectedSection = value;
+                  //               });
+                  //             },
+                  //           ),
+                  //
+                  //         ),
+                  //
+                  //       ],
+                  //     ),
+                  //
+                  //
+                  //   ),
+                  // ),
 
                   SizedBox(height: 10),
 

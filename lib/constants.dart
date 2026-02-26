@@ -42,7 +42,6 @@ class AppColors2 {
 
 class AppAssets {
   static const String logo = 'assets/images/logo.png'; 
-  static const String cjm = 'assets/cjm.png';
   static const String cjmlogo = 'assets/playstore.png';
 }
 
@@ -87,6 +86,10 @@ class ApiRoutes {
   static const String payFeesNewUser  = "$baseUrlNewUser/payfees";
   static const String admissionDownload  = "$baseUrlNewUser/profile/";
 
+
+// common
+  static const String getBanner = "$baseUrl/banner";
+  static const String getBirthdays = "$baseUrl/birthdays";
 
 
 
@@ -146,6 +149,8 @@ class ApiRoutes {
   static const String getTeacherVideos = "$baseUrlNewUser/getVideos";
   static const String getTeacherlibrary = "$baseUrl/library-get";
   static const String getTeacherBookTypes = "$baseUrl/book-types";
+  static const String getClassTeachers = "$baseUrl/class-teachers";
+  static const String getStaff = "$baseUrl/staff";
   static const String getTeacherBookCategories = "$baseUrl/book-categories";
   static const String getTeacherBookPublishers = "$baseUrl/book-publishers";
   static const String getTeacherBookSupplier= "$baseUrl/book-supplier";

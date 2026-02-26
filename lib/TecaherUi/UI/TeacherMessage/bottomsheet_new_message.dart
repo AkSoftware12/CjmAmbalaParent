@@ -64,14 +64,33 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
     });
   }
 
+  List<Map<String, dynamic>> _asMapList(dynamic v) {
+    if (v == null) return [];
+    if (v is List) {
+      return v
+          .where((e) => e is Map)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    }
+    return [];
+  }
+
   Future<void> fetchClasses() async {
-    setState(() {
-      isLoading = true;
-    });
+    if (!mounted) return;
+    setState(() => isLoading = true);
 
     try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? token = prefs.getString('teachertoken');
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('teachertoken');
+
+      if (token == null || token.isEmpty) {
+        if (!mounted) return;
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No token found. Please log in.')),
+        );
+        return;
+      }
 
       final response = await http.get(
         Uri.parse(ApiRoutes.getTeacherTeacherSubject),
@@ -82,39 +101,37 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       );
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = json.decode(response.body);
+        final Map<String, dynamic> responseData =
+        json.decode(response.body) as Map<String, dynamic>;
+
+        final parsedClasses = _asMapList(responseData['classes']);
+        final parsedSections = _asMapList(responseData['sections']);
+
+        if (!mounted) return;
         setState(() {
-          classes = List<Map<String, dynamic>>.from(responseData['classes']);
-          section = List<Map<String, dynamic>>.from(responseData['sections']);
+          classes = parsedClasses;
+          section = parsedSections;
           isLoading = false;
-
-          // Debug: Check for duplicate IDs
-          _checkForDuplicateIds(classes, 'classes');
-          _checkForDuplicateIds(section, 'sections');
-
-          // Set default values only if lists are not empty
-          if (classes.isNotEmpty) {
-            selectedClass = 0;
-          }
-          if (section.isNotEmpty) {
-            selectedSection = 0;
-            fetchAssignmentsData(); // Fetch data after setting section
-          }
         });
+
+        // Debug: duplicates check
+        _checkForDuplicateIds(classes, 'classes');
+        // _checkForDuplicateIds(section, 'sections');
+
+        // ✅ setState ke andar async call mat karo
+        await fetchAssignmentsData();
       } else {
-        throw Exception('Failed to load class and section data');
+        throw Exception('Failed to load class and section data (${response.statusCode})');
       }
     } catch (e) {
-      print('Error fetching classes and sections: $e');
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching classes: $e')));
+      debugPrint('Error fetching classes and sections: $e');
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching classes: $e')),
+      );
     }
   }
-
   // Helper function to check for duplicate IDs in a list
   void _checkForDuplicateIds(List<Map<String, dynamic>> list, String listName) {
     final idSet = <int>{};
@@ -150,10 +167,11 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       final queryParams = <String, String>{};
       if (selectedClass != null) {
         queryParams['class_id'] = selectedClass.toString();
+        print('clss${ queryParams['class_id'] = selectedClass.toString()}');
       }
-      if (selectedSection != null) {
-        queryParams['section_id'] = selectedSection.toString();
-      }
+      // if (selectedSection != null) {
+      //   queryParams['section_id'] = selectedSection.toString();
+      // }
 
       // Construct the URI with query parameters
       final uri = Uri.parse(
@@ -727,10 +745,8 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                                 ? classes.map((c) {
                                                     return DropdownMenuItem<int>(
                                                       value: c["id"],
-                                                      child: Text(
-                                                        c["title"]?.toString() ??
-                                                            'Unknown',
-                                                      ),
+                                                      child: Text('${c["academic_class"]['title'].toString()}${'(${c["section"]['title'].toString()})'}'),
+
                                                     );
                                                   }).toList()
                                                 : [
@@ -745,7 +761,7 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                                 ? (value) {
                                                     setState(() {
                                                       selectedClass = value;
-                                                      // fetchAssignmentsData();
+                                                      fetchAssignmentsData();
                                                     });
                                                   }
                                                 : null,
@@ -760,128 +776,6 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                         color: Colors.black,
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8.sp,
-                              vertical: 5.sp,
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'Section',
-                                  style: GoogleFonts.montserrat(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8.sp),
-                            child: Container(
-                              width: double.infinity,
-                              height: 40.sp,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.blue.withOpacity(0.2),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: DropdownButtonHideUnderline(
-                                        child: DropdownButtonFormField<int?>(
-                                          isExpanded: true, // ✅ very important
-                                          value: (section.isNotEmpty &&
-                                              section.any((s) => s["id"] == selectedSection))
-                                              ? selectedSection
-                                              : null,
-                                          decoration: const InputDecoration(
-                                            hintText: "Select Section",
-                                            border: InputBorder.none,
-                                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                                          ),
-                                          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20,), // ✅ keep a small icon
-                                          selectedItemBuilder: (context) {
-                                            if (section.isEmpty) {
-                                              return [
-                                                const Align(
-                                                  alignment: Alignment.centerLeft,
-                                                  child: Text(
-                                                    "No Sections Available",
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ];
-                                            }
-                                            return section.map<Widget>((s) {
-                                              return Align(
-                                                alignment: Alignment.centerLeft,
-                                                child: Text(
-                                                  (s["title"] ?? "Unknown").toString(),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  softWrap: false,
-                                                ),
-                                              );
-                                            }).toList();
-                                          },
-                                          items: section.isNotEmpty
-                                              ? section.map((s) {
-                                            return DropdownMenuItem<int>(
-                                              value: s["id"],
-                                              child: Text(
-                                                (s["title"] ?? "Unknown").toString(),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis, // ✅ menu text bhi safe
-                                              ),
-                                            );
-                                          }).toList()
-                                              : const [
-                                            DropdownMenuItem<int?>(
-                                              value: null,
-                                              child: Text("No Sections Available"),
-                                            ),
-                                          ],
-                                          onChanged: section.isNotEmpty
-                                              ? (value) {
-                                            setState(() {
-                                              selectedSection = value;
-                                            });
-                                            fetchAssignmentsData();
-                                          }
-                                              : null,
-                                        ),
-                                      ),
-                                    ),
-
                                   ],
                                 ),
                               ),
@@ -993,7 +887,7 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            '${assignment['first_name']?.toString().toUpperCase() ?? 'UNKNOWN'}',
+                                            assignment['first_name']?.toString().toUpperCase() ?? 'UNKNOWN',
                                             style: GoogleFonts.montserrat(
                                               fontSize: 13.sp,
                                               fontWeight: FontWeight.w700,

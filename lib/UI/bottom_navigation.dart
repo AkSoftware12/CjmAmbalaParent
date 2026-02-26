@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../TecaherUi/UI/BirthdayScreen/birthday_screen.dart';
 import '../UI/Dashboard/HomeScreen%20.dart';
 import '../constants.dart';
 import '../strings.dart';
@@ -52,9 +53,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   final List<Widget> _screens = [
     HomeScreen(),
     AttendanceCalendarScreen(title: 'Attendance'),
-    // AttendanceCalendar(),
-    LibraryScreen(),
-    FeesScreen(),
+    LibraryScreen(appBar: '',),
+    CalendarScreen(title: ''),
+    // FeesScreen(),
     ProfileScreen(appBar: '',),
   ];
 
@@ -332,8 +333,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
               backgroundColor: AppColors.primary,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.currency_rupee),
-              label: AppStrings.feesLabel,
+              icon: Icon(Icons.calendar_month),
+              label: AppStrings.activity,
               backgroundColor: AppColors.primary,
             ),
             BottomNavigationBarItem(
@@ -356,7 +357,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
                 GestureDetector(
                   onTap: () {
-
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return ProfileScreen(appBar: 'appbar');
+                        },
+                      ),
+                    );
                   },
                   child: CircleAvatar(
                     radius: 40,
@@ -572,7 +580,44 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               ),
                             ),
 
+                            ListTile(
+                              title: Text(
+                                'Birthday List',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                      color:AppColors2.textblack,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors2.primary,
+                                child: Icon(CupertinoIcons.gift,color:AppColors2.textblack,),
 
+                              ),
+                              onTap: () {
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return  BirthdayScreen();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                            Padding(
+                              padding:
+                              EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                              ),
+                            ),
 
                             ListTile(
                               title: Text(
@@ -764,20 +809,14 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               ),
                               onTap: () {
                                 Navigator.pop(context);
-
-                                // Navigate to the Profile screen in the BottomNavigationBar
-                                setState(() {
-                                  _selectedIndex =
-                                  3; // Index of the Profile screen in _screens
-                                });
-                                // Navigator.push(
-                                //   context,
-                                //   MaterialPageRoute(
-                                //     builder: (context) {
-                                //       return DownloadPdf();
-                                //     },
-                                //   ),
-                                // );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return FeesScreen(title: 'aa');
+                                    },
+                                  ),
+                                );
                               },
                             ),
                             Padding(

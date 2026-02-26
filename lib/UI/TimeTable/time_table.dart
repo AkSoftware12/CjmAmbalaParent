@@ -30,7 +30,7 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
   double dotPosition = 0.0;
 
   // Always start week from Monday
-  final List<String> days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  final List<String> days = ["Mon", "Tue", "Wed", "Thu", "Fri", ];
 
   @override
   void initState() {

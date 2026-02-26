@@ -1,52 +1,104 @@
+import 'package:avi/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../HexColorCode/HexColor.dart';
 import 'attendance_report.dart';
 import 'mark_attendance.dart';
 
-class AttendanceTabScreen extends StatelessWidget {
+class AttendanceTabScreen extends StatefulWidget {
+  const AttendanceTabScreen({super.key});
+
+  @override
+  State<AttendanceTabScreen> createState() => _AttendanceTabScreenState();
+}
+
+class _AttendanceTabScreenState extends State<AttendanceTabScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(70),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(00),
-                ),
-              ),
-              bottom: TabBar(
-                indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: Colors.white,
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                indicatorWeight: 3,
-                labelColor: Colors.blueAccent,
-                unselectedLabelColor: Colors.white,
-                labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                tabs: [
-                  Tab(text: "Mark Attendance".toUpperCase()),
-                  Tab(text: "Report Attendance".toUpperCase()),
-                ],
-              ),
+       body: SafeArea(
+      child: Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+      ),
+      child: Column(
+        children: [
+          // _topHeader(),
+          SizedBox(height: 2.h),
+          _tabBar(),
+          SizedBox(height: 8.h),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                AttendanceScreen(), // First Tab (Offline)
+                MonthlyAttendanceScreen(),
+              ],
             ),
           ),
+        ],
+      ),
+    ),
+    ),
+      ),
+    );
+  }
+
+  Widget _tabBar() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 3.w),
+      child: Container(
+        padding: EdgeInsets.all(5.w),
+        decoration: BoxDecoration(
+          // color: HexColor('#010071'),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: HexColor('#010071'),),
         ),
-        body: Padding(
-          padding: EdgeInsets.only(bottom: 5), // Bottom padding
-          child: TabBarView(
-            children: [
-              AttendanceScreen(),
-              MonthlyAttendanceScreen(),
-            ],
+        child: TabBar(
+          controller: _tabController,
+          indicator: BoxDecoration(
+            borderRadius: BorderRadius.circular(14.r),
+            gradient: LinearGradient(
+              colors: [ AppColors.primary,AppColors.primary,],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
+          indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: Colors.transparent,
+          labelColor: Colors.white,
+          unselectedLabelColor: HexColor('#010071'),
+          labelStyle: GoogleFonts.poppins(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w700,
+          ),
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+          ),
+          tabs: const [
+            Tab(text: "Mark Attendance"),
+            Tab(text: "Report Attendance"),
+          ],
         ),
       ),
     );

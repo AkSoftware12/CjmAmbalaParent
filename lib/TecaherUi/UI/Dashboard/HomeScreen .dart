@@ -1,7 +1,14 @@
+import 'dart:async';
+import 'dart:math';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider_plus/carousel_slider_plus.dart';
+import 'package:confetti/confetti.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:scrollable_clean_calendar/controllers/clean_calendar_controller.dart';
@@ -14,6 +21,7 @@ import 'package:html/parser.dart' as html_parser;
 import '../../../HexColorCode/HexColor.dart';
 import '../../../UI/Dashboard/HomeScreen .dart';
 import '../../../UI/Gallery/Album/album.dart';
+import '../../../UI/Library/LibraryScreen.dart';
 import '../../../constants.dart';
 import '../Assignment/assignment.dart';
 import '../HomeWork/home_work.dart';
@@ -23,14 +31,93 @@ import '../TeacherMessage/message.dart';
 import '../TimeTable/time_table_teacher.dart';
 import '../bottom_navigation.dart';
 
-class HomeScreen extends StatefulWidget {
+// API Service
+class ApiService {
+  final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 20),
+    ),
+  );
+
+
+
+
+  Future<List<dynamic>> fetchDashboardData(String token) async {
+    final url = Uri.parse(ApiRoutes.getBirthdays);
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+
+        final students = responseData['data']['today_student_birthdays'] ?? [];
+        final teachers = responseData['data']['today_teacher_birthdays'] ?? [];
+
+        return [...students, ...teachers]; // 👈 merge
+      } else {
+        throw Exception("Failed to load data");
+      }
+    } catch (e) {
+      throw Exception('Error fetching dashboard data: $e');
+    }
+  }
+}
+
+class DashboardData {
+  final List<dynamic> assignments;
+
+  DashboardData(this.assignments);
+}
+
+final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
+
+final dashboardDataProvider =
+StateNotifierProvider<DashboardDataNotifier, AsyncValue<DashboardData>>(
+      (ref) => DashboardDataNotifier(ref.read(apiServiceProvider)),
+);
+
+class DashboardDataNotifier extends StateNotifier<AsyncValue<DashboardData>> {
+  final ApiService _apiService;
+
+  DashboardDataNotifier(this._apiService) : super(const AsyncValue.loading()) {
+    fetchDashboardData();
+  }
+
+  Future<void> fetchDashboardData() async {
+    try {
+      state = const AsyncValue.loading();
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('teachertoken');
+      if (token == null) {
+        state = AsyncValue.error(
+          Exception('No token found'),
+          StackTrace.current,
+        );
+        return;
+      }
+      final assignments = await _apiService.fetchDashboardData(token);
+      state = AsyncValue.data(DashboardData(assignments));
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+}
+
+
+
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   Map<String, dynamic>? teacherData;
   List assignments = []; // Declare a list to hold API data
   List<dynamic> banners = [];
@@ -64,6 +151,10 @@ class _HomeScreenState extends State<HomeScreen> {
       'name': 'Gallery',
       'image': 'assets/gallery.png',
     },
+    {
+      'name': 'Library',
+      'image': 'assets/booksimg.png',
+    },
 
   ];
 
@@ -75,6 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
       maxDate: DateTime.now().add(const Duration(days: 365)),
     );
     fetchStudentData();
+    fetchBannerData();
     // fetchDasboardData();
   }
 
@@ -102,8 +194,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> fetchData() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    final url = Uri.parse(ApiRoutes.getDashboard); // Ensure ApiRoutes.getDashboard is valid
+    final token = prefs.getString('teachertoken');
+    final url = Uri.parse(ApiRoutes.getTeacherDashboard); // Ensure ApiRoutes.getDashboard is valid
 
     try {
       final response = await http.get(
@@ -134,6 +226,35 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('Error fetching data:  $e');
     }
   }
+  Future<void> fetchBannerData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final url = Uri.parse(ApiRoutes.getBanner);
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body)['data'];
+
+        setState(() {
+          banners = data['banners'] ?? [];
+          //
+          // /// ✅ permissions
+          // messageViewPermissionsApp =
+          //     (data['permisions']?[0]['app_status'] as num?)?.toInt() ?? 0;
+          //
+          // messageSendPermissionsApp =
+          //     (data['permisions']?[1]['app_status'] as num?)?.toInt() ?? 0;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching data: $e');
+    }
+  }
 
 
   @override
@@ -157,6 +278,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildGridview(),
                   const SizedBox(height: 10),
 
+                  _buildSectionTitle('Teachers & Students Birthday', ''),
+                  BirthdayCard(),
                   Container(
                     height: 220,
                     width: double.infinity,
@@ -173,59 +296,51 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildWelcomeHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: AppColors2.secondary,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+
+  Widget _buildSectionTitle(String title, String see) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10.sp, vertical: 6.sp),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundImage: teacherData!['photo'] != null
-                ? NetworkImage(teacherData!['photo'])
-                : null,
-            child: teacherData!['photo'] == null
-                ? Image.asset(AppAssets.logo, fit: BoxFit.cover)
-                : null,
-          ),
-          const SizedBox(width: 16),
+
+          /// 🔥 Title Section
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Welcome',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors2.textblack,
+                title,
+                style: GoogleFonts.montserrat(
+                  fontSize: MediaQuery.of(context).size.width * 0.042,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textwhite,
+                  letterSpacing: 0.5,
                 ),
               ),
-              Text(
-                teacherData!['student_name'] ?? 'Student',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors2.textblack,
+
+              /// 🔻 Accent line
+              Container(
+                margin: EdgeInsets.only(top: 4.sp),
+                height: 4,
+                width: 40,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white,
+                      Colors.white,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ],
           ),
+
+
         ],
       ),
     );
   }
-
-
   Widget _buildGridview() {
     return Padding(
       padding: const EdgeInsets.all(2.0),
@@ -263,7 +378,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
 
 
-              } else if (items[index]['name'] == 'Subject') {
+              }else if (items[index]['name'] == 'Library') {
+
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    transitionDuration: Duration(milliseconds: 500), // Animation Speed
+                    pageBuilder: (context, animation, secondaryAnimation) => LibraryScreen(appBar: '25',),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      var begin = Offset(1.0, 0.0); // Right to Left
+                      var end = Offset.zero;
+                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: Curves.easeInOut));
+
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                  ),
+                );
+
+
+              }
+
+              else if (items[index]['name'] == 'Subject') {
 
                 Navigator.push(
                   context,
@@ -363,7 +501,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         width: 50,
                       ),
                       SizedBox(
-                        height: 20,
+                        height: 10,
                       ),
                       Text(
                         items[index]['name']!,
@@ -386,109 +524,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildListView() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: ListView.builder(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        itemCount: assignments.length, // Number of items in the list
-        itemBuilder: (context, index) {
-          final assignment = assignments[index];
-
-          String description =
-              html_parser.parse(assignment['description']).body?.text ?? '';
-
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) {
-                    return AssignmentListScreen();
-                  },
-                ),
-              );
-            },
-            child: Card(
-              elevation: 5,
-              color: AppColors2.secondary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(
-                  color: Colors.grey.shade300, // Border color
-                  width: 1.5, // Border width
-                ), // Rounded corners
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Card(
-                  color: HexColor('#f2888c'),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    side: BorderSide(
-                      color: Colors.grey.shade300, // Border color
-                      width: 1, // Border width
-                    ), // Rounded corners
-                  ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(8.0),
-                    leading: Container(
-                      height: 50,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        color: AppColors2.textblack,
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${index + 1}', // Displaying the index number
-                          style: GoogleFonts.montserrat(
-                            fontSize: 25,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors2.textblack,
-                          ),
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      assignments[index]['title'].toString().toUpperCase(),
-                      style: GoogleFonts.montserrat(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors2.textblack,
-                      ),
-                    ),
-                    subtitle: Text(
-                      description,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey.shade300,
-                      ),
-                    ),
-                    trailing: Icon(Icons.arrow_forward_ios,
-                        color: Colors.white, size: 25),
-                    // Optional arrow icon
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) {
-                            return AssignmentListScreen();
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Widget _buildsellAll(String title, String see) {
     return Padding(
@@ -844,3 +879,291 @@ class PromotionCard extends StatelessWidget {
     );
   }
 }
+class BirthdayCard extends ConsumerStatefulWidget {
+  const BirthdayCard({super.key});
+
+  @override
+  ConsumerState<BirthdayCard> createState() => _BirthdayCardState();
+}
+
+class _BirthdayCardState extends ConsumerState<BirthdayCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _bounceAnimation;
+  late ConfettiController _confettiController;
+
+  int currentIndex = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    _bounceAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    );
+
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 8),
+    );
+
+    _startConfettiLoop();
+    _controller.forward();
+  }
+
+  void _startConfettiLoop() {
+    _confettiController.play();
+
+    _timer = Timer.periodic(const Duration(seconds: 6), (_) {
+      if (!mounted) return;
+
+      // ✅ safe list length check
+      final st = ref.read(dashboardDataProvider);
+      final list = st.value?.assignments ?? [];
+      if (list.isEmpty) return;
+
+      _controller.reverse().then((_) {
+        if (!mounted) return;
+
+        setState(() {
+          currentIndex = (currentIndex + 1) % list.length;
+        });
+
+        _controller.forward();
+        _confettiController.play();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _confettiController.dispose();
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dashboardState = ref.watch(dashboardDataProvider);
+
+    return dashboardState.when(
+      data: (data) {
+        final birthdayList = data.assignments;
+
+        if (birthdayList.isEmpty) {
+          return const NoBirthdaysToday();
+        }
+
+        if (currentIndex >= birthdayList.length) currentIndex = 0;
+
+        final item = birthdayList[currentIndex] as Map<String, dynamic>;
+
+        // ✅ student item me "student" key hoti hai
+        final bool isStudent =
+            item.containsKey('student') && item['student'] != null;
+
+        String name = '';
+        String imageUrl = '';
+        String roleText = '';
+
+        if (isStudent) {
+          final s = (item['student'] as Map<String, dynamic>);
+          final academicClass = (item['academic_class'] as Map<String, dynamic>);
+          final section = (item['section'] as Map<String, dynamic>);
+          name = '${(s['student_name'] ?? '').toString()}\n(${academicClass['title'] }(${section['title'] }))';
+          imageUrl = (s['picture_data'] ?? '').toString();
+          roleText = 'Student';
+
+        } else {
+          // ✅ teacher item direct object hai
+          name = (item['first_name'] ?? '').toString();
+          imageUrl = (item['photo'] ?? '').toString(); // ✅ teacher photo
+          roleText = (item['designation']?['title'] ?? 'Teacher').toString();
+        }
+
+        return Padding(
+          padding: EdgeInsets.all(10.sp),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(20.sp),
+                    decoration: BoxDecoration(
+                      image: const DecorationImage(
+                        image: AssetImage('assets/backg.jpg'),
+                        fit: BoxFit.cover,
+                      ),
+                      gradient: LinearGradient(
+                        colors: [
+                          HexColor('#191970').withOpacity(0.9),
+                          HexColor('#191970').withOpacity(0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(15.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.4),
+                          spreadRadius: 4,
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // ✅ IMAGE
+                        Container(
+                          height: 130.sp,
+                          width: 130.sp,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20.r),
+                          ),
+                          child: ScaleTransition(
+                            scale: _fadeAnimation,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20.r),
+                              child: (imageUrl.isNotEmpty)
+                                  ? CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                fit: BoxFit.fill,
+                                errorWidget: (context, url, error) =>
+                                    Icon(
+                                      Icons.cake,
+                                      size: 60.sp,
+                                      color: Colors.orangeAccent,
+                                    ),
+                              )
+                                  : Container(
+                                color: Colors.white,
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  isStudent ? Icons.school : Icons.badge,
+                                  size: 60.sp,
+                                  color: Colors.orangeAccent,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 6.sp),
+
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: Text(
+                            'Happy Birthday!',
+                            style: GoogleFonts.poppins(
+                              fontSize: 22.sp,
+                              color: Colors.orangeAccent,
+                              fontWeight: FontWeight.bold,
+
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 6.sp),
+
+                        SlideTransition(
+                          position: _slideAnimation,
+                          child: Center(
+                            child: Text(
+                              name,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 18.sp,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 8.sp),
+
+                        // ✅ ROLE / DESIGNATION CHIP
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10.sp,
+                            vertical: 5.sp,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(.25),
+                            borderRadius: BorderRadius.circular(50.r),
+                          ),
+                          child: Text(
+                            roleText,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // ✅ overlay image (optional)
+                  Image.asset('assets/birthday.png', fit: BoxFit.fill),
+                ],
+              ),
+
+              // ✅ CONFETTI
+              ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirection: -pi / 2,
+                emissionFrequency: 0.05,
+                numberOfParticles: 2,
+                gravity: 0.0,
+                colors: const [
+                  Colors.red,
+                  Colors.blue,
+                  Colors.yellow,
+                  Colors.green,
+                  Colors.purple,
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(child: CupertinoActivityIndicator(radius: 20)),
+      error: (error, _) => const SizedBox(),
+    );
+  }
+}
+

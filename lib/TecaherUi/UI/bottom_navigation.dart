@@ -22,10 +22,13 @@ import 'Assignment/assignment.dart';
 import 'Attendance/AttendanceScreen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'BirthdayScreen/birthday_screen.dart';
+import 'ClassTeacher/class_teacher.dart';
 import 'Notice/notice.dart';
 import 'Notification/notification.dart';
 import 'Profile/ProfileScreen.dart';
 import 'TeacherMessage/message.dart';
+import 'TeachingStaff/teaching_staff.dart';
 import 'TimeTable/time_table_teacher.dart';
 
 class TeacherBottomNavBarScreen extends StatefulWidget {
@@ -48,7 +51,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
   final List<Widget> _screens = [
     HomeScreen(),
     AttendanceTabScreen(),
-    LibraryScreen(),
+    LibraryScreen(appBar: '',),
     ProfileScreen(appBar: '',),
   ];
 
@@ -292,19 +295,31 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                 height: 70,
               ),
 
-              ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: teacherData != null && teacherData?['photo'] != null
-                    ? Image.network(
-                  teacherData?['photo'],
-                  height: 100.sp,
-                  width: 100.sp,
-
-                )
-                    : Image.asset(
-                  AppAssets.cjmlogo,
-                  height: 80.sp,
-                  width: 80.sp,
+              GestureDetector(
+                onTap: (){
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return ProfileScreen(appBar: 'appbar');
+                      },
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: teacherData != null && teacherData?['photo'] != null
+                      ? Image.network(
+                    teacherData?['photo'],
+                    height: 100.sp,
+                    width: 100.sp,
+                
+                  )
+                      : Image.asset(
+                    AppAssets.cjmlogo,
+                    height: 80.sp,
+                    width: 80.sp,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -392,14 +407,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             onTap: () {
                               Navigator.pop(context);
 
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) {
-                              //       return DownloadPdf();
-                              //     },
-                              //   ),
-                              // );
+                             
                             },
                           ),
                           Padding(
@@ -414,7 +422,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
 
                           ListTile(
                             title: Text(
-                              'Students',
+                              'Students Profile',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
                                     color:AppColors2.textblack,
@@ -452,6 +460,124 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
+
+                          ListTile(
+                            title: Text(
+                              'Birthday List',
+                              style: GoogleFonts.cabin(
+                                textStyle: TextStyle(
+                                    color:AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            trailing: Container(
+                              height: 20,
+                              width: 20,
+                              color: AppColors2.primary,
+                              child: Icon(CupertinoIcons.gift,color:AppColors2.textblack,),
+
+                            ),
+                            onTap: () {
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return  BirthdayScreen();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          Padding(
+                            padding:
+                            EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
+
+                          ListTile(
+                            title: Text(
+                              'Class Teachers',
+                              style: GoogleFonts.cabin(
+                                textStyle: TextStyle(
+                                    color:AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            trailing: Container(
+                              height: 20,
+                              width: 20,
+                              color: AppColors2.primary,
+                              child: Icon(CupertinoIcons.person_2,color:AppColors2.textblack,),
+
+                            ),
+                            onTap: () {
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return  ClassTeacher();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          Padding(
+                            padding:
+                            EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
+
+
+                          ListTile(
+                            title: Text(
+                              'Staff List',
+                              style: GoogleFonts.cabin(
+                                textStyle: TextStyle(
+                                    color:AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            trailing: Container(
+                              height: 20,
+                              width: 20,
+                              color: AppColors2.primary,
+                              child: Icon(CupertinoIcons.person_2,color:AppColors2.textblack,),
+
+                            ),
+                            onTap: () {
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return  TeachingStaff();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          Padding(
+                            padding:
+                            EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
 
                           ListTile(
                             title: Text(

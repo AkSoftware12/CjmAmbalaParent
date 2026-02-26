@@ -170,11 +170,7 @@ class _LoginPageState extends State<LoginPageDemo> {
                         children: [
                           Column(
                             children: [
-                              SizedBox(
-                                height: 140.sp,
-                                width: 140.sp,
-                                child: Image.asset('assets/aonelogo.png'),
-                              ),
+
                               // const SizedBox(height: 5),
                               Text(
                                 'A One Recovery'.toUpperCase(),

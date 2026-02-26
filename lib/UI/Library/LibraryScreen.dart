@@ -14,7 +14,9 @@ import 'package:http/http.dart' as http;
 import '../../CommonCalling/data_not_found.dart';
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({super.key});
+  final String appBar;
+
+  const LibraryScreen({super.key, required this.appBar});
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -460,11 +462,40 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: widget.appBar.isNotEmpty
+          ?AppBar(
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFFE53935), // red
+                Color(0xFFD32F2F), // dark red
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Library",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+            letterSpacing: 0.5,
+          ),
+        ),
+        centerTitle: false,
+      )
+          : null, // 👈 agar null h to AppBar hide
       body: Column(
         children: [
-          // =======================
-          // TOP HORIZONTAL FILTERS
-          // =======================
           SizedBox(
             height: 40.sp,
             child: Material(
@@ -786,8 +817,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 : ListView.builder(
                     itemCount: books.length,
                     itemBuilder: (context, index) {
-                      final book =
-                      books[index] as Map<String, dynamic>?;
+                      final book = books[index] as Map<String, dynamic>?;
                       final status =
                           int.tryParse(
                             (books[index]['status'] ?? '0').toString(),
@@ -819,7 +849,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 leading: ClipRRect(
                                   borderRadius: BorderRadius.circular(10.sp),
                                   child: CachedNetworkImage(
-                                    imageUrl: (book['cover_page'] ?? '').toString(),
+                                    imageUrl: (book['cover_page'] ?? '')
+                                        .toString(),
                                     height: 50.sp,
                                     width: 50.sp,
                                     // fit: BoxFit.fill,
@@ -848,7 +879,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-
                                     Text(
                                       "Author: ${(book['author'] ?? 'N/A')}",
                                       style: GoogleFonts.montserrat(
@@ -868,7 +898,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                     SizedBox(height: 6.sp),
 
                                     /// 🔥 STATUS CHIP
-
                                   ],
                                 ),
 
@@ -916,7 +945,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                   ),
                                 ),
                               ),
-                            )
+                            ),
                           ],
                         ),
                       );

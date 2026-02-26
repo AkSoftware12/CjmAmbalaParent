@@ -17,7 +17,13 @@ import '../../constants.dart';
 import '../../utils/date_time_utils.dart';
 // import 'package:flutter/services.dart';
 
-
+// test key
+// const req_EncKey = 'A4476C2062FFA58980DC8F79EB6A799E';
+// const req_Salt = 'A4476C2062FFA58980DC8F79EB6A799E';
+// const res_DecKey = '75AEF0FA1B94B3C10D4F5B268F757F11';
+// const res_Salt = '75AEF0FA1B94B3C10D4F5B268F757F11';
+// const resHashKey = "KEYRESP123657234";
+// const authUrl = "https://caller.atomtech.in/ots/aipay/auth";
 
 // live key
 const req_EncKey = '7ABE0A52322733FFDFE5285649F7B92D';
@@ -34,8 +40,24 @@ final password = Uint8List.fromList(utf8.encode(req_EncKey));
 final salt = Uint8List.fromList(utf8.encode(req_Salt));
 final resPassword = Uint8List.fromList(utf8.encode(res_DecKey));
 final resSalt = Uint8List.fromList(utf8.encode(res_Salt));
-final iv =
-Uint8List.fromList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+final iv = Uint8List.fromList([
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+]);
 
 //Encrypt Function
 Future<String> encrypt(String text) async {
@@ -132,11 +154,13 @@ Future<String> decrypt(String hexCipherText) async {
 }
 
 Future<bool> validateSignature(
-    Map<String, dynamic> data, String resHashKey) async {
+  Map<String, dynamic> data,
+  String resHashKey,
+) async {
   debugPrint("validateSignature called");
 
-  String signatureString = data["payInstrument"]["merchDetails"]["merchId"]
-      .toString() +
+  String signatureString =
+      data["payInstrument"]["merchDetails"]["merchId"].toString() +
       data["payInstrument"]["payDetails"]["atomTxnId"].toString() +
       data['payInstrument']['merchDetails']['merchTxnId'].toString() +
       data['payInstrument']['payDetails']['totalAmount'].toStringAsFixed(2) +
@@ -152,8 +176,9 @@ Future<bool> validateSignature(
   final secretKey = SecretKey(key);
   final mac = await hmac.calculateMac(bytes, secretKey: secretKey);
 
-  var genSig =
-  mac.bytes.map((byte) => byte.toRadixString(16).padLeft(2, '0')).join();
+  var genSig = mac.bytes
+      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
+      .join();
 
   if (data['payInstrument']['payDetails']['signature'] == genSig) {
     print("ignaure matched");
@@ -165,7 +190,8 @@ Future<bool> validateSignature(
 }
 
 class FeesScreen extends StatefulWidget {
-  const FeesScreen({super.key});
+  final String title;
+  const FeesScreen({super.key, required this.title});
 
   @override
   State<FeesScreen> createState() => _FeesScreenState();
@@ -180,10 +206,7 @@ class _FeesScreenState extends State<FeesScreen> {
   int remainingSeconds = 0;
 
   static const String disableTimeKey = 'pay_button_disabled_time';
-  static const int cooldownMinutes = 8;
-
-
-
+  static const int cooldownMinutes = 1;
 
   bool isLoading = false;
   List fees = [];
@@ -235,6 +258,8 @@ class _FeesScreenState extends State<FeesScreen> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
+    debugPrint('Fee Data 1');
+
     final response = await http.get(
       Uri.parse(ApiRoutes.getFees),
       headers: {'Authorization': 'Bearer $token'},
@@ -246,6 +271,7 @@ class _FeesScreenState extends State<FeesScreen> {
         fees = data['fees'];
         fetchStudentData();
         isLoading = false;
+        debugPrint('Fee Data 2');
 
         print('FEE List : $fees');
       });
@@ -316,7 +342,6 @@ class _FeesScreenState extends State<FeesScreen> {
         body: jsonEncode(body),
       );
 
-
       if (response.statusCode == 200) {
         print("Success: ${response.body}");
         Map<String, dynamic> data = jsonDecode(response.body);
@@ -339,16 +364,22 @@ class _FeesScreenState extends State<FeesScreen> {
     }
   }
 
-  Future<void> orderCreateApi(BuildContext context) async {
+  Future<void> orderCreateApi(
+    BuildContext context,
+    String transactionResult,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     print("Token: $token");
+    print("AtomPay Api Json: $transactionResult");
+    debugPrint("OrderCreateApi: $transactionResult");
 
     final url = Uri.parse(ApiRoutes.atompay);
 
     Map<String, dynamic> body = {
       "fee_ids": selectedFees1 ?? [],
       "order_id": createOrderId,
+      "transaction_status": transactionResult, // 👈 yaha bhej diya
     };
 
     try {
@@ -360,28 +391,33 @@ class _FeesScreenState extends State<FeesScreen> {
         },
         body: jsonEncode(body),
       );
-
+      // hideLoadingDialog(context);
       if (response.statusCode == 200) {
         print("Success: ${response.body}");
-
         Map<String, dynamic> data = jsonDecode(response.body);
+
+        // ✅ RESET selection & amount when API success
+        setState(() {
+          selectedFees1.clear();
+          selectedFees.clear(); // optional (aap use kar rahe ho Set<int>)
+          totalAmount = 0.0;
+        });
+
+        _statusCheckTimer?.cancel(); // ✅ optional: stop status check
+        // hideLoadingDialog(context);
+
         _showPaymentSuccessDialog(context);
         fetchFeesData();
-
-        setState(() {
-          print('Susses: $data');
-        });
-      } else {
-        print("Failed: ${response.statusCode}, Response: ${response.body}");
       }
     } catch (e) {
       print("Error: $e");
     }
   }
 
-  void _refresh() {
+  void _refresh(String transactionResult) {
     setState(() {
-      orderCreateApi(context);
+      debugPrint("resultRefresh: $transactionResult");
+      orderCreateApi(context, transactionResult); // 👈 pass
     });
   }
 
@@ -410,11 +446,7 @@ class _FeesScreenState extends State<FeesScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 20),
-                Icon(
-                  Icons.check_circle_rounded,
-                  color: Colors.white,
-                  size: 80,
-                ),
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 80),
                 const SizedBox(height: 10),
                 Text(
                   'Payment Successful',
@@ -430,10 +462,7 @@ class _FeesScreenState extends State<FeesScreen> {
                   child: Text(
                     'Your payment has been processed successfully!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -445,17 +474,16 @@ class _FeesScreenState extends State<FeesScreen> {
                       borderRadius: BorderRadius.circular(30.0),
                     ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 10),
+                      horizontal: 30,
+                      vertical: 10,
+                    ),
                   ),
                   onPressed: () {
                     Navigator.pop(context);
                   },
                   child: const Text(
                     'OK',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -556,7 +584,7 @@ class _FeesScreenState extends State<FeesScreen> {
       // Check if all selected fees are paid
       bool allPaid = selectedFees1.every((feeId) {
         var fee = updatedFees.firstWhere(
-              (f) => f['id'].toString() == feeId,
+          (f) => f['id'].toString() == feeId,
           orElse: () => null,
         );
         return fee != null && fee['pay_status'].toLowerCase() == 'paid';
@@ -602,93 +630,103 @@ class _FeesScreenState extends State<FeesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.secondary,
-      body:  isLoading
+      appBar: widget.title.isNotEmpty? AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: AppColors.secondary,
+        title: Text('Fees',style: TextStyle(color: Colors.white),),
+      ):null,
+      body: isLoading
           ? _buildShimmerLoading()
           : Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: fees.length,
-                  itemBuilder: (context, index) {
-                    String dueDate = fees[index]['due_date'].toString();
-                    String monthName = "";
-                    if (dueDate.isNotEmpty) {
-                      DateTime parsedDate = DateTime.parse(dueDate);
-                      monthName = DateFormat('MMMM').format(parsedDate);
-                    }
+              children: [
+                Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: fees.length,
+                        itemBuilder: (context, index) {
+                          String dueDate = fees[index]['due_date'].toString();
+                          String monthName = "";
+                          if (dueDate.isNotEmpty) {
+                            DateTime parsedDate = DateTime.parse(dueDate);
+                            monthName = DateFormat('MMMM').format(parsedDate);
+                          }
 
-                     return PaymentCard(
-                      amount: fees[index]['to_pay_amount'].toString(),
-                      status: fees[index]['pay_status'].toString(),
-                      dueDate: fees[index]['due_date'].toString(),
-                      payDate: fees[index]['pay_date'].toString(),
-                      id: fees[index]['id'],
-                      receipts: (fees[index]['receipts'] as List?) ?? [], // ✅ ADD
-                      finalAmount: fees[index]['final_amount'].toString(), // ✅ optional (nice)
-                      isSelected: selectedFees1.contains(fees[index]['installment_id'].toString()),
-                      onSelect: (bool selected) {
-                        _toggleSelection(
-                          fees[index]['installment_id'],
-                          double.parse(fees[index]['to_pay_amount'].toString()),
-                        );
-                      },
-                      month: monthName,
-                      name: fees[index]['name'].toString(),
-                    );
-                  },
-                ),
-              ),
-              if (selectedFees1.isNotEmpty &&
-                  atomSession?['payment'].toString() == '1')
-                SizedBox(
-                  width: double.infinity,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (isButtonDisabled) {
-                          // Show dialog when timer is running
-                          _showCooldownDialog(context);
-                        } else {
-                          // orderCreate(context);
-                          // startCooldown();
-
-                          onPayNow();
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: EdgeInsets.symmetric(vertical: 10.sp),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        isButtonDisabled
-                            ? 'Please wait (${formatDuration(remainingSeconds)})'
-                            : 'Pay ₹ ${totalAmount.toString()}',
-                        style: GoogleFonts.montserrat(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                          return PaymentCard(
+                            amount: fees[index]['to_pay_amount'].toString(),
+                            status: fees[index]['pay_status'].toString(),
+                            dueDate: fees[index]['due_date'].toString(),
+                            payDate: fees[index]['pay_date'].toString(),
+                            id: fees[index]['id'],
+                            receipts: (fees[index]['receipts'] as List?) ?? [],
+                            // ✅ ADD
+                            finalAmount: fees[index]['final_amount'].toString(),
+                            // ✅ optional (nice)
+                            isSelected: selectedFees1.contains(
+                              fees[index]['installment_id'].toString(),
+                            ),
+                            onSelect: (bool selected) {
+                              _toggleSelection(
+                                fees[index]['installment_id'],
+                                double.parse(
+                                  fees[index]['to_pay_amount'].toString(),
+                                ),
+                              );
+                            },
+                            month: monthName,
+                            name: fees[index]['name'].toString(),
+                          );
+                        },
                       ),
                     ),
-                  ),
-                ),
-            ],
-          ),
+                    if (selectedFees1.isNotEmpty &&
+                        atomSession?['payment'].toString() == '1')
+                      SizedBox(
+                        width: double.infinity,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (isButtonDisabled) {
+                                // Show dialog when timer is running
+                                _showCooldownDialog(context);
+                              } else {
+                                // orderCreate(context);
+                                // startCooldown();
 
-        ],
-      ),
+                                onPayNow();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: EdgeInsets.symmetric(vertical: 10.sp),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              isButtonDisabled
+                                  ? 'Please wait (${formatDuration(remainingSeconds)})'
+                                  : 'Pay ₹ ${totalAmount.toString()}',
+                              style: GoogleFonts.montserrat(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
     );
   }
 
   Widget _buildShimmerLoading() {
     return Center(
-      child: CupertinoActivityIndicator(radius: 30,color: Colors.white,),
+      child: CupertinoActivityIndicator(radius: 30, color: Colors.white),
     );
   }
 
@@ -705,17 +743,15 @@ class _FeesScreenState extends State<FeesScreen> {
       const String userContactNo = "8888888888";
 
       //Json data for sending to atom server
-      String jsonData = '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"${studentData!['email'].toString()}","custMobile":"${studentData!['contact_no'].toString()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"udf4","udf5":"udf5"}}}';
-
+      String jsonData =
+          '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"${studentData!['email'].toString()}","custMobile":"${studentData!['contact_no'].toString()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"udf4","udf5":"udf5"}}}';
       final String encDataR = await encrypt(jsonData);
       final response = await http.post(
         Uri.parse(authUrl),
-        headers: {
-          'content-type': 'application/x-www-form-urlencoded',
-        },
+        headers: {'content-type': 'application/x-www-form-urlencoded'},
         body: {
           'encData': encDataR,
-          'merchId': '712303',
+          'merchId': atomData!['login'].toString(),
         },
       );
 
@@ -727,8 +763,9 @@ class _FeesScreenState extends State<FeesScreen> {
 
         if (responseData.length > 1) {
           // Extract the encrypted data
-          final encDataPart = responseData
-              .firstWhere((element) => element.startsWith('encData'));
+          final encDataPart = responseData.firstWhere(
+            (element) => element.startsWith('encData'),
+          );
           final encryptedData = encDataPart.split('=')[1];
           final extractedData = ['encData', encryptedData];
           debugPrint("Extracted encrypted response data: $extractedData");
@@ -742,28 +779,29 @@ class _FeesScreenState extends State<FeesScreen> {
             debugPrint("JSON response: $jsonResponse");
             hideLoadingDialog(context);
 
-
             if (jsonResponse['responseDetails']['txnStatusCode'] == 'OTS0000') {
               setState(() {
                 atomTokenId = jsonResponse['atomTokenId'].toString();
 
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => PaymentWebView(
-                          atomTokenId:
-                          jsonResponse['atomTokenId'].toString(),
-                          merchId: '712303',
-                          currentTxnId: createOrderId,
-                          onReturn: _refresh,
-                          userEmail: studentData!['email'].toString(),
-                          userContact:
-                          studentData!['contact_no'].toString(),
-                        )));
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PaymentWebView(
+                      atomTokenId: jsonResponse['atomTokenId'].toString(),
+                      merchId: atomData!['login'].toString(),
+                      currentTxnId: createOrderId,
+                      onReturn: (result) => _refresh(result),
+                      userEmail: studentData!['email'].toString(),
+                      userContact: studentData!['contact_no'].toString(),
+                    ),
+                  ),
+                );
                 isLoading = false;
                 // ignore: prefer_interpolation_to_compose_strings
-                debugPrint("Transaction Status Code: " +
-                    jsonResponse['responseDetails']['txnStatusCode']);
+                debugPrint(
+                  "Transaction Status Code: " +
+                      jsonResponse['responseDetails']['txnStatusCode'],
+                );
               });
             } else {
               debugPrint("Error: txnStatusCode is not 'OTS0000'");
@@ -779,7 +817,8 @@ class _FeesScreenState extends State<FeesScreen> {
         }
       } else {
         debugPrint(
-            "Error: Failed to connect to the server. Status code: ${response.statusCode}");
+          "Error: Failed to connect to the server. Status code: ${response.statusCode}",
+        );
         throw Exception('Failed to connect to the server');
       }
     } catch (e) {
@@ -787,6 +826,7 @@ class _FeesScreenState extends State<FeesScreen> {
         isLoading = false;
       });
       showError('Payment initialization failed: $e');
+      print('$e');
     }
   }
 
@@ -813,7 +853,7 @@ class _FeesScreenState extends State<FeesScreen> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 15.sp),
-              Text("Please wait...")
+              Text("Please wait..."),
             ],
           ),
         );
@@ -825,192 +865,195 @@ class _FeesScreenState extends State<FeesScreen> {
     Navigator.of(context, rootNavigator: true).pop();
   }
 
-
-
   Future<bool> showPremiumTermsDialog(BuildContext context) async {
     bool isChecked = false;
     bool showError = false;
 
     return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              backgroundColor: Colors.black,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(25),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return StatefulBuilder(
+              builder: (context, setState) {
+                return Dialog(
+                  insetPadding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
+                  backgroundColor: Colors.black,
+                  child: ClipRRect(
                     borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1.2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blueAccent.withOpacity(0.25),
-                        blurRadius: 20,
-                        spreadRadius: 1,
-                      )
-                    ],
-                  ),
-
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-
-                      // TITLE
-                      Center(
-                        child: Text(
-                          "Terms & Conditions",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.8,
-                          ),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1.2,
                         ),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      // SCROLLABLE AREA
-                      Container(
-                        height: 330,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white12),
-                        ),
-                        child: ScrollConfiguration(
-                          behavior: ScrollConfiguration.of(context).copyWith(
-                            overscroll: true,
-                            scrollbars: true,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blueAccent.withOpacity(0.25),
+                            blurRadius: 20,
+                            spreadRadius: 1,
                           ),
-                          child: SingleChildScrollView(
-                            // physics: const BouncingScrollPhysics(),
-                            child: Text(
-                              AppStrings.termsText,
-                              textAlign: TextAlign.justify,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                                height: 1.45,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 5),
-
-                      // CHECKBOX
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: isChecked,
-                            activeColor: Colors.green,
-                            checkColor: Colors.white,
-                            side: const BorderSide(color: Colors.white70),
-                            onChanged: (val) {
-                              setState(() {
-                                isChecked = val!;
-                                showError = false; // checkbox tick hote hi error hata do
-                              });
-                            },
-                          ),
-                          Expanded(
-                            child: Text(
-                              "I have read & agree to the Terms & Conditions ",
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.85),
-                                fontSize: 13.5,
-                              ),
-                            ),
-                          )
                         ],
                       ),
 
-                      const SizedBox(height: 5),
-
-// ----------------------
-// INLINE ERROR MESSAGE
-// ----------------------
-                      if (showError)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            "⚠️ Please accept Terms & Conditions",
-                            style: TextStyle(
-                              color: Colors.redAccent,
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-
-                      const SizedBox(height: 6),
-
-// BUTTON ROW
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text(
-                              "Cancel",
+                          // TITLE
+                          Center(
+                            child: Text(
+                              "Terms & Conditions",
                               style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              if (!isChecked) {
-                                setState(() {
-                                  showError = true; // yahi par error dikhana hai
-                                });
-                                return;
-                              }
-
-                              Navigator.pop(context, true);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              "Accept & Continue",
-                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
                                 color: Colors.white,
-                                fontSize: 14.5,
+                                letterSpacing: 0.8,
                               ),
                             ),
                           ),
+
+                          const SizedBox(height: 18),
+
+                          // SCROLLABLE AREA
+                          Container(
+                            height: 330,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white12),
+                            ),
+                            child: ScrollConfiguration(
+                              behavior: ScrollConfiguration.of(
+                                context,
+                              ).copyWith(overscroll: true, scrollbars: true),
+                              child: SingleChildScrollView(
+                                // physics: const BouncingScrollPhysics(),
+                                child: Text(
+                                  AppStrings.termsText,
+                                  textAlign: TextAlign.justify,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                    height: 1.45,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 5),
+
+                          // CHECKBOX
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: isChecked,
+                                activeColor: Colors.green,
+                                checkColor: Colors.white,
+                                side: const BorderSide(color: Colors.white70),
+                                onChanged: (val) {
+                                  setState(() {
+                                    isChecked = val!;
+                                    showError =
+                                        false; // checkbox tick hote hi error hata do
+                                  });
+                                },
+                              ),
+                              Expanded(
+                                child: Text(
+                                  "I have read & agree to the Terms & Conditions ",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.85),
+                                    fontSize: 13.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 5),
+
+                          // ----------------------
+                          // INLINE ERROR MESSAGE
+                          // ----------------------
+                          if (showError)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                "⚠️ Please accept Terms & Conditions",
+                                style: TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+
+                          const SizedBox(height: 6),
+
+                          // BUTTON ROW
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text(
+                                  "Cancel",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              ElevatedButton(
+                                onPressed: () {
+                                  if (!isChecked) {
+                                    setState(() {
+                                      showError =
+                                          true; // yahi par error dikhana hai
+                                    });
+                                    return;
+                                  }
+
+                                  Navigator.pop(context, true);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  "Accept & Continue",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           },
-        );
-      },
-    ) ??
+        ) ??
         false;
   }
 
@@ -1022,7 +1065,6 @@ class _FeesScreenState extends State<FeesScreen> {
       startCooldown();
     }
   }
-
 }
 
 class PaymentCard extends StatelessWidget {
@@ -1036,8 +1078,8 @@ class PaymentCard extends StatelessWidget {
   final bool isSelected;
   final ValueChanged<bool> onSelect;
 
-  final List receipts;         // ✅ ADD
-  final String finalAmount;    // ✅ optional ADD (for display)
+  final List receipts; // ✅ ADD
+  final String finalAmount; // ✅ optional ADD (for display)
 
   const PaymentCard({
     super.key,
@@ -1055,7 +1097,9 @@ class PaymentCard extends StatelessWidget {
   });
 
   bool get isPaid => status.toLowerCase() == 'paid';
+
   bool get isPartial => status.toLowerCase() == 'partial';
+
   bool get isActive => status.toLowerCase() == 'active';
 
   String get statusLabel {
@@ -1077,7 +1121,8 @@ class PaymentCard extends StatelessWidget {
   }
 
   Future<void> _openReceiptsSheet(BuildContext context) async {
-    final String installmentName = name; // PaymentCard ka name (e.g. July -September)
+    final String installmentName =
+        name; // PaymentCard ka name (e.g. July -September)
 
     showModalBottomSheet(
       context: context,
@@ -1117,12 +1162,8 @@ class PaymentCard extends StatelessWidget {
                         width: double.infinity,
                         padding: EdgeInsets.all(14.sp),
                         decoration: BoxDecoration(
-                          gradient:  LinearGradient(
-                            colors: [
-                              AppColors.primary,
-                              AppColors.primary,
-
-                            ],
+                          gradient: LinearGradient(
+                            colors: [AppColors.primary, AppColors.primary],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -1132,7 +1173,7 @@ class PaymentCard extends StatelessWidget {
                               color: Colors.red.withOpacity(0.28),
                               blurRadius: 14,
                               spreadRadius: 1,
-                            )
+                            ),
                           ],
                         ),
                         child: Row(
@@ -1177,10 +1218,16 @@ class PaymentCard extends StatelessWidget {
                                             vertical: 5.h,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.18),
-                                            borderRadius: BorderRadius.circular(30),
+                                            color: Colors.white.withOpacity(
+                                              0.18,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
                                             border: Border.all(
-                                              color: Colors.white.withOpacity(0.25),
+                                              color: Colors.white.withOpacity(
+                                                0.25,
+                                              ),
                                             ),
                                           ),
                                           child: Text(
@@ -1195,7 +1242,6 @@ class PaymentCard extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-
                                     ],
                                   ),
                                 ],
@@ -1211,215 +1257,267 @@ class PaymentCard extends StatelessWidget {
                       Expanded(
                         child: receipts.isEmpty
                             ? Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(14.sp),
-                            child: Text(
-                              "No receipts found.",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 13.sp,
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        )
-                            : ListView.separated(
-                          controller: scrollController,
-                          itemCount: receipts.length,
-                          separatorBuilder: (_, __) => SizedBox(height: 10.sp),
-                          itemBuilder: (context, i) {
-                            final r =
-                                (receipts[i] as Map?)?.cast<String, dynamic>() ?? {};
-
-                            final receiptNo =
-                            (r['receipt_no'] ?? 'N/A').toString();
-                            final receiptDate =
-                            (r['receipt_date'] ?? '').toString();
-                            final receiptName =
-                            (r['name'] ?? installmentName).toString(); // ✅ month/name
-                            final paidAmount =
-                            (r['paid_amount'] ?? '0').toString();
-                            final remark = (r['remark'] ?? '').toString();
-                            final url = (r['url'] ?? '').toString();
-
-                            return Container(
-                              padding: EdgeInsets.all(12.sp),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: Colors.grey.shade200),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 10,
-                                    spreadRadius: 1,
-                                  )
-                                ],
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Left icon container (red tint)
-                                  Container(
-                                    height: 42.sp,
-                                    width: 42.sp,
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.withOpacity(0.10),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: Icon(
-                                      Icons.receipt,
-                                      size: 22.sp,
-                                      color: Colors.green.shade700,
+                                child: Padding(
+                                  padding: EdgeInsets.all(14.sp),
+                                  child: Text(
+                                    "No receipts found.",
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 13.sp,
+                                      color: Colors.black54,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  SizedBox(width: 10.sp),
+                                ),
+                              )
+                            : ListView.separated(
+                                controller: scrollController,
+                                itemCount: receipts.length,
+                                separatorBuilder: (_, __) =>
+                                    SizedBox(height: 10.sp),
+                                itemBuilder: (context, i) {
+                                  final r =
+                                      (receipts[i] as Map?)
+                                          ?.cast<String, dynamic>() ??
+                                      {};
 
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                "Receipt No. #$receiptNo",
-                                                style: GoogleFonts.montserrat(
-                                                  fontSize: 13.sp,
-                                                  fontWeight: FontWeight.w800,
-                                                ),
-                                              ),
-                                            ),
+                                  final receiptNo = (r['receipt_no'] ?? 'N/A')
+                                      .toString();
+                                  final receiptDate = (r['receipt_date'] ?? '')
+                                      .toString();
+                                  final receiptName =
+                                      (r['name'] ?? installmentName)
+                                          .toString(); // ✅ month/name
+                                  final paidAmount = (r['paid_amount'] ?? '0')
+                                      .toString();
+                                  final remark = (r['remark'] ?? '').toString();
+                                  final url = (r['url'] ?? '').toString();
 
-                                            // ✅ Paid amount chip (RED)
-                                            Container(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: 10.w,
-                                                vertical: 5.h,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.green.shade50,
-                                                borderRadius:
-                                                BorderRadius.circular(30),
-                                                border: Border.all(
-                                                  color: Colors.green.shade100,
-                                                ),
-                                              ),
-                                              child: Text(
-                                                "₹$paidAmount",
-                                                style: GoogleFonts.montserrat(
-                                                  fontSize: 11.sp,
-                                                  fontWeight: FontWeight.w800,
-                                                  color: Colors.green.shade700,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                  return Container(
+                                    padding: EdgeInsets.all(12.sp),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.grey.shade200,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.04),
+                                          blurRadius: 10,
+                                          spreadRadius: 1,
                                         ),
-                                        SizedBox(height: 6.sp),
-
-                                        // ✅ Month/Installment name line
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.calendar_month,
-                                              size: 14.sp,
-                                              color: Colors.black45,
-                                            ),
-                                            SizedBox(width: 6.sp),
-                                            Expanded(
-                                              child: Text(
-                                                receiptName,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: GoogleFonts.montserrat(
-                                                  fontSize: 11.5.sp,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Colors.black87,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 4.sp),
-
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              "Date: ${receiptDate.isEmpty ? 'N/A' : AppDateTimeUtils.date(receiptDate)}",
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: 11.sp,
-                                                color: Colors.black54,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                            if (url.isNotEmpty)
-                                              Container(
-                                                height: 30.sp,
-                                                width: 30.sp,
-                                                decoration: BoxDecoration(
-                                                    color: Colors.grey.shade200,
-                                                    borderRadius: BorderRadius.all(Radius.circular(10))
-                                                ),
-
-                                                child: Center(
-                                                  child: IconButton(
-                                                    icon: Icon(Icons.download, size: 18.sp),
-
-                                                    onPressed: () async {
-                                                      final uri = Uri.parse(url);
-                                                      if (!await launchUrl(
-                                                        uri,
-                                                        mode: LaunchMode.externalApplication,
-                                                      )) {
-                                                        ScaffoldMessenger.of(context).showSnackBar(
-                                                          const SnackBar(
-                                                            content:
-                                                            Text('Could not open receipt URL'),
-                                                          ),
-                                                        );
-                                                      }
-                                                    },
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-
-                                        if (remark.trim().isNotEmpty) ...[
-                                          SizedBox(height: 6.sp),
-                                          Container(
-                                            width: double.infinity,
-                                            padding: EdgeInsets.all(10.sp),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey.shade50,
-                                              borderRadius:
-                                              BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: Colors.grey.shade200,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              "Remark: $remark",
-                                              style: GoogleFonts.montserrat(
-                                                fontSize: 11.sp,
-                                                color: Colors.black54,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
                                       ],
                                     ),
-                                  ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Left icon container (red tint)
+                                        Container(
+                                          height: 42.sp,
+                                          width: 42.sp,
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.withOpacity(
+                                              0.10,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.receipt,
+                                            size: 22.sp,
+                                            color: Colors.green.shade700,
+                                          ),
+                                        ),
+                                        SizedBox(width: 10.sp),
 
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      "Receipt No. #$receiptNo",
+                                                      style:
+                                                          GoogleFonts.montserrat(
+                                                            fontSize: 13.sp,
+                                                            fontWeight:
+                                                                FontWeight.w800,
+                                                          ),
+                                                    ),
+                                                  ),
 
-                                ],
+                                                  // ✅ Paid amount chip (RED)
+                                                  Container(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                          horizontal: 10.w,
+                                                          vertical: 5.h,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          Colors.green.shade50,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            30,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: Colors
+                                                            .green
+                                                            .shade100,
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      "₹$paidAmount",
+                                                      style:
+                                                          GoogleFonts.montserrat(
+                                                            fontSize: 11.sp,
+                                                            fontWeight:
+                                                                FontWeight.w800,
+                                                            color: Colors
+                                                                .green
+                                                                .shade700,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              SizedBox(height: 6.sp),
+
+                                              // ✅ Month/Installment name line
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.calendar_month,
+                                                    size: 14.sp,
+                                                    color: Colors.black45,
+                                                  ),
+                                                  SizedBox(width: 6.sp),
+                                                  Expanded(
+                                                    child: Text(
+                                                      receiptName,
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style:
+                                                          GoogleFonts.montserrat(
+                                                            fontSize: 11.5.sp,
+                                                            fontWeight:
+                                                                FontWeight.w700,
+                                                            color:
+                                                                Colors.black87,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              SizedBox(height: 4.sp),
+
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    "Date: ${receiptDate.isEmpty ? 'N/A' : AppDateTimeUtils.date(receiptDate)}",
+                                                    style:
+                                                        GoogleFonts.montserrat(
+                                                          fontSize: 11.sp,
+                                                          color: Colors.black54,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                  ),
+                                                  if (url.isNotEmpty)
+                                                    Container(
+                                                      height: 30.sp,
+                                                      width: 30.sp,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors
+                                                            .grey
+                                                            .shade200,
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                              Radius.circular(
+                                                                10,
+                                                              ),
+                                                            ),
+                                                      ),
+
+                                                      child: Center(
+                                                        child: IconButton(
+                                                          icon: Icon(
+                                                            Icons.download,
+                                                            size: 18.sp,
+                                                          ),
+
+                                                          onPressed: () async {
+                                                            final uri =
+                                                                Uri.parse(url);
+                                                            if (!await launchUrl(
+                                                              uri,
+                                                              mode: LaunchMode
+                                                                  .externalApplication,
+                                                            )) {
+                                                              ScaffoldMessenger.of(
+                                                                context,
+                                                              ).showSnackBar(
+                                                                const SnackBar(
+                                                                  content: Text(
+                                                                    'Could not open receipt URL',
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            }
+                                                          },
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+
+                                              if (remark.trim().isNotEmpty) ...[
+                                                SizedBox(height: 6.sp),
+                                                Container(
+                                                  width: double.infinity,
+                                                  padding: EdgeInsets.all(
+                                                    10.sp,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey.shade50,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                    border: Border.all(
+                                                      color:
+                                                          Colors.grey.shade200,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    "Remark: $remark",
+                                                    style:
+                                                        GoogleFonts.montserrat(
+                                                          fontSize: 11.sp,
+                                                          color: Colors.black54,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
                       ),
 
                       SizedBox(height: 10.sp),
@@ -1456,9 +1554,11 @@ class PaymentCard extends StatelessWidget {
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
-    final showCheckbox = !isPaid; // ✅ PAID me checkbox lock, PARTIAL/ACTIVE me allow
+    final showCheckbox =
+        !isPaid; // ✅ PAID me checkbox lock, PARTIAL/ACTIVE me allow
 
     return Card(
       elevation: 6,
@@ -1518,7 +1618,11 @@ class PaymentCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.calendar_month, size: 14.sp, color: Colors.blueAccent),
+                      Icon(
+                        Icons.calendar_month,
+                        size: 14.sp,
+                        color: Colors.blueAccent,
+                      ),
                       SizedBox(width: 4.w),
                       Expanded(
                         child: Text(
@@ -1538,7 +1642,8 @@ class PaymentCard extends StatelessWidget {
 
                   /// ✅ amount (remaining / to_pay)
                   Text(
-                    "₹${isPaid ? finalAmount : amount}", // ✅ paid => full amount show
+                    "₹${isPaid ? finalAmount : amount}",
+                    // ✅ paid => full amount show
                     style: GoogleFonts.montserrat(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
@@ -1569,7 +1674,11 @@ class PaymentCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.receipt, size: 16.sp, color: Colors.black54),
+                          Icon(
+                            Icons.receipt,
+                            size: 16.sp,
+                            color: Colors.black54,
+                          ),
                           SizedBox(width: 6.sp),
                           Text(
                             "Fee Receipt",
@@ -1590,31 +1699,34 @@ class PaymentCard extends StatelessWidget {
             /// RIGHT
             showCheckbox
                 ? Checkbox(
-              value: isSelected,
-              onChanged: (value) {
-                if (value != null) onSelect(value);
-              },
-            )
+                    value: isSelected,
+                    onChanged: (value) {
+                      if (value != null) onSelect(value);
+                    },
+                  )
                 : Column(
-              children: [
-                /// ✅ PAID me receipts sheet open
-                IconButton(
-                  icon: Icon(Icons.receipt_long, size: 20.sp),
-                  onPressed: receipts.isEmpty ? null : () => _openReceiptsSheet(context),
-                ),
-                Checkbox(
-                  value: true,
-                  onChanged: (_) {},
-                  activeColor: Colors.green,
-                ),
-              ],
-            ),
+                    children: [
+                      /// ✅ PAID me receipts sheet open
+                      IconButton(
+                        icon: Icon(Icons.receipt_long, size: 20.sp),
+                        onPressed: receipts.isEmpty
+                            ? null
+                            : () => _openReceiptsSheet(context),
+                      ),
+                      Checkbox(
+                        value: true,
+                        onChanged: (_) {},
+                        activeColor: Colors.green,
+                      ),
+                    ],
+                  ),
           ],
         ),
       ),
     );
   }
 }
+
 class _CooldownDialog extends StatefulWidget {
   final int remainingSeconds;
 
@@ -1644,7 +1756,8 @@ class _CooldownDialogState extends State<_CooldownDialog> {
       } else {
         _dialogTimer?.cancel();
         Navigator.pop(
-            context); // Automatically close the dialog when time is up
+          context,
+        ); // Automatically close the dialog when time is up
       }
     });
   }
@@ -1664,9 +1777,7 @@ class _CooldownDialogState extends State<_CooldownDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
       title: Text(
         'Payment on Cooldown',
         style: TextStyle(fontWeight: FontWeight.bold),
@@ -1674,18 +1785,12 @@ class _CooldownDialogState extends State<_CooldownDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.timer,
-            color: Colors.orange,
-            size: 50.sp,
-          ),
+          Icon(Icons.timer, color: Colors.orange, size: 50.sp),
           SizedBox(height: 10.sp),
           Text(
             'Please wait for ${_formatDuration(_currentSeconds)} before you can make another payment.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
-              fontSize: 14.sp,
-            ),
+            style: GoogleFonts.montserrat(fontSize: 14.sp),
           ),
         ],
       ),
@@ -1707,13 +1812,11 @@ class _CooldownDialogState extends State<_CooldownDialog> {
   }
 }
 
-
-
 class PaymentWebView extends StatefulWidget {
   final String atomTokenId;
   final String merchId;
   final String currentTxnId;
-  final VoidCallback onReturn;
+  final Function(String) onReturn;
   final String userEmail;
   final String userContact;
 
@@ -1746,13 +1849,14 @@ class _PaymentWebViewState extends State<PaymentWebView> {
             Padding(
               padding: EdgeInsets.only(top: 40.sp),
               child: InAppWebView(
-                  initialData: InAppWebViewInitialData(
-                    data: '''
+                initialData: InAppWebViewInitialData(
+                  data:
+                      '''
       <!DOCTYPE html>
       <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="https://psa.atomtech.in/staticdata/ots/js/atomcheckout.js"></script>
+       <script src="https://psa.atomtech.in/staticdata/ots/js/atomcheckout.js"></script>
       </head>
       <body>
       <script>
@@ -1772,92 +1876,113 @@ class _PaymentWebViewState extends State<PaymentWebView> {
       </body>
       </html>
       ''',
-                  ),
-                  shouldOverrideUrlLoading: (controller, navigationAction) async {
-                    debugPrint("shouldOverrideUrlLoading called");
-                    var uri = navigationAction.request.url!;
+                ),
+                shouldOverrideUrlLoading: (controller, navigationAction) async {
+                  debugPrint("shouldOverrideUrlLoading called");
+                  var uri = navigationAction.request.url!;
 
-                    if (["upi", "tez", "gpay", "phonepe", "paytmmp", "credpay"]
-                        .any(uri.scheme.contains)) {
-                      debugPrint("UPI URL detected");
-                      await launchUrl(uri);
-                      return NavigationActionPolicy.CANCEL;
+                  if ([
+                    "upi",
+                    "tez",
+                    "gpay",
+                    "phonepe",
+                    "paytmmp",
+                    "credpay",
+                  ].any(uri.scheme.contains)) {
+                    debugPrint("UPI URL detected");
+                    await launchUrl(uri);
+                    return NavigationActionPolicy.CANCEL;
+                  }
+
+                  return NavigationActionPolicy.ALLOW;
+                },
+                initialSettings: InAppWebViewSettings(
+                  javaScriptEnabled: true,
+                  javaScriptCanOpenWindowsAutomatically: true,
+                ),
+
+                onLoadStop: (controller, url) async {
+                  print("onLoadStop");
+                  print(url);
+                  setState(() {
+                    progress = 1.0;
+                  });
+
+                  if (url != null) {
+                    // Check for returnUrl
+                    if (url.toString().contains("returnUrl")) {
+                      print("returnUrl detected");
+                      _closeWebView(context, "Return URL Called");
+                      return; // Exit after closing WebView
                     }
 
-                    return NavigationActionPolicy.ALLOW;
-                  },
-                  initialSettings: InAppWebViewSettings(
-                    javaScriptEnabled: true,
-                    javaScriptCanOpenWindowsAutomatically: true,
-                  ),
+                    // Existing logic for /mobilesdk/param
+                    if (url.toString().contains("/mobilesdk/param")) {
+                      print("/mobilesdk/param detected");
 
-                  onLoadStop: (controller, url) async {
-                    print("onLoadStop");
-                    print(url);
-                    setState(() {
-                      progress = 1.0;
-                    });
+                      // New code to evaluate JavaScript and get the response
+                      final String
+                      response = await controller.evaluateJavascript(
+                        source:
+                            "document.getElementsByTagName('h5')[0].innerHTML",
+                      );
+                      debugPrint("HTML response : $response");
 
-                    if (url != null) {
-                      // Check for returnUrl
-                      if (url.toString().contains("returnUrl")) {
-                        print("returnUrl detected");
-                        _closeWebView(context, "Return URL Called");
-                        return; // Exit after closing WebView
-                      }
+                      final split = response.trim().split('|');
+                      final Map<int, String> values = {
+                        for (int i = 0; i < split.length; i++) i: split[i],
+                      };
 
-                      // Existing logic for /mobilesdk/param
-                      if (url.toString().contains("/mobilesdk/param")) {
-                        print("/mobilesdk/param detected");
+                      var transactionResult = "";
 
-                        // New code to evaluate JavaScript and get the response
-                        final String response = await controller.evaluateJavascript(
-                            source: "document.getElementsByTagName('h5')[0].innerHTML");
-                        debugPrint("HTML response : $response");
+                      if (response.trim().contains("cancelTransaction")) {
+                        transactionResult = "Transaction Cancelled!";
+                      } else {
+                        final splitTwo = values[1]!.split('=');
+                        print("encData value");
+                        debugPrint(splitTwo[1].toString());
 
-                        final split = response.trim().split('|');
-                        final Map<int, String> values = {
-                          for (int i = 0; i < split.length; i++) i: split[i]
-                        };
+                        final decryptedResponseData = await decrypt(
+                          splitTwo[1].toString(),
+                        );
+                        debugPrint(
+                          'Decrypted response data: $decryptedResponseData',
+                        );
 
-                        var transactionResult = "";
+                        Map<String, dynamic> jsonInput = jsonDecode(
+                          decryptedResponseData,
+                        );
+                        debugPrint("Reading full response: $jsonInput");
 
-                        if (response.trim().contains("cancelTransaction")) {
-                          transactionResult = "Transaction Cancelled!";
-                        } else {
-                          final splitTwo = values[1]!.split('=');
-                          print("encData value");
-                          debugPrint(splitTwo[1].toString());
+                        var checkFinalTransaction = await validateSignature(
+                          jsonInput,
+                          resHashKey,
+                        );
+                        debugPrint("Signature matched: $checkFinalTransaction");
 
-                          final decryptedResponseData = await decrypt(splitTwo[1].toString());
-                          debugPrint('Decrypted response data: $decryptedResponseData');
-
-                          Map<String, dynamic> jsonInput = jsonDecode(decryptedResponseData);
-                          debugPrint("Reading full response: $jsonInput");
-
-                          var checkFinalTransaction = await validateSignature(jsonInput, resHashKey);
-                          debugPrint("Signature matched: $checkFinalTransaction");
-
-                          if (checkFinalTransaction) {
-                            print("Signature is valid");
-                            if (jsonInput["payInstrument"]["responseDetails"]["statusCode"] == 'OTS0000') {
-                              debugPrint("Transaction success and close");
-                              transactionResult = "Transaction Success";
-                            } else {
-                              debugPrint("Transaction failed");
-                              transactionResult = "Transaction Failed";
-                            }
+                        if (checkFinalTransaction) {
+                          print("Signature is valid");
+                          if (jsonInput["payInstrument"]["responseDetails"]["statusCode"] ==
+                              'OTS0000') {
+                            debugPrint("Transaction success and close");
+                            // transactionResult = "Transaction Success";
+                            transactionResult = "$jsonInput";
                           } else {
-                            debugPrint("Signature mismatched");
-                            transactionResult = "Signature Failed";
+                            debugPrint("Transaction failed");
+                            // transactionResult = "Transaction Failed";
+                            transactionResult = "$jsonInput";
                           }
+                        } else {
+                          debugPrint("Signature mismatched");
+                          transactionResult = "Signature Failed";
                         }
-                        _closeWebView(context, transactionResult);
                       }
+                      _closeWebView(context, transactionResult);
                     }
-                  }),
+                  }
+                },
+              ),
             ),
-
           ],
         ),
       ),
@@ -1865,24 +1990,22 @@ class _PaymentWebViewState extends State<PaymentWebView> {
   }
 
   void _closeWebView(BuildContext context, String transactionResult) {
-    // debugPrint("Closing web");
-    // debugPrint("result: $transactionResult");
+    debugPrint("resultCloseWebView: $transactionResult");
+
     if (!mounted) return;
 
     Navigator.of(context).pop();
 
-    // Check transaction result and show appropriate dialog
-    if (transactionResult == 'Transaction Success') {
-      // _showPaymentSuccessDialog(context);
-      Future.delayed(Duration(seconds: 5), () {
-        widget.onReturn();
+    // ✅ Check using contains
+    if (transactionResult.contains("message: SUCCESS")) {
+      debugPrint("Payment Success Detected");
+
+      Future.delayed(const Duration(seconds: 5), () {
+        widget.onReturn(transactionResult);
       });
-    } else if (transactionResult == 'Transaction Cancelled!') {
+    } else if (transactionResult.contains("Transaction Cancelled")) {
       _showPaymentCanceledDialog(context);
-    } else {
     }
-
-
   }
 
   Future<bool> _handleBackButtonAction(BuildContext context) async {
@@ -1903,9 +2026,6 @@ class _PaymentWebViewState extends State<PaymentWebView> {
               Navigator.pop(context);
               Navigator.of(context).pop();
               _showPaymentCanceledDialog(context);
-              // ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              //   content: Text("Transaction Status = Transaction cancelled"),
-              // ));
             },
             child: const Text('Yes'),
           ),
@@ -1914,7 +2034,6 @@ class _PaymentWebViewState extends State<PaymentWebView> {
     );
     return Future.value(true);
   }
-
 
   void _showPaymentCanceledDialog(BuildContext context) {
     showDialog(
@@ -1941,11 +2060,7 @@ class _PaymentWebViewState extends State<PaymentWebView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 20),
-                Icon(
-                  Icons.cancel_rounded,
-                  color: Colors.white,
-                  size: 80,
-                ),
+                Icon(Icons.cancel_rounded, color: Colors.white, size: 80),
                 const SizedBox(height: 10),
                 Text(
                   'Transaction Cancelled',
@@ -1975,10 +2090,12 @@ class _PaymentWebViewState extends State<PaymentWebView> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 30,
+                      vertical: 10,
+                    ),
                   ),
                   onPressed: () {
-
                     Navigator.of(context).pop();
                   },
                   child: Text(
@@ -1997,6 +2114,4 @@ class _PaymentWebViewState extends State<PaymentWebView> {
       },
     );
   }
-
-
 }

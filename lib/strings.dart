@@ -26,6 +26,7 @@ class AppStrings {
   static const attendanceLabel = 'Attendance';
   static const libraryLabel = 'Library';
   static const feesLabel = 'Fees';
+  static const activity = 'Activity';
   static const profileLabel = 'Profile';
   static const termsText  =  """
 Terms and Conditions for Online Fee Payment

@@ -107,8 +107,7 @@ class _AssignmentUploadScreenState extends State<AssignmentUpdateScreen> {
 
       // Add Form Fields
       request.fields['title'] = titleController.text;
-      request.fields['total_marks'] = totalMarksController.text;
-      request.fields['description'] = descriptionController.text;
+     request.fields['description'] = descriptionController.text;
       request.fields['start_date'] = widget.startDate.toString().split(' ')[0];
       request.fields['end_date'] = widget.endDate.toString().split(' ')[0];
       request.fields['status'] = 1.toString();

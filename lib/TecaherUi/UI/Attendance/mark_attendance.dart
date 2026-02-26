@@ -74,8 +74,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         setState(() {
           classes =
           List<Map<String, dynamic>>.from(responseData['data']['classes']);
-          sections =
-          List<Map<String, dynamic>>.from(responseData['data']['sections']);
+          // sections =
+          // List<Map<String, dynamic>>.from(responseData['data']['sections']);
           isLoading = false;
         });
       } else {
@@ -90,7 +90,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
   Future<void> fetchAttendance() async {
-    if (selectedClass == null || selectedSection == null) return;
+    if (selectedClass == null) return;
 
     setState(() => isLoading = true);
 
@@ -100,7 +100,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
       final response = await http.get(
         Uri.parse(
-            '${ApiRoutes.baseUrl}/teacher-student-atttendance?class=$selectedClass&section=$selectedSection&date=${DateFormat('yyyy-MM-dd').format(selectedDate)}'),
+            '${ApiRoutes.baseUrl}/teacher-student-atttendance?class=$selectedClass&date=${DateFormat('yyyy-MM-dd').format(selectedDate)}'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -146,8 +146,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('teachertoken'); // Fetch stored token
-
-      final String url = "${ApiRoutes.baseUrl}/mark-attendance";
+      const String url = "${ApiRoutes.baseUrl}/mark-attendance";
 
       // Create MultipartRequest
       var request = http.MultipartRequest('POST', Uri.parse(url));
@@ -162,7 +161,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       request.fields['date'] =
           DateFormat('yyyy-MM-dd').format(selectedDate); // Date
       request.fields['class_id'] = selectedClass.toString(); // Class ID
-      request.fields['section_id'] = selectedSection.toString(); // Section ID
+      // request.fields['section_id'] = selectedSection.toString(); // Section ID
 
       // Add Arrays (students, attendances, notes)
       for (int i = 0; i < studentIds.length; i++) {
@@ -243,107 +242,131 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         color: Colors.black54,
       ))
           : Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(5.0),
         child: Column(
           children: [
-            // **Date Picker**
-            GestureDetector(
-              onTap: () async {
-                DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate,
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
-                );
-                if (pickedDate != null) {
-                  setState(() {
-                    selectedDate = pickedDate;
-                    fetchAttendance();
-                  });
-                }
-              },
-              child: Container(
-                padding:
-                EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(DateFormat('dd-MM-yyyy').format(selectedDate)),
-                    Icon(Icons.calendar_today, color: Colors.blueAccent),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
 
             Row(
               children: [
-                // Class Dropdown
+                // 📅 DATE PICKER
                 Expanded(
-                  child: DropdownButtonFormField<int>(
-                    value: selectedClass,
-                    decoration: InputDecoration(
-                      labelText: "Select Class",
-                      border: OutlineInputBorder(),
-                    ),
-                    items: classes.map((c) {
-                      return DropdownMenuItem<int>(
-                        value: c["id"],
-                        child: Text(c["title"]),
+                  child: GestureDetector(
+                    onTap: () async {
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
                       );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedClass = value;
-                        selectedSection = null;
-                        globalAttendance = null; // Clear global selection
-                        attendanceStatus.clear();
-                        studentIds.clear();
-                        attendances.clear();
-                      });
-                      fetchClassesAndSections();
+                      if (pickedDate != null) {
+                        setState(() {
+                          selectedDate = pickedDate;
+                          fetchAttendance();
+                        });
+                      }
                     },
+                    child: Container(
+                      height: 45.sp,
+                      margin: EdgeInsets.only(right: 8),
+                      padding: EdgeInsets.symmetric(vertical: 5, horizontal: 14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                           AppColors.primary,
+                           AppColors.primary,
+
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(0.25),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.calendar_today,
+                                color: Colors.white, size: 18),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              DateFormat('dd MMM yyyy').format(selectedDate),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
 
-                SizedBox(width: 16), // Space between dropdowns
-
-                // Section Dropdown (Only shows if a class is selected)
+                // 📚 CLASS DROPDOWN
                 Expanded(
-                  child: DropdownButtonFormField<int>(
-                    value: selectedSection,
-                    decoration: InputDecoration(
-                      labelText: "Select Section",
-                      border: OutlineInputBorder(),
+                  child: Container(
+                    height: 45.sp,
+                    margin: EdgeInsets.only(left: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    items: sections
-                        .where((s) => s["class_id"] == selectedClass)
-                        .map((s) {
-                      return DropdownMenuItem<int>(
-                        value: s["section_id"],
-                        child: Text(s["section_title"].toString()),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedSection = value;
-                        globalAttendance = null; // Clear global selection
-                        attendanceStatus.clear();
-                        studentIds.clear();
-                        attendances.clear();
-                      });
-                      fetchAttendance();
-                    },
+                    child: DropdownButtonFormField<int>(
+                      value: selectedClass,
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        labelText: "Class",
+                        labelStyle: TextStyle(fontSize: 12),
+                      ),
+                      icon: Icon(Icons.keyboard_arrow_down_rounded,
+                          color: Colors.blueAccent),
+                      items: classes.map((c) {
+                        return DropdownMenuItem<int>(
+                          value: c["id"],
+                          child: Text(
+                            '${c["academic_class"]['title']} (${c["section"]['title']})',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedClass = value;
+                          selectedSection = null;
+                          globalAttendance = null;
+                          attendanceStatus.clear();
+                          studentIds.clear();
+                          attendances.clear();
+                        });
+                        fetchAttendance();
+                      },
+                    ),
                   ),
                 ),
               ],
             ),
-
-            SizedBox(height: 16),
+            SizedBox(height: 10),
 
             // **Global Attendance Selection**
             Card(
@@ -362,7 +385,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 10),
 
             // **Attendance List**
             Expanded(
@@ -387,10 +410,10 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       );
 
                       return Container(
-                        padding: EdgeInsets.all(10),
+                        padding: EdgeInsets.all(5),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(0),
                           boxShadow: [
                             BoxShadow(
                                 color: Colors.grey.shade300,
