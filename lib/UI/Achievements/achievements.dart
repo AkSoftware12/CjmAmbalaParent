@@ -55,9 +55,16 @@ class _AchievementsWaveScreenState extends State<AchievementsWaveScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token'); // agar token required ho
+
+      final teacherToken = prefs.getString('teachertoken');
+      final userToken = prefs.getString('token');
+
+      final token = (teacherToken != null && teacherToken.isNotEmpty)
+          ? teacherToken
+          : userToken;
 
       final url = Uri.parse("${ApiRoutes.getAchievement}?page=$page");
+
       final res = await http.get(
         url,
         headers: {
@@ -93,21 +100,28 @@ class _AchievementsWaveScreenState extends State<AchievementsWaveScreen> {
       debugPrint("Achievements error: $e");
     }
   }
-
   Future<void> _fetchMore() async {
     if (_page >= _lastPage) {
       setState(() => _hasMore = false);
       return;
     }
+
     setState(() => _loadingMore = true);
 
     try {
       final nextPage = _page + 1;
 
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
+
+      final teacherToken = prefs.getString('teachertoken');
+      final userToken = prefs.getString('token');
+
+      final token = (teacherToken != null && teacherToken.isNotEmpty)
+          ? teacherToken
+          : userToken;
 
       final url = Uri.parse("${ApiRoutes.getAchievement}?page=$nextPage");
+
       final res = await http.get(
         url,
         headers: {
@@ -140,7 +154,6 @@ class _AchievementsWaveScreenState extends State<AchievementsWaveScreen> {
       debugPrint("Achievements load more error: $e");
     }
   }
-
   Future<void> _refresh() async => _fetch(page: 1);
 
   void _snack(String msg) {

@@ -516,6 +516,7 @@ class _LoginPageState extends State<LoginUserLIst> {
                                 ),
                               ),
                             ),
+
                           ],
                         );
                       },
@@ -573,6 +574,43 @@ class _LoginPageState extends State<LoginUserLIst> {
         ),
       ),
     );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _performLogout();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _performLogout() {
+    // Clear saved student selection
+    setState(() {
+      selectedOption = null;
+      selectedAdmNo = null;
+      staffPass = null;
+    });
+    // Add your actual logout logic here, e.g.:
+    // SharedPreferences prefs = await SharedPreferences.getInstance();
+    // await prefs.clear();
+    // Navigator.pushReplacementNamed(context, '/login');
   }
 }
 

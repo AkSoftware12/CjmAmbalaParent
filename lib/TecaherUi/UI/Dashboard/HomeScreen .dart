@@ -23,6 +23,7 @@ import '../../../UI/Dashboard/HomeScreen .dart';
 import '../../../UI/Gallery/Album/album.dart';
 import '../../../UI/Library/LibraryScreen.dart';
 import '../../../constants.dart';
+import '../AdminTimeTable/admin_time_table.dart';
 import '../Assignment/assignment.dart';
 import '../HomeWork/home_work.dart';
 import '../Notice/notice.dart';
@@ -125,19 +126,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool isLoading = true;
   int? messageViewPermissionsApp;
   int? messageSendPermissionsApp;
+
+  int messageCount = 0;
+  int noticeCount = 0;
+  int photoCount = 0;
+  int videoCount = 0;
+  int achievementCount = 0;
+
   late CleanCalendarController calendarController;
-  final List<Map<String, String>> items = [
+   List<Map<String, dynamic>> get items => [
     {
       'name': 'Assignments',
       'image': 'assets/assignments.png',
+    'count':  0
     },
     {
       'name': 'Time Table',
       'image': 'assets/watch.png',
+    'count':  0
     },
     {
       'name': 'Messages',
       'image': 'assets/message_home.png',
+    'count':  messageCount??0
     },
     // {
     //   'name': 'Attendance',
@@ -146,14 +157,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     {
       'name': 'Activity Calendar',
       'image': 'assets/calendar_activity.png',
+  'count':  0
     },
     {
       'name': 'Gallery',
       'image': 'assets/gallery.png',
+    'count':  photoCount
     },
     {
       'name': 'Library',
       'image': 'assets/booksimg.png',
+    'count':  0
     },
 
   ];
@@ -167,7 +181,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
     fetchStudentData();
     fetchBannerData();
-    // fetchDasboardData();
+    fetchData();
   }
 
 
@@ -195,7 +209,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> fetchData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('teachertoken');
-    final url = Uri.parse(ApiRoutes.getTeacherDashboard); // Ensure ApiRoutes.getDashboard is valid
+    final url = Uri.parse(ApiRoutes.getTeacherDashboard);
 
     try {
       final response = await http.get(
@@ -204,29 +218,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body)['data'];
+        final jsonData = json.decode(response.body);
+        final data = jsonData['data'] ?? {};
+
         setState(() {
-          banners = data['banners'] ?? [];
-
-          messageViewPermissionsApp = (data['permisions']?[0]['app_status'] as num?)?.toInt() ?? 0;
-          messageSendPermissionsApp = (data['permisions']?[1]['app_status'] as num?)?.toInt() ?? 0;
-
-        });
-      } else {
-        setState(() {
-
+          messageCount = _toInt(data['message_count']);
+          noticeCount = _toInt(data['notice']);
+          photoCount = _toInt(data['photo_count']);
+          videoCount = _toInt(data['video_count']);
+          achievementCount = _toInt(data['achivement_count']);
         });
       }
     } catch (e) {
-      setState(() {
-        // attendancePercent = 0.0; // Default value for error case
-
-      });
-      // Optionally log the error for debugging
-      debugPrint('Error fetching data:  $e');
+      debugPrint('Error fetching data: $e');
     }
-  }
-  Future<void> fetchBannerData() async {
+  }  Future<void> fetchBannerData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     final url = Uri.parse(ApiRoutes.getBanner);
@@ -256,6 +262,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    return int.tryParse(v.toString()) ?? 0;
+  }
+  Future<void> _refreshDashboardCounts() async {
+    if (!mounted) return;
+
+    // optional loader (agar chaho)
+    setState(() => isLoading = true);
+
+    await fetchData(); // ✅ ye wali API hit hogi aur counts refresh honge
+
+    if (!mounted) return;
+    setState(() => isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -355,8 +377,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         itemCount: items.length,
         // Kitne bhi items set kar sakte hain
         itemBuilder: (context, index) {
+          final item = items[index];
+          final raw = item['count'];
+
+          int count = 0;
+          String? label;
+
+          if (raw is int) {
+            count = raw;
+          } else if (raw is String && int.tryParse(raw) != null) {
+            count = int.parse(raw);
+          } else if (raw is String) {
+            label = raw.toUpperCase(); // DUE / PENDING
+          }
           return GestureDetector(
-            onTap: () {
+            onTap: () async {
               if (items[index]['name'] == 'Assignments') {
 
                 Navigator.push(
@@ -424,7 +459,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
               } else if (items[index]['name'] == 'Gallery') {
 
-                Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) {
@@ -432,9 +467,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                   ),
                 );
+                await _refreshDashboardCounts();
+
 
               } else if (items[index]['name'] == 'Messages') {
-                Navigator.push(
+                await Navigator.push(
                   context,
                   PageRouteBuilder(
                     transitionDuration: Duration(milliseconds: 500), // Animation Speed
@@ -451,6 +488,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                   ),
                 );
+                await _refreshDashboardCounts();
 
 
               } else if (items[index]['name'] == 'Activity Calendar') {
@@ -465,58 +503,106 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
 
               } else if (items[index]['name'] == 'Time Table') {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    transitionDuration: Duration(milliseconds: 500), // Animation Speed
-                    pageBuilder: (context, animation, secondaryAnimation) => TimeTableTeacherScreen(),
-                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                      var begin = Offset(1.0, 0.0); // Right to Left
-                      var end = Offset.zero;
-                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: Curves.easeInOut));
+                  final role = int.tryParse(teacherData?['role_manual'].toString() ?? '') ?? 0;
 
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                  ),
-                );
+                  if (role == 2) {
+                    // ✅ AdminTimeTable open
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AdminTimeTableTabScreen(),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        transitionDuration: Duration(milliseconds: 500), // Animation Speed
+                        pageBuilder: (context, animation, secondaryAnimation) => TimeTableTeacherScreen(),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          var begin = Offset(1.0, 0.0); // Right to Left
+                          var end = Offset.zero;
+                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: Curves.easeInOut));
+
+                          return SlideTransition(
+                            position: animation.drive(tween),
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
+
+                  }
+
+
+
+
+
               }
             },
-            child: Padding(
-              padding: const EdgeInsets.all(3.0),
-              child: Container(
-                decoration: BoxDecoration(
-                    color: Colors.red.shade700,
-                    borderRadius: BorderRadius.circular(10)
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        items[index]['image']!,
-                        height: 50, // Adjust the size as needed
-                        width: 50,
+            child: Stack(
+              children: [
+                Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  color: Colors.red.shade600,
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            items[index]['image']!,
+                            height: 40,
+                            width: 40,
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            items[index]['name']!,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        items[index]['name']!,
-                        style: GoogleFonts.montserrat(
-                          textStyle: Theme.of(context).textTheme.displayLarge,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          fontStyle: FontStyle.normal,
-                          color: AppColors2.textblack,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+
+                /// 🔴 BADGE COUNT
+                if (count > 0 || label != null)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                          )
+                        ],
+                      ),
+                      child: Text(
+                        label ?? "$count",
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           );
         },

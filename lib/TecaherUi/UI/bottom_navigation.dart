@@ -11,12 +11,14 @@ import '../../UI/Auth/login_student_userlist.dart';
 import '../../UI/EbooksScreen/Ebooks/ebooks.dart';
 import '../../UI/Gallery/Album/album.dart';
 import '../../UI/Library/LibraryScreen.dart' show LibraryScreen;
+import '../../UI/LogoutUserList/logout_user_list.dart';
 import '../../UI/Notice/notice.dart';
 import '../../UI/TransactionLibrary/transaction_library.dart';
 import '../../UI/Videos/video_screen.dart';
 import '../../constants.dart';
 import '../../strings.dart';
 import '../UI/Dashboard/HomeScreen%20.dart';
+import 'AdminTimeTable/admin_time_table.dart';
 import 'AllStudents/all_students.dart';
 import 'Assignment/assignment.dart';
 import 'Attendance/AttendanceScreen.dart';
@@ -27,6 +29,7 @@ import 'ClassTeacher/class_teacher.dart';
 import 'Notice/notice.dart';
 import 'Notification/notification.dart';
 import 'Profile/ProfileScreen.dart';
+import 'SalarySlip/salary_slip.dart';
 import 'TeacherMessage/message.dart';
 import 'TeachingStaff/teaching_staff.dart';
 import 'TimeTable/time_table_teacher.dart';
@@ -47,6 +50,14 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
   String currentVersion = '';
   int? messageViewPermissionsApp;
   int? messageSendPermissionsApp;
+
+  int? messageCount;
+  int? feesCount;
+  int? assignmentCount;
+  int? galleryCount;
+  int? achivementCount;
+  int? videoCount;
+  int? noticeCount;
   // List of screens
   final List<Widget> _screens = [
     HomeScreen(),
@@ -90,12 +101,23 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body)['data'];
         setState(() {
-          // Handle attendance_percent as double to support decimal values
-          // attendancePercent = (data['attendance_percent'] as num?)?.toDouble() ?? 0.0;
-          // Uncomment and fix if permissions are needed
-          messageViewPermissionsApp = (data['permisions']?[0]['app_status'] as num?)?.toInt() ?? 0;
-          messageSendPermissionsApp = (data['permisions']?[1]['app_status'] as num?)?.toInt() ?? 0;
+          messageCount = _toInt(data['message_count']);
+          assignmentCount = _toInt(data['assignment_count']);
+          feesCount = _toInt(data['fee_count']);
 
+          // ✅ if API has gallery_count then use it, else keep previous or 0
+          galleryCount = data.containsKey('photo_count')
+              ? _toInt(data['photo_count'])
+              : (galleryCount ?? 0);
+          achivementCount = data.containsKey('achivement_count')
+              ? _toInt(data['achivement_count'])
+              : (achivementCount ?? 0);
+          videoCount = data.containsKey('video_count')
+              ? _toInt(data['video_count'])
+              : (videoCount ?? 0);
+          noticeCount = data.containsKey('notice')
+              ? _toInt(data['notice'])
+              : (noticeCount ?? 0);
         });
       } else {
         setState(() {
@@ -111,7 +133,11 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
       debugPrint('Error fetching data: $e');
     }
   }
-
+  int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    return int.tryParse(v.toString()) ?? 0;
+  }
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('teachertoken');
@@ -132,6 +158,77 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
       });
     } else {
     }
+  }
+  Future<void> _refreshCounts() async {
+    if (!mounted) return;
+    await fetchData();
+  }
+
+  // ✅✅✅ BADGE widget
+  Widget _menuBadge(dynamic raw) {
+    int count = 0;
+    String? label;
+
+    if (raw is int) {
+      count = raw;
+    } else if (raw is String && int.tryParse(raw) != null) {
+      count = int.parse(raw);
+    } else if (raw is String && raw.trim().isNotEmpty) {
+      label = raw.toUpperCase(); // DUE
+    }
+
+    final show = (count > 0) || (label != null);
+    if (!show) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(.15), blurRadius: 6)
+        ],
+      ),
+      child: Text(
+        label ?? "$count",
+        style: const TextStyle(
+          color: Colors.red,
+          fontWeight: FontWeight.w800,
+          fontSize: 10,
+        ),
+      ),
+    );
+  }
+
+  // ✅ Drawer tile builder (badge + icon)
+  Widget _drawerTile({
+    required String title,
+    dynamic badgeValue, // int or "DUE"
+    required Widget iconBox,
+    required Future<void> Function() onTap,
+    Color titleColor = Colors.white,
+  }) {
+    return ListTile(
+      title: Text(
+        title,
+        style: GoogleFonts.cabin(
+          textStyle: TextStyle(
+            color: titleColor,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _menuBadge(badgeValue),
+          const SizedBox(width: 8),
+          iconBox,
+        ],
+      ),
+      onTap: () async => await onTap(),
+    );
   }
 
   Widget _buildAppBar() {
@@ -224,24 +321,62 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
           Padding(
             padding: const EdgeInsets.all(15.0),
             child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return NotificationScreen();
-                      },
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => NotificationScreen()),
+                );
+                if (!mounted) return;
+                await _refreshCounts(); // refresh after back
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(
+                    Icons.notifications_active,
+                    size: 26,
+                    color: Colors.white,
+                  ),
+
+                  // 🔴 BADGE
+                  if ((noticeCount ?? 0) > 0)
+                    Positioned(
+                      right: -6,
+                      top: -10,
+                      child: Container(
+                        width: 15.sp,
+                        height: 15.sp,
+                        padding: const EdgeInsets.all(1),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 6,
+                            )
+                          ],
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
+                        child: Text(
+                          noticeCount! > 99 ? "99+" : "$noticeCount",
+                          style:  TextStyle(
+                            color: Colors.red,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ),
-                  );
-                },
-                child: Icon(
-                  Icons.notification_add,
-                  size: 26,
-                  color: AppColors2.textblack,
-                )),
+                ],
+              ),
+            ),
           )
 
-          // Container(child: Icon(Icons.ice_skating)),
         ],
       ),
       body: _screens[_selectedIndex], // Display the selected screen
@@ -666,8 +801,43 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               thickness: 1,
                             ),
                           ),
+                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')== 2)
+                            ListTile(
+                              title: Text(
+                                'Salary Slip',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors2.primary,
+                                child: Icon(Icons.currency_rupee,color: Colors.white,),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SalaryScreen(),
+                                  ),
+                                );
+                              },
+                            ),
 
-
+                          Padding(
+                            padding:
+                            EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
 
                           ListTile(
                             title: Text(
@@ -691,14 +861,25 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
 
                             ),
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return TimeTableTeacherScreen();
-                                  },
-                                ),
-                              );
+                              final role = int.tryParse(teacherData?['role_manual'].toString() ?? '') ?? 0;
+
+                              if (role == 2) {
+                                // ✅ AdminTimeTable open
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AdminTimeTableTabScreen(),
+                                  ),
+                                );
+                              } else {
+                                // ✅ TimeTable (Teacher) open
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TimeTableTeacherScreen(),
+                                  ),
+                                );
+                              }
                             },
                           ),
                           Padding(
@@ -710,35 +891,25 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               thickness: 1,
                             ),
                           ),
-                          ListTile(
-                            title: Text(
-                              'Notice',
-                              style: GoogleFonts.cabin(
-                                textStyle: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            trailing: Container(
+                          _drawerTile(
+                            title: 'Notice',
+                            badgeValue: noticeCount ?? 0,
+                            iconBox: Container(
                               height: 20,
                               width: 20,
                               color: AppColors.primary,
-                              child: Icon(
-                                CupertinoIcons.bell,
-                                color: Colors.white,
-                              ),
+                              child:  Icon(CupertinoIcons.bell,
+                                  color: Colors.white, size: 20.sp),
                             ),
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) {
-                                    return NoticeScreen();
-                                  },
-                                ),
+                                    builder: (context) => NoticeScreen()),
                               );
+                              if (!mounted) return;
+                              await _refreshCounts();
                             },
                           ),
                           Padding(
@@ -750,29 +921,18 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
-                          ListTile(
-                            title: Text(
-                              'Messages',
-                              style: GoogleFonts.cabin(
-                                textStyle: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            trailing: Container(
+                          _drawerTile(
+                            title: 'Messages',
+                            badgeValue: messageCount ?? 0,
+                            iconBox: Container(
                               height: 20,
                               width: 20,
                               color: AppColors.primary,
-                              child: Image.asset(
-                                'assets/message_home.png',
-                                height: 80, // Adjust the size as needed
-                                width: 80,
-                              ),
+                              child: Image.asset('assets/message_home.png'),
                             ),
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await  Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
@@ -780,8 +940,11 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                   },
                                 ),
                               );
+                              if (!mounted) return;
+                              await _refreshCounts();
                             },
                           ),
+
                           Padding(
                             padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
@@ -952,39 +1115,26 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               thickness: 1,
                             ),
                           ),
-                          ListTile(
-                            title: Text(
-                              'Photo Gallery',
-                              style: GoogleFonts.cabin(
-                                textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            trailing: Container(
+                          _drawerTile(
+                            title: 'Photo Gallery',
+                            badgeValue: galleryCount ?? 0,
+                            iconBox: Container(
                               height: 20,
                               width: 20,
-                              color: AppColors2.primary,
-                              child:  Image.asset(
-                                'assets/gallery.png',
-                                height: 80, // Adjust the size as needed
-                                width: 80,
-                              ),
-
+                              color: AppColors.primary,
+                              child: Image.asset('assets/gallery.png'),
                             ),
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) {
-                                    return GalleryScreen();
-                                  },
-                                ),
+                                    builder: (context) => GalleryScreen()),
                               );
+                              if (!mounted) return;
+                              await _refreshCounts();
                             },
-                          ),
-                          Padding(
+                          ),                          Padding(
                             padding:
                             EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
@@ -994,34 +1144,26 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
+                          _drawerTile(
+                            title: 'Video Gallery',
+                            badgeValue: videoCount ?? 0,
 
-                          ListTile(
-                            title: Text(
-                              'Video Gallery',
-                              style: GoogleFonts.cabin(
-                                textStyle: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            trailing: Container(
+                            iconBox: Container(
                               height: 20,
                               width: 20,
                               color: AppColors.primary,
-                              child:Icon(CupertinoIcons.video_camera, color: Colors.white)
-                              ,
+                              child: const Icon(CupertinoIcons.video_camera,
+                                  color: Colors.white, size: 18),
                             ),
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) {
-                                    return VideoGallery();
-                                  },
-                                ),
+                                    builder: (context) => VideoGallery()),
                               );
+                              if (!mounted) return;
+                              await _refreshCounts();
                             },
                           ),
 
@@ -1034,36 +1176,28 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
-                          ListTile(
-                            title: Text(
-                              'Achievement Gallery',
-                              style: GoogleFonts.cabin(
-                                textStyle: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            trailing: Container(
+                          _drawerTile(
+                            title: 'Achievement Gallery',
+                            badgeValue: achivementCount ?? 0,
+                            iconBox: Container(
                               height: 20,
                               width: 20,
                               color: AppColors.primary,
-                              child:Icon(CupertinoIcons.rosette, color: Colors.white)
-                              ,
+                              child: const Icon(CupertinoIcons.rosette,
+                                  color: Colors.white, size: 18),
                             ),
-                            onTap: () {
-                              Navigator.push(
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) {
-                                    return AchievementsWaveScreen();
-                                  },
-                                ),
+                                    builder: (context) =>
+                                        AchievementsWaveScreen()),
                               );
+                              if (!mounted) return;
+                              await _refreshCounts();
                             },
                           ),
-
                           Padding(
                             padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
@@ -1091,12 +1225,18 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                   color:AppColors2.textblack,
                                 )),
                             onTap: () async {
-                              final prefs = await SharedPreferences.getInstance();
-                              await prefs.clear(); // Clear the stored token
-                              Navigator.pushReplacement(
+                              Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => const LoginPage()),
+                                MaterialPageRoute(
+                                  builder: (context) =>  LogoutUserList(),
+                                ),
                               );
+                              // final prefs = await SharedPreferences.getInstance();
+                              // await prefs.clear(); // Clear the stored token
+                              // Navigator.pushReplacement(
+                              //   context,
+                              //   MaterialPageRoute(builder: (context) => const LoginPage()),
+                              // );
                             },
                           ),
                         ],

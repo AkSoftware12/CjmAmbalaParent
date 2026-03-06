@@ -46,8 +46,6 @@ class AppAssets {
 }
 
 class ApiRoutes {
-
-
   // Gallery App url
 
 
@@ -69,7 +67,7 @@ class ApiRoutes {
 // Local  App Url
 
   // static const String baseUrlNewUser = "http://192.168.1.5/cjmweb/api";
-  // static const String baseUrl = "http://192.168.1.10/cjm_ambala12/api";
+  // static const String baseUrl = "http://192.168.1.13/cjm_ambala12/api";
   //
   // // Download local url
   // static const String downloadUrl = "http://192.168.1.10/cjm_ambala12/";
@@ -78,6 +76,8 @@ class ApiRoutes {
 
 
   // New Admission Api
+
+
   static const String loginNewUser = "$baseUrlNewUser/login";
   static const String loginstudentNewUser = "$baseUrlNewUser/loginstudent";
   static const String getProfileNewUser = "$baseUrlNewUser/student-get";
@@ -156,12 +156,14 @@ class ApiRoutes {
   static const String getTeacherBookSupplier= "$baseUrl/book-supplier";
   static const String uploadTeacherAssignment = "$baseUrl/teacher-assignment";
   static const String deleteTeacherAssignment = "$baseUrl/teacher-assignment-delete";
-  static const String getTeacherDashboard = "$baseUrl/dashboard";
+  static const String getTeacherDashboard = "$baseUrl/teacher-dashboard";
   static const String getTeacherFees = "$baseUrl/get-fees";
   static const String getTeacherAssignments = "$baseUrl/teacher-assignment";
   // static const String getTimeTable = "$baseUrl/teacher-subjects";
   static const String getTeacherTimeTable = "$baseUrl/teacher-timetable?day=";
   static const String getTeacherSubject = "$baseUrl/get-subjects";
+  static const String getAdminStudentTimeTable = "$baseUrl/admin-student-timetable";
+  static const String getAdminTeacherTimeTable = "$baseUrl/admin-teacher-timetable";
   static const String studentTeacherDashboard = "$baseUrl/dashboard";
   static const String Teacherattendance = "$baseUrl/get-attendance-monthly";
   static const String Teacherevents = "$baseUrl/events";
@@ -179,4 +181,5 @@ class ApiRoutes {
   static const String getAllTeacherConversations = "$baseUrl/teacher/conversations";
   static const String getTeacherMessagesConversation = "$baseUrl/teacher/messages/conversation/";
   static const String sendTeacherMessage = "$baseUrl/teacher/messages/send";
+  static const String getSalarySlip = "$baseUrl/admin-salary";
 }

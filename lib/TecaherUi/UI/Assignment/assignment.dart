@@ -299,12 +299,17 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                                             .body
                                             ?.text ??
                                         '';
-                                    String startDate = DateFormat('dd-MM-yyyy')
-                                        .format(DateTime.parse(
-                                            assignment['start_date']));
-                                    String endDate = DateFormat('dd-MM-yyyy')
-                                        .format(DateTime.parse(
-                                            assignment['end_date']));
+                                    String startDate = (assignment['start_date'] != null &&
+                                        assignment['start_date'].toString().isNotEmpty)
+                                        ? DateFormat('dd-MM-yyyy')
+                                        .format(DateTime.parse(assignment['start_date']))
+                                        : 'N/A';
+
+                                    String endDate = (assignment['end_date'] != null &&
+                                        assignment['end_date'].toString().isNotEmpty)
+                                        ? DateFormat('dd-MM-yyyy')
+                                        .format(DateTime.parse(assignment['end_date']))
+                                        : 'N/A';
 
                                     return GestureDetector(
                                       onTap: () {

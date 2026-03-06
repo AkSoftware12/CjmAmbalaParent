@@ -8,6 +8,7 @@ import 'dart:convert';
 import '../../constants.dart';
 import '../../utils/date_time_utils.dart';
 import '../Auth/login_student_userlist.dart';
+import '../LogoutUserList/logout_user_list.dart';
 import '/UI/Auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -110,12 +111,21 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         onPressed: () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.clear(); // Clear the stored token
-          Navigator.pushReplacement(
+
+          Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const LoginPage()),
+            MaterialPageRoute(
+              builder: (context) =>  LogoutUserList(),
+            ),
           );
+
+
+          // final prefs = await SharedPreferences.getInstance();
+          // await prefs.clear(); // Clear the stored token
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const LoginPage()),
+          // );
         },
       ),
       body: isLoading
@@ -217,22 +227,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   ],
                 ),
               ),
-
-              // Hero(
-              //   tag: 'profile-pic',
-              //   child: CircleAvatar(
-              //     radius: 60,
-              //     backgroundImage: studentData!['photo'] != null
-              //         ? NetworkImage(studentData!['photo'])
-              //         : null,
-              //     child: studentData!['photo'] == null
-              //         ? Image.asset(
-              //       AppAssets.logo,  // Assuming AppAssets.logo is a string path to an asset
-              //       fit: BoxFit.cover,  // Ensures the logo fills the avatar space
-              //     )
-              //         : null,
-              //   ),
-              // ),
               const SizedBox(height: 20),
               _buildAnimatedSection('Personal Information', [
                 buildProfileRow('Name', studentData!['student_name']??''),

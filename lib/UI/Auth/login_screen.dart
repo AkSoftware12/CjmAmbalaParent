@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../NewUserBottombarPage/new_user_bottombar_page.dart';
@@ -12,6 +13,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 
 import 'login_student.dart';
+import 'login_student_userlist.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -258,6 +260,8 @@ class _LoginPageState extends State<LoginPage> {
     final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
     String? deviceToken = await _firebaseMessaging.getToken();
 
+    print('${ApiRoutes.teacherlogin}');
+
     try {
       final url = Uri.parse(ApiRoutes.teacherlogin);
       final response = await http.post(
@@ -417,202 +421,246 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.primary,
-      resizeToAvoidBottomInset: true,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Center(
-              child: Padding(
-                padding: EdgeInsets.all(15.sp),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                  ),
-                  padding: EdgeInsets.all(12.sp),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        Column(
-                          children: [
-                            SizedBox(
-                              height: 90.sp,
-                              width: 90.sp,
-                              child: Image.asset(AppAssets.cjmlogo),
-                            ),
-                            Text(
-                              'Convent of Jesus & Mary'.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w700,
+    return PopScope(
+      canPop: false, // ✅ back pop disable
+      onPopInvoked: (didPop) async {
+        // ✅ Always close app on back
+        SystemNavigator.pop(); // Android: app close
+        // exit(0); // ❌ avoid (not recommended)
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.primary,
+        resizeToAvoidBottomInset: true,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.all(15.sp),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.all(Radius.circular(20)),
+                    ),
+                    padding: EdgeInsets.all(12.sp),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          Column(
+                            children: [
+                              SizedBox(
+                                height: 90.sp,
+                                width: 90.sp,
+                                child: Image.asset(AppAssets.cjmlogo),
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 30.sp),
-                        TextFormField(
-                          controller: _emailController,
-                          decoration: InputDecoration(
-                            prefixIcon: const Icon(
-                              CupertinoIcons.mail_solid,
-                              color: Colors.black,
-                            ),
-                            hintText: 'Enter User Id, or Adm. no',
-                            hintStyle: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 16,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.blueAccent),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.blue,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade400,
-                              ),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 16,
-                              horizontal: 12,
-                            ),
-                          ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your User Id or Adm. no';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 15),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: !_isPasswordVisible,
-                          decoration: InputDecoration(
-                            prefixIcon: const Icon(
-                              CupertinoIcons.padlock_solid,
-                              color: Colors.black,
-                            ),
-                            hintText: AppStrings.password,
-                            hintStyle: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 16,
-                            ),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isPasswordVisible
-                                    ? CupertinoIcons.eye_slash_fill
-                                    : CupertinoIcons.eye_solid,
-                                color: Colors.black,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isPasswordVisible = !_isPasswordVisible;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.blueAccent),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.blue,
-                                width: 2,
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade400,
-                              ),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 16,
-                              horizontal: 12,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return AppStrings.passwordRequired;
-                            }
-                            if (value.length < 4) {
-                              return 'Password must be at least 4 characters long';
-                            }
-                            return null;
-                          },
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _rememberMe,
-                              activeColor: AppColors.secondary,
-                              onChanged: (value) {
-                                setState(() {
-                                  _rememberMe = value ?? false;
-                                });
-                              },
-                            ),
-                            Text(
-                              'Remember Me',
-                              style: TextStyle(fontSize: 14.sp),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        if (_isLoading)
-                          Center(child: CircularProgressIndicator())
-                        else
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 18.sp),
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : tryLogin,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.secondary,
-                                foregroundColor: Colors.white,
-                                minimumSize: Size(double.infinity, 45.sp),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                              child: Text(
-                                'Login',
+                              Text(
+                                'Convent of Jesus & Mary'.toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 18.sp,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 30.sp),
+                          TextFormField(
+                            controller: _emailController,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                CupertinoIcons.mail_solid,
+                                color: Colors.black,
+                              ),
+                              hintText: 'Enter User Id, or Adm. no',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 16,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.blueAccent),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.blue,
+                                  width: 2,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade400,
+                                ),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 12,
+                              ),
+                            ),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your User Id or Adm. no';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 15),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: !_isPasswordVisible,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                CupertinoIcons.padlock_solid,
+                                color: Colors.black,
+                              ),
+                              hintText: AppStrings.password,
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 16,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isPasswordVisible
+                                      ? CupertinoIcons.eye_slash_fill
+                                      : CupertinoIcons.eye_solid,
+                                  color: Colors.black,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isPasswordVisible = !_isPasswordVisible;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.blueAccent),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.blue,
+                                  width: 2,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade400,
+                                ),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 16,
+                                horizontal: 12,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return AppStrings.passwordRequired;
+                              }
+                              if (value.length < 4) {
+                                return 'Password must be at least 4 characters long';
+                              }
+                              return null;
+                            },
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                activeColor: AppColors.secondary,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                              ),
+                              Text(
+                                'Remember Me',
+                                style: TextStyle(fontSize: 14.sp),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          if (_isLoading)
+                            Center(child: CircularProgressIndicator())
+                          else
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 18.sp),
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : tryLogin,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.secondary,
+                                  foregroundColor: Colors.white,
+                                  minimumSize: Size(double.infinity, 45.sp),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        SizedBox(height: 10.sp),
-                      ],
+                          SizedBox(height: 10.sp),
+
+                          if (studentList.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginUserLIst(),
+                                  ),
+                                );
+                              },
+                              child: Card(
+                                color: Colors.blue,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(15.0),
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.account_circle,
+                                            size: 20, color: Colors.white),
+                                        SizedBox(width: 5.sp),
+                                        Text(
+                                          'Go to Login Users',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

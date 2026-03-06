@@ -121,8 +121,10 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
         itemCount: assignments.length,
         itemBuilder: (context, index) {
           final assignment = assignments[index];
-          String description = html_parser.parse(assignment['description']).body?.text ?? '';
-
+          final rawDesc = assignment['description'];
+          final descString = (rawDesc == null) ? '' : rawDesc.toString(); // ✅ null safe
+          final description =
+              html_parser.parse(descString).body?.text.trim() ?? '';
           String formatDate(String? dateStr) {
             try {
               if (dateStr == null || dateStr.isEmpty) return "Not Available";

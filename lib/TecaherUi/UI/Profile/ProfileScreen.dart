@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../UI/Auth/login_student_userlist.dart';
+import '../../../UI/LogoutUserList/logout_user_list.dart';
 import '../../../constants.dart';
 import '/UI/Auth/login_screen.dart';
 
@@ -108,12 +109,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         onPressed: () async {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.clear(); // Clear the stored token
-          Navigator.pushReplacement(
+          Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const LoginPage()),
+            MaterialPageRoute(
+              builder: (context) =>  LogoutUserList(),
+            ),
           );
+          // final prefs = await SharedPreferences.getInstance();
+          // await prefs.clear(); // Clear the stored token
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const LoginPage()),
+          // );
         },
       ),
       body: isLoading

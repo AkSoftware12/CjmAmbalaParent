@@ -118,20 +118,22 @@ class GalleryNotifier extends StateNotifier<AsyncValue<List<Album>>> {
 
       final client = ref.read(httpClientProvider);
       final prefs = await ref.read(sharedPrefsProvider.future);
-      final token = prefs.getString('token');
 
-      // if (token == null || token.isEmpty) {
-      //   state = AsyncValue.error(
-      //     Exception('Authentication token not found'),
-      //     StackTrace.current,
-      //   );
-      //   _isFetching = false;
-      //   return;
-      // }
+      final teacherToken = prefs.getString('teachertoken');
+      final userToken = prefs.getString('token');
+
+      // ✅ jo token mile use karo
+      final token = (teacherToken != null && teacherToken.isNotEmpty)
+          ? teacherToken
+          : userToken;
+
       final headers = <String, String>{};
+
       if (token != null && token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
+
+      print('GalleryToken$token');
 
       final response = await client.get(
         Uri.parse('$apiUrl?page=$page'),
@@ -140,29 +142,35 @@ class GalleryNotifier extends StateNotifier<AsyncValue<List<Album>>> {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
+
         if (jsonResponse is Map<String, dynamic> &&
             jsonResponse.containsKey('album') &&
             jsonResponse['album'].containsKey('data')) {
-          final List<dynamic> albumsJson = jsonResponse['album']['data'] ?? [];
-          final newAlbums = albumsJson
-              .map((json) => Album.fromJson(json))
-              .toList();
+
+          final List<dynamic> albumsJson =
+              jsonResponse['album']['data'] ?? [];
+
+          final newAlbums =
+          albumsJson.map((json) => Album.fromJson(json)).toList();
 
           _lastPage = jsonResponse['album']['last_page'] ?? 1;
 
           state = AsyncValue.data(newAlbums);
+
         } else {
           state = AsyncValue.error(
             Exception('Invalid API response format'),
             StackTrace.current,
           );
         }
-      } else if (response.statusCode == 401) {
+      }
+      else if (response.statusCode == 401) {
         state = AsyncValue.error(
           Exception('Unauthorized: Invalid or expired token'),
           StackTrace.current,
         );
-      } else {
+      }
+      else {
         state = AsyncValue.error(
           Exception(
             'Failed to load gallery: ${response.statusCode} - ${response.reasonPhrase}',
@@ -170,13 +178,13 @@ class GalleryNotifier extends StateNotifier<AsyncValue<List<Album>>> {
           StackTrace.current,
         );
       }
+
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
     } finally {
       _isFetching = false;
     }
   }
-
   Future<void> refresh() async {
     await fetchSubjectData(page: 1);
   }
@@ -198,7 +206,9 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   @override
   void initState() {
     super.initState();
-    // Removed precacheImages call from initState
+    Future.microtask(() {
+      ref.read(galleryProvider.notifier).fetchSubjectData(page: 1);
+    });
   }
 
   @override

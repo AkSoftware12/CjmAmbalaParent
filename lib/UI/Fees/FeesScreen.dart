@@ -679,8 +679,7 @@ class _FeesScreenState extends State<FeesScreen> {
                         },
                       ),
                     ),
-                    if (selectedFees1.isNotEmpty &&
-                        atomSession?['payment'].toString() == '1')
+                    if (selectedFees1.isNotEmpty && atomSession?['payment'].toString() == '1')
                       SizedBox(
                         width: double.infinity,
                         child: Padding(

@@ -62,14 +62,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
       final token = prefs.getString('token');
 
       // ✅ If token missing, stop loader (you can redirect to login if you want)
-      if (token == null || token.isEmpty) {
-        setState(() => isLoading = false);
-        return;
-      }
+      // if (token == null || token.isEmpty) {
+      //   setState(() => isLoading = false);
+      //   return;
+      // }
 
       final response = await http.get(
         Uri.parse(ApiRoutes.events),
-        headers: {'Authorization': 'Bearer $token'},
+        // headers: {'Authorization': 'Bearer $token'},
       );
 
       if (!mounted) return;

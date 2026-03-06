@@ -32,19 +32,30 @@ class _VideoGalleryState extends State<VideoGallery> {
     });
 
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
 
-    // ✅ TODO: your API endpoint
+    final teacherToken = prefs.getString('teachertoken');
+    final userToken = prefs.getString('token');
+
+    // ✅ jo token mile use karo
+    final token = (teacherToken != null && teacherToken.isNotEmpty)
+        ? teacherToken
+        : userToken;
+
     final url = Uri.parse(ApiRoutes.getVideos);
 
     try {
       final response = await http.get(
         url,
-        headers: {'Authorization': 'Bearer $token'},
+        headers: {
+          "Accept": "application/json",
+          if (token != null && token.isNotEmpty)
+            "Authorization": "Bearer $token",
+        },
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
         setState(() {
           videoGallery = data['data'] ?? [];
           isLoading = false;
@@ -63,7 +74,6 @@ class _VideoGalleryState extends State<VideoGallery> {
       debugPrint('Error fetching Data: $e');
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

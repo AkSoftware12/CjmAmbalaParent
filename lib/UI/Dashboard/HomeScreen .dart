@@ -68,9 +68,9 @@ class DashboardData {
 final apiServiceProvider = Provider<ApiService>((ref) => ApiService());
 
 final dashboardDataProvider =
-StateNotifierProvider<DashboardDataNotifier, AsyncValue<DashboardData>>(
+    StateNotifierProvider<DashboardDataNotifier, AsyncValue<DashboardData>>(
       (ref) => DashboardDataNotifier(ref.read(apiServiceProvider)),
-);
+    );
 
 class DashboardDataNotifier extends StateNotifier<AsyncValue<DashboardData>> {
   final ApiService _apiService;
@@ -117,20 +117,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   double attendancePercent = 0;
   int? messageViewPermissionsApp;
   int? messageSendPermissionsApp;
-  late CleanCalendarController calendarController;
-  final List<Map<String, String>> items = [
-    {'name': 'Assignments', 'image': 'assets/assignments.png'},
-    {'name': 'Time Table', 'image': 'assets/watch.png'},
-    {'name': 'Messages', 'image': 'assets/message_home.png'},
-    {'name': 'Attendance', 'image': 'assets/calendar_attendance.png'},
-    {'name': 'Fees', 'image': 'assets/rupee-indian.png'},
-    {'name': 'Gallery', 'image': 'assets/gallery.png'},
-    // {
-    //   'name': 'Library',
-    //   'image': 'assets/booksimg.png',
-    // },
-  ];
 
+  int? messageCount;
+  int? feesCount;
+  int? assignmentCount;
+  int? galleryCount;
+
+  late CleanCalendarController calendarController;
+  List<Map<String, dynamic>> get items => [
+    {'name': 'Assignments', 'image': 'assets/assignments.png', 'count': assignmentCount ?? 0},
+    {'name': 'Time Table', 'image': 'assets/watch.png', 'count': 0},
+    {'name': 'Messages', 'image': 'assets/message_home.png', 'count': messageCount ?? 0},
+    {'name': 'Attendance', 'image': 'assets/calendar_attendance.png', 'count': 0},
+
+    // ✅ Fees: agar count > 0 to number, warna 0
+    {'name': 'Fees', 'image': 'assets/rupee-indian.png', 'count':  ((feesCount ?? 0) > 0 ? 'DUE' : 0)},
+
+    {'name': 'Gallery', 'image': 'assets/gallery.png', 'count': galleryCount ?? 0},
+  ];
   @override
   void initState() {
     super.initState();
@@ -189,22 +193,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body)['data'];
+        final Map<String, dynamic> decoded = json.decode(response.body);
+
+        final Map<String, dynamic> data =
+        Map<String, dynamic>.from(decoded['data'] ?? {});
+
+        /// ✅ APPLY COUNTS
+        applyDashboardCounts(data);
 
         setState(() {
-          /// ✅ permissions
+          /// ✅ permissions (safe parsing)
+          final permissions = (data['permisions'] ?? []) as List;
+
           messageViewPermissionsApp =
-              (data['permisions']?[0]['app_status'] as num?)?.toInt() ?? 0;
+              (permissions.isNotEmpty
+                  ? (permissions[0]['app_status'] as num?)?.toInt()
+                  : 0) ??
+                  0;
 
           messageSendPermissionsApp =
-              (data['permisions']?[1]['app_status'] as num?)?.toInt() ?? 0;
+              (permissions.length > 1
+                  ? (permissions[1]['app_status'] as num?)?.toInt()
+                  : 0) ??
+                  0;
         });
       }
     } catch (e) {
       debugPrint('Error fetching data: $e');
     }
   }
-
   Future<void> fetchBannerData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -228,7 +245,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       debugPrint('Error fetching data: $e');
     }
   }
+  void applyDashboardCounts(Map<String, dynamic> data) {
+    setState(() {
+      messageCount = _toInt(data['message_count']);
+      assignmentCount = _toInt(data['assignment_count']);
+      feesCount = _toInt(data['fee_count']);
 
+      galleryCount = _toInt(data['photo_count']) ?? 0;
+    });
+  }
+  int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    return int.tryParse(v.toString()) ?? 0;
+  }
+
+  Future<void> _refreshDashboardCounts() async {
+    if (!mounted) return;
+
+    // optional loader (agar chaho)
+    setState(() => isLoading = true);
+
+    await fetchData(); // ✅ ye wali API hit hogi aur counts refresh honge
+
+    if (!mounted) return;
+    setState(() => isLoading = false);
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -236,31 +278,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: isLoading
           ? const Center(child: CupertinoActivityIndicator(radius: 20))
           : SingleChildScrollView(
-        padding: const EdgeInsets.all(0.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CarouselExample(
-              banners: banners,
-            ),
-            const SizedBox(height: 20),
-            _buildsellAll('Category', ''),
-            _buildGridview(),
-            const SizedBox(height: 10),
-            _buildSectionTitle('Students Birthday', ''),
-            BirthdayCard(),
-            Container(
-              height: 220,
-              width: double.infinity,
-              child: Image.network(
-                'https://cjmambala.in/images/building.png',
-                fit: BoxFit.fill,
+              padding: const EdgeInsets.all(0.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CarouselExample(banners: banners),
+                  const SizedBox(height: 20),
+                  _buildsellAll('Category', ''),
+                  _buildGridview(),
+                  const SizedBox(height: 10),
+                  _buildSectionTitle('Students Birthday', ''),
+                  BirthdayCard(),
+                  Container(
+                    height: 220,
+                    width: double.infinity,
+                    child: Image.network(
+                      'https://cjmambala.in/images/building.png',
+                      fit: BoxFit.fill,
+                    ),
+                  ),
+                  Divider(thickness: 1.sp, color: Colors.grey),
+                ],
               ),
             ),
-            Divider(thickness: 1.sp, color: Colors.grey),
-          ],
-        ),
-      ),
     );
   }
 
@@ -291,10 +331,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 width: 40,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      Colors.white,
-                      Colors.white,
-                    ],
+                    colors: [Colors.white, Colors.white],
                   ),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -319,19 +356,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         itemCount: items.length,
         itemBuilder: (context, index) {
+          final item = items[index];
+          final raw = item['count'];
+
+          int count = 0;
+          String? label;
+
+          if (raw is int) {
+            count = raw;
+          } else if (raw is String && int.tryParse(raw) != null) {
+            count = int.parse(raw);
+          } else if (raw is String) {
+            label = raw.toUpperCase(); // DUE / PENDING
+          }
+
+          final showBadge = (count > 0) || (label != null);
           return GestureDetector(
-            onTap: () {
+            onTap: () async {
               if (items[index]['name'] == 'Assignments') {
-                Navigator.push(
+                await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return AssignmentListScreen();
-                    },
-                  ),
+                  MaterialPageRoute(builder: (_) => AssignmentListScreen()),
                 );
+
+                // ✅ back aate hi dashboard api hit + count refresh
+                await _refreshDashboardCounts();
               } else if (items[index]['name'] == 'Gallery') {
-                Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) {
@@ -339,28 +390,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                   ),
                 );
+                await _refreshDashboardCounts();
+
               } else if (items[index]['name'] == 'Library') {
                 Navigator.push(
                   context,
                   PageRouteBuilder(
-                    transitionDuration:
-                    Duration(milliseconds: 500), // Animation Speed
+                    transitionDuration: Duration(
+                      milliseconds: 500,
+                    ), // Animation Speed
                     pageBuilder: (context, animation, secondaryAnimation) =>
-                        LibraryScreen(
-                          appBar: '25',
-                        ),
+                        LibraryScreen(appBar: '25'),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
-                      var begin = Offset(1.0, 0.0); // Right to Left
-                      var end = Offset.zero;
-                      var tween = Tween(begin: begin, end: end)
-                          .chain(CurveTween(curve: Curves.easeInOut));
+                          var begin = Offset(1.0, 0.0); // Right to Left
+                          var end = Offset.zero;
+                          var tween = Tween(
+                            begin: begin,
+                            end: end,
+                          ).chain(CurveTween(curve: Curves.easeInOut));
 
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
+                          return SlideTransition(
+                            position: animation.drive(tween),
+                            child: child,
+                          );
+                        },
                   ),
                 );
               } else if (items[index]['name'] == 'Leaves') {
@@ -382,7 +436,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 );
               } else if (items[index]['name'] == 'Fees') {
-                Navigator.push(
+               await  Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) {
@@ -390,6 +444,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                   ),
                 );
+                await _refreshDashboardCounts();
+
               } else if (items[index]['name'] == 'Time Table') {
                 Navigator.push(
                   context,
@@ -400,7 +456,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 );
               } else if (items[index]['name'] == 'Messages') {
-                Navigator.push(
+               await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) {
@@ -410,41 +466,73 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     },
                   ),
                 );
+                await _refreshDashboardCounts();
+
               }
             },
-            child: Card(
-              elevation: 5,
-              color: Colors.red.shade600,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      items[index]['image']!,
-                      height: 50,
-                      width: 50,
-                    ),
-                    SizedBox(height: 20),
-                    Padding(
-                      padding: EdgeInsets.only(left: 10.0, right: 10),
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Text(
-                          items[index]['name']!,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.montserrat(
-                            textStyle: Theme.of(context).textTheme.displayLarge,
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.bold,
-                            fontStyle: FontStyle.normal,
-                            color: AppColors.textwhite,
+            child: Stack(
+              children: [
+                Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  color: Colors.red.shade600,
+                  child: Container(
+                    padding: EdgeInsets.all(8),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            items[index]['image']!,
+                            height: 40,
+                            width: 40,
                           ),
+                          SizedBox(height: 10),
+                          Text(
+                            items[index]['name']!,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.montserrat(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                /// 🔴 BADGE COUNT
+                if (count > 0 || label != null)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                          )
+                        ],
+                      ),
+                      child: Text(
+                        label ?? "$count",
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+              ],
             ),
           );
         },
@@ -558,9 +646,11 @@ class _CarouselExampleState extends State<CarouselExample> {
                   borderRadius: BorderRadius.circular(8),
                   child: CachedNetworkImage(
                     imageUrl: url,
-                    fit: BoxFit.fill, // ✅ correct fit
+                    fit: BoxFit.fill,
+                    // ✅ correct fit
                     width: double.infinity,
-                    memCacheWidth: cacheW, // ✅ fast decode
+                    memCacheWidth: cacheW,
+                    // ✅ fast decode
                     placeholder: (context, _) => const BannerShimmer(radius: 8),
                     errorWidget: (context, _, __) => Container(
                       color: Colors.grey.shade200,
@@ -593,6 +683,7 @@ class _CarouselExampleState extends State<CarouselExample> {
 /// ✅ Premium shimmer placeholder (progress bar ki jagah)
 class BannerShimmer extends StatelessWidget {
   final double radius;
+
   const BannerShimmer({super.key, this.radius = 8});
 
   @override
@@ -823,24 +914,25 @@ class _BirthdayCardState extends ConsumerState<BirthdayCard>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
-    _bounceAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
-    );
+    _bounceAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
 
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 8),
@@ -908,10 +1000,11 @@ class _BirthdayCardState extends ConsumerState<BirthdayCard>
 
         if (isStudent) {
           final s = (item['student'] as Map<String, dynamic>);
-          final academicClass = (item['academic_class'] as Map<String, dynamic>);
+          final academicClass =
+              (item['academic_class'] as Map<String, dynamic>);
           final section = (item['section'] as Map<String, dynamic>);
           name =
-          '${(s['student_name'] ?? '').toString()}\n(${academicClass['title']}(${section['title']}))';
+              '${(s['student_name'] ?? '').toString()}\n(${academicClass['title']}(${section['title']}))';
           imageUrl = (s['picture_data'] ?? '').toString();
           roleText = 'Student';
         } else {
@@ -970,23 +1063,24 @@ class _BirthdayCardState extends ConsumerState<BirthdayCard>
                               borderRadius: BorderRadius.circular(20.r),
                               child: (imageUrl.isNotEmpty)
                                   ? CachedNetworkImage(
-                                imageUrl: imageUrl,
-                                fit: BoxFit.fill,
-                                errorWidget: (context, url, error) => Icon(
-                                  Icons.cake,
-                                  size: 60.sp,
-                                  color: Colors.orangeAccent,
-                                ),
-                              )
+                                      imageUrl: imageUrl,
+                                      fit: BoxFit.fill,
+                                      errorWidget: (context, url, error) =>
+                                          Icon(
+                                            Icons.cake,
+                                            size: 60.sp,
+                                            color: Colors.orangeAccent,
+                                          ),
+                                    )
                                   : Container(
-                                color: Colors.white,
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  isStudent ? Icons.school : Icons.badge,
-                                  size: 60.sp,
-                                  color: Colors.orangeAccent,
-                                ),
-                              ),
+                                      color: Colors.white,
+                                      alignment: Alignment.center,
+                                      child: Icon(
+                                        isStudent ? Icons.school : Icons.badge,
+                                        size: 60.sp,
+                                        color: Colors.orangeAccent,
+                                      ),
+                                    ),
                             ),
                           ),
                         ),
@@ -1062,7 +1156,8 @@ class _BirthdayCardState extends ConsumerState<BirthdayCard>
           ),
         );
       },
-      loading: () => const Center(child: CupertinoActivityIndicator(radius: 20)),
+      loading: () =>
+          const Center(child: CupertinoActivityIndicator(radius: 20)),
       error: (error, _) => const SizedBox(),
     );
   }
@@ -1095,7 +1190,7 @@ class NoBirthdaysToday extends StatelessWidget {
                 color: Colors.black.withOpacity(.10),
                 blurRadius: 26,
                 offset: const Offset(0, 14),
-              )
+              ),
             ],
           ),
           child: ClipRRect(
@@ -1113,8 +1208,10 @@ class NoBirthdaysToday extends StatelessWidget {
                   child: _BlurBlob(size: 200, color: red2.withOpacity(.14)),
                 ),
                 Padding(
-                  padding:
-                  EdgeInsets.symmetric(horizontal: 18.w, vertical: 18.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 18.w,
+                    vertical: 18.h,
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -1133,11 +1230,14 @@ class NoBirthdaysToday extends StatelessWidget {
                               color: red2.withOpacity(.35),
                               blurRadius: 18,
                               offset: const Offset(0, 10),
-                            )
+                            ),
                           ],
                         ),
-                        child: const Icon(Icons.cake_rounded,
-                            color: Colors.white, size: 26),
+                        child: const Icon(
+                          Icons.cake_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
                       ),
                       SizedBox(width: 14.w),
                       Expanded(
@@ -1172,6 +1272,7 @@ class NoBirthdaysToday extends StatelessWidget {
 class _BlurBlob extends StatelessWidget {
   final double size;
   final Color color;
+
   const _BlurBlob({required this.size, required this.color});
 
   @override
@@ -1181,10 +1282,7 @@ class _BlurBlob extends StatelessWidget {
       child: Container(
         height: size,
         width: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color,
-        ),
+        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
       ),
     );
   }
