@@ -67,7 +67,7 @@ class ApiRoutes {
 // Local  App Url
 
   // static const String baseUrlNewUser = "http://192.168.1.5/cjmweb/api";
-  // static const String baseUrl = "http://192.168.1.13/cjm_ambala12/api";
+  // static const String baseUrl = "http://192.168.1.9/cjm_ambala12/api";
   //
   // // Download local url
   // static const String downloadUrl = "http://192.168.1.10/cjm_ambala12/";
@@ -90,6 +90,7 @@ class ApiRoutes {
 // common
   static const String getBanner = "$baseUrl/banner";
   static const String getBirthdays = "$baseUrl/birthdays";
+  static const String appReport = "$baseUrl/update-datetime";
 
 
 
@@ -182,4 +183,7 @@ class ApiRoutes {
   static const String getTeacherMessagesConversation = "$baseUrl/teacher/messages/conversation/";
   static const String sendTeacherMessage = "$baseUrl/teacher/messages/send";
   static const String getSalarySlip = "$baseUrl/admin-salary";
+  static const String getTeacherAppReport = "$baseUrl/app-report";
+  static const String getFreeTeachers = "$baseUrl/free-teachers";
+  static const String getStudentAppReport = "$baseUrl/app-report-student?page=";
 }

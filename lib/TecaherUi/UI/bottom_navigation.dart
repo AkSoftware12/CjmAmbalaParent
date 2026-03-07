@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -20,18 +21,21 @@ import '../../strings.dart';
 import '../UI/Dashboard/HomeScreen%20.dart';
 import 'AdminTimeTable/admin_time_table.dart';
 import 'AllStudents/all_students.dart';
+import 'AppReport/app_report.dart';
 import 'Assignment/assignment.dart';
 import 'Attendance/AttendanceScreen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'BirthdayScreen/birthday_screen.dart';
 import 'ClassTeacher/class_teacher.dart';
+import 'FreeTeachers/free_teacher.dart';
 import 'Notice/notice.dart';
 import 'Notification/notification.dart';
 import 'Profile/ProfileScreen.dart';
 import 'SalarySlip/salary_slip.dart';
 import 'TeacherMessage/message.dart';
 import 'TeachingStaff/teaching_staff.dart';
+import 'TeachingStaffProfile/teaching_staff_profile.dart';
 import 'TimeTable/time_table_teacher.dart';
 
 class TeacherBottomNavBarScreen extends StatefulWidget {
@@ -77,7 +81,6 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
   void initState() {
     super.initState();
     checkForVersion(context);
-
     fetchData();
     fetchStudentData();
     _selectedIndex = widget.initialIndex; // Set the initial tab index
@@ -298,6 +301,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -427,11 +431,11 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
               SizedBox(
-                height: 70,
+                height: 50.sp,
               ),
 
               GestureDetector(
-                onTap: (){
+                onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -443,17 +447,29 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                 },
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: teacherData != null && teacherData?['photo'] != null
-                      ? Image.network(
-                    teacherData?['photo'],
-                    height: 100.sp,
-                    width: 100.sp,
-                
-                  )
-                      : Image.asset(
-                    AppAssets.cjmlogo,
-                    height: 80.sp,
-                    width: 80.sp,
+                  child: CachedNetworkImage(
+                    imageUrl: teacherData?['photo'] ?? '',
+                    height: 140.sp,
+                    width: 160.sp,
+                    fit: BoxFit.cover,
+
+                    // ✅ Loading state
+                    placeholder: (context, url) => Container(
+                      height: 120.sp,
+                      width: 160.sp,
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2,color: Colors.red,),
+                      ),
+                    ),
+
+                    // ✅ Error ya null photo
+                    errorWidget: (context, url, error) => Image.asset(
+                      AppAssets.cjmlogo,
+                      height: 120.sp,
+                      width: 160.sp,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
@@ -674,6 +690,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
+                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')!= 2)
 
                           ListTile(
                             title: Text(
@@ -699,6 +716,49 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                 MaterialPageRoute(
                                   builder: (context) {
                                     return  TeachingStaff();
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')!= 2)
+
+                            Padding(
+                            padding:
+                            EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
+
+                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')== 2)
+
+                          ListTile(
+                            title: Text(
+                              'Staff Profile',
+                              style: GoogleFonts.cabin(
+                                textStyle: TextStyle(
+                                    color:AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            trailing: Container(
+                              height: 20,
+                              width: 20,
+                              color: AppColors2.primary,
+                              child: Icon(CupertinoIcons.person_2,color:AppColors2.textblack,),
+
+                            ),
+                            onTap: () {
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return  TeachingStaffProfile();
                                   },
                                 ),
                               );
@@ -792,6 +852,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               );
                             },
                           ),
+
                           Padding(
                             padding:
                             EdgeInsets.only(left: 8, right: 8),
@@ -824,6 +885,43 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => SalaryScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+
+                          Padding(
+                            padding:
+                            EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
+                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')== 2)
+                            ListTile(
+                              title: Text(
+                                'App Report',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors2.primary,
+                                child: Icon(Icons.report,color: Colors.white,),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>  AppReportScreen(),
                                   ),
                                 );
                               },
@@ -882,6 +980,47 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               }
                             },
                           ),
+                          Padding(
+                            padding:
+                            EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
+
+                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')== 2)
+
+                            ListTile(
+                              title: Text(
+                                'Free Teachers ',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                      color:AppColors2.textblack,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors2.primary,
+                                child: Icon(CupertinoIcons.person_2,color:AppColors2.textblack,),
+
+                              ),
+                              onTap: () {
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return  FreeTeachers();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
                           Padding(
                             padding:
                             EdgeInsets.only(left: 8, right: 8),

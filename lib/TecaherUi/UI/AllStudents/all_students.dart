@@ -18,70 +18,75 @@ class AllStudents extends StatefulWidget {
 class _AllStudentsState extends State<AllStudents> {
   TextEditingController searchCtrl = TextEditingController();
 
+  // ✅ Controllers for synced scrolling
+  final PageController _pageController = PageController();
+  final ScrollController _tabScrollController = ScrollController();
+
+  // ✅ GlobalKey list — har tab ka exact size/position measure karne ke liye
+  List<GlobalKey> _tabKeys = [];
+
   bool loading = true;
   bool studentsLoading = false;
 
   List classes = [];
-  List sections = [];
-  List students = [];
-  List filteredStudents = [];
 
-  int? selectedClassId;
-  int? selectedSectionId;
-
-  String searchQuery = "";
-  String sortBy = "roll";
+  // ✅ Map to store students per class tab
+  Map<int, List> studentsMap = {};
 
   int selectedTab = 0;
+  String sortBy = "roll";
+  String searchQuery = "";
 
   @override
   void initState() {
     super.initState();
     searchCtrl.addListener(() {
-      setState(() {}); // To refresh clear button visibility
+      setState(() {});
     });
     loadInitial();
   }
 
-  // 1️⃣ Load classes
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _tabScrollController.dispose();
+    searchCtrl.dispose();
+    super.dispose();
+  }
+
+  // ─── Load classes ────────────────────────────────────────────
   Future<void> loadInitial() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('teachertoken');
 
     final url = Uri.parse(ApiRoutes.getTeacherAllStudents);
-
     final response = await http.get(
       url,
       headers: {"Authorization": "Bearer $token", "Accept": "application/json"},
     );
 
     final data = jsonDecode(response.body);
-
-    /// 🔹 Safe parse
     final List classList = data["data"]?["classes"] ?? [];
 
     setState(() {
       loading = false;
       classes = classList;
-      sections = [];
-      students = [];
-      filteredStudents = [];
-
-      /// ✅ Only if classes available
-      if (classes.isNotEmpty) {
-        selectedClassId = classes.first['class_section_id'];
-        loadStudents();
-      } else {
-        selectedClassId = null; // 👈 important
-        debugPrint("⚠️ No classes found");
-      }
+      // ✅ Har class ke liye ek GlobalKey banao
+      _tabKeys = List.generate(classList.length, (_) => GlobalKey());
     });
+
+    if (classes.isNotEmpty) {
+      await loadStudentsForTab(0);
+    }
   }
 
-  // 3️⃣ Load actual students
-  Future<void> loadStudents() async {
-    // if (selectedClassId == null || selectedSectionId == null) return;
-    if (selectedClassId == null) return;
+  // ─── Load students for a specific tab index ──────────────────
+  Future<void> loadStudentsForTab(int tabIndex) async {
+    // Already loaded → skip API call
+    if (studentsMap.containsKey(tabIndex)) return;
+
+    final classItem = classes[tabIndex];
+    final int classSectionId = classItem["class_section_id"];
 
     setState(() => studentsLoading = true);
 
@@ -89,7 +94,7 @@ class _AllStudentsState extends State<AllStudents> {
     String? token = prefs.getString('teachertoken');
 
     final url = Uri.parse(
-      "${ApiRoutes.getTeacherAllStudents1}?class_section_id=$selectedClassId",
+      "${ApiRoutes.getTeacherAllStudents1}?class_section_id=$classSectionId",
     );
 
     final response = await http.get(
@@ -98,69 +103,126 @@ class _AllStudentsState extends State<AllStudents> {
     );
 
     final data = jsonDecode(response.body);
+    final List fetchedStudents = data["data"]["students"] ?? [];
 
-    students = data["data"]["students"];
-    filteredStudents = students;
-    print('examReportData $students');
-
-    setState(() => studentsLoading = false);
-  }
-
-  // 🔍 Searching
-  void filterSearch(String query) {
-    searchQuery = query;
-
-    if (query.isEmpty) {
-      setState(() => filteredStudents = students);
-      return;
-    }
-
-    String q = query.toLowerCase();
     setState(() {
-      filteredStudents = students.where((stu) {
-        String name =
-            stu['student']["student_name"]?.toString().toLowerCase() ?? "";
-        String roll = stu['student']["roll_no"]?.toString().toLowerCase() ?? "";
-        String adm = stu['student']["adm_no"]?.toString().toLowerCase() ?? "";
-        return name.contains(q) || roll.contains(q) || adm.contains(q);
-      }).toList();
+      studentsMap[tabIndex] = fetchedStudents;
+      studentsLoading = false;
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Gender count
-    int boys = filteredStudents
-        .where((x) => x["gender"]?.toLowerCase() == "male")
-        .length;
+  // ─── Get current tab's filtered students ─────────────────────
+  List get currentStudents {
+    final list = studentsMap[selectedTab] ?? [];
+    if (searchQuery.isEmpty) return list;
 
-    int girls = filteredStudents
-        .where((x) => x["gender"]?.toLowerCase() == "female")
-        .length;
+    final q = searchQuery.toLowerCase();
+    return list.where((stu) {
+      String name = stu['student']["student_name"]?.toString().toLowerCase() ?? "";
+      String roll = stu['student']["roll_no"]?.toString().toLowerCase() ?? "";
+      String adm  = stu['student']["adm_no"]?.toString().toLowerCase() ?? "";
+      return name.contains(q) || roll.contains(q) || adm.contains(q);
+    }).toList();
+  }
 
-    // Sorting logic
-    filteredStudents.sort((a, b) {
+  // ─── Selected tab ko screen ke CENTER mein scroll karo ──────
+  void _scrollTabIntoView(int index) {
+    if (_tabKeys.isEmpty || index >= _tabKeys.length) return;
+
+    final key = _tabKeys[index];
+    final keyContext = key.currentContext;
+    if (keyContext == null) return;
+
+    // Tab widget ka RenderBox lao
+    final RenderBox tabBox = keyContext.findRenderObject() as RenderBox;
+
+    // Tab bar ScrollController ka RenderBox lao
+    final RenderBox? scrollBox =
+    _tabScrollController.hasClients
+        ? (_tabScrollController.position.context.storageContext
+        .findRenderObject() as RenderBox?)
+        : null;
+
+    // Tab ki left position (scroll ke andar)
+    final tabOffset = tabBox.localToGlobal(Offset.zero).dx;
+    final tabWidth = tabBox.size.width;
+
+    // Screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Current scroll offset
+    final currentScroll = _tabScrollController.offset;
+
+    // Tab center ko screen center pe lane ke liye offset calculate karo
+    final targetScroll =
+        currentScroll + tabOffset - (screenWidth / 2) + (tabWidth / 2);
+
+    _tabScrollController.animateTo(
+      targetScroll.clamp(0.0, _tabScrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  // ─── On tab tap ──────────────────────────────────────────────
+  void onTabTap(int index) async {
+    setState(() {
+      selectedTab = index;
+      searchQuery = "";
+      searchCtrl.clear();
+    });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+    // ✅ Frame render hone ke baad center scroll
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollTabIntoView(index));
+    await loadStudentsForTab(index);
+  }
+
+  void onPageChanged(int index) async {
+    setState(() {
+      selectedTab = index;
+      searchQuery = "";
+      searchCtrl.clear();
+    });
+    // ✅ Frame render hone ke baad center scroll
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollTabIntoView(index));
+    await loadStudentsForTab(index);
+  }
+
+  // ─── Search ──────────────────────────────────────────────────
+  void filterSearch(String query) {
+    setState(() => searchQuery = query);
+  }
+
+  // ─── Sort ────────────────────────────────────────────────────
+  List getSorted(List list) {
+    final sorted = List.from(list);
+    sorted.sort((a, b) {
       if (sortBy == "roll") {
-        return int.parse(
-          a['student']["roll_no"].toString(),
-        ).compareTo(int.parse(b['student']["roll_no"].toString()));
+        return int.parse(a['student']["roll_no"].toString())
+            .compareTo(int.parse(b['student']["roll_no"].toString()));
       } else if (sortBy == "adm_no") {
-        return int.parse(
-          a['student']["adm_no"].toString(),
-        ).compareTo(int.parse(b['student']["adm_no"].toString()));
+        return int.parse(a['student']["adm_no"].toString())
+            .compareTo(int.parse(b['student']["adm_no"].toString()));
       } else {
-        return a['student']["student_name"].compareTo(
-          b['student']["student_name"],
-        );
+        return a['student']["student_name"]
+            .compareTo(b['student']["student_name"]);
       }
     });
+    return sorted;
+  }
 
+  // ════════════════════════════════════════════════════════════
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // ---------------- Green Header ----------------
       body: Column(
         children: [
+          // ── Header ──
           Padding(
             padding: EdgeInsets.only(top: 40.sp),
             child: Container(
@@ -169,19 +231,10 @@ class _AllStudentsState extends State<AllStudents> {
               color: AppColors2.primary,
               child: Row(
                 children: [
-                  // BACK BUTTON
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 22.sp,
-                    ),
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(Icons.arrow_back, color: Colors.white, size: 22.sp),
                   ),
-
-                  // TITLE TEXT
                   Expanded(
                     child: Center(
                       child: Text(
@@ -198,358 +251,365 @@ class _AllStudentsState extends State<AllStudents> {
               ),
             ),
           ),
+
+          // ── Body ──
           loading
               ? SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.5,
-                  child: const Center(
-                    child: CupertinoActivityIndicator(
-                      radius: 20,
-                      color: Colors.black54,
-                    ),
-                  ),
-                )
+            height: MediaQuery.of(context).size.height * 0.5,
+            child: const Center(
+              child: CupertinoActivityIndicator(radius: 20, color: Colors.black54),
+            ),
+          )
               : classes.isEmpty
               ? SizedBox(
-            height: MediaQuery.of(context).size.height*0.8,
-                child: const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.class_outlined, size: 90, color: Colors.blue),
-                        SizedBox(height: 16),
-                        Text(
-                          "No Class Available",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ],
+            height: MediaQuery.of(context).size.height * 0.8,
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.class_outlined, size: 90, color: Colors.blue),
+                  SizedBox(height: 16),
+                  Text(
+                    "No Class Available",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blue,
                     ),
                   ),
-              )
+                ],
+              ),
+            ),
+          )
               : Expanded(
-                  child: Column(
-                    children: [
-                      // ---------------- TOP TABS ----------------
-                      if (classes.isNotEmpty)
-                        Container(
-                          width: double.infinity,
-                          color: Colors.grey.shade200,
-                          padding: const EdgeInsets.only(bottom: 0),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: classes.asMap().entries.map((map) {
-                                int index = map.key;
-                                var item = map.value;
-                                return GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      selectedTab = index;
-                                      selectedClassId =
-                                          item["class_section_id"];
-                                      // selectedSectionId = item["section_id"];
-                                    });
-                                    loadStudents();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 10,
-                                    ),
-                                    margin: const EdgeInsets.only(left: 10),
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color: selectedTab == index
-                                              ? AppColors2.primary
-                                              : Colors.transparent,
-                                          width: 3,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      '${item["title"]}-${item["section_title"]}',
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 14,
-                                        fontWeight: selectedTab == index
-                                            ? FontWeight.bold
-                                            : FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            infoBox(
-                              Icons.people,
-                              "Total Students",
-                              "${filteredStudents.length}",
-                            ),
-                            infoBox(Icons.boy, "Boy(s)", "$boys"),
-                            infoBox(
-                              Icons.girl,
-                              "Girl(s)",
-                              "${filteredStudents.length}",
-                            ),
-                          ],
-                        ),
-                      ),
-                      Divider(height: 1.sp, color: Colors.grey),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            sortButton("Roll No", "roll"),
-                            const SizedBox(width: 8),
-                            sortButton("Admission No", "adm_no"),
-                            const SizedBox(width: 8),
-                            sortButton("Name", "student_name"),
-                          ],
-                        ),
-                      ),
-                      Divider(height: 1.sp, color: Colors.grey),
-                      // const SizedBox(height: 10),
-
-                      // ---------------- GRID VIEW ----------------
-                      Expanded(
-                        child: studentsLoading
-                            ? const Center(
-                                child: CupertinoActivityIndicator(
-                                  radius: 20,
-                                  color: Colors.black54,
-                                ),
-                              )
-                            : filteredStudents.isEmpty
-                            ? const Center(child: Text("No students found"))
-                            : GridView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 0,
-                                ),
-                                itemCount: filteredStudents.length,
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      childAspectRatio: 1,
-                                      // crossAxisSpacing: 10,
-                                      // mainAxisSpacing: 10,
-                                    ),
-                                itemBuilder: (context, index) {
-                                  var stu = filteredStudents[index];
-
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return StudentAttendanceScreen(
-                                              id: stu['student']["id"],
-                                              studentId:
-                                                  stu['student']["student_id"]
-                                                      .toString(),
-                                            );
-                                          },
-                                        ),
-                                      );
-                                    },
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: AppColors2.primary,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          const SizedBox(height: 10),
-
-                                          Container(
-                                            width: 90.sp,
-                                            height: 90.sp,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: AppColors2.primary,
-                                                width: 3,
-                                              ),
-                                            ),
-                                            child: ClipOval(
-                                              child: CachedNetworkImage(
-                                                imageUrl:
-                                                    stu['student']["picture_data"] ??
-                                                    "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-
-                                                fit: BoxFit.cover,
-
-                                                // 🔥 FAST LOAD Placeholder
-                                                placeholder: (context, url) =>
-                                                    Container(
-                                                      color:
-                                                          Colors.grey.shade200,
-                                                      child: Center(
-                                                        child: Icon(
-                                                          Icons.person,
-                                                          color: Colors.grey,
-                                                          size: 35,
-                                                        ),
-                                                      ),
-                                                    ),
-
-                                                // ❌ Error Image
-                                                errorWidget:
-                                                    (context, url, error) =>
-                                                        Container(
-                                                          color: Colors
-                                                              .grey
-                                                              .shade200,
-                                                          child: Center(
-                                                            child: Icon(
-                                                              Icons.error,
-                                                              color: Colors.red,
-                                                              size: 35,
-                                                            ),
-                                                          ),
-                                                        ),
-                                              ),
-                                            ),
-                                          ),
-
-                                          const SizedBox(height: 10),
-
-                                          Text(
-                                            stu['student']["student_name"]
-                                                .toString(),
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 15,
-                                            ),
-                                          ),
-
-                                          const SizedBox(height: 6),
-
-                                          Text(
-                                            "Admission No.: ${stu['student']['adm_no']}",
-                                          ),
-                                          Text(
-                                            "Roll No : ${stu['student']['roll_no']}",
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-
-                      // ---------------- SEARCH BAR (BOTTOM) ----------------
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 18.sp),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          color: AppColors2.primary,
+            child: Column(
+              children: [
+                // ── Class Tabs ──
+                Container(
+                  width: double.infinity,
+                  color: Colors.grey.shade200,
+                  child: SingleChildScrollView(
+                    controller: _tabScrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: classes.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        var item = entry.value;
+                        bool isActive = selectedTab == index;
+                        return GestureDetector(
+                          onTap: () => onTabTap(index),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
+                            key: _tabKeys[index], // ✅ GlobalKey assign
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
                             ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.search, color: Colors.black54),
-
-                                SizedBox(width: 10),
-
-                                Expanded(
-                                  child: TextField(
-                                    controller: searchCtrl,
-                                    decoration: const InputDecoration(
-                                      border: InputBorder.none,
-                                      hintText: "Search by Name, Roll No...",
-                                    ),
-                                    onChanged: filterSearch,
-                                  ),
+                            margin: const EdgeInsets.only(left: 10),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: isActive
+                                      ? AppColors2.primary
+                                      : Colors.transparent,
+                                  width: 3,
                                 ),
+                              ),
+                            ),
+                            child: Text(
+                              '${item["title"]}-${item["section_title"]}',
+                              style: TextStyle(
+                                color: isActive
+                                    ? AppColors2.primary
+                                    : Colors.black,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
 
-                                // ❌ CLEAR BUTTON (only show when text is typed)
-                                if (searchCtrl.text.isNotEmpty)
-                                  GestureDetector(
-                                    onTap: () {
-                                      searchCtrl.clear();
-                                      filterSearch(""); // reset list
-                                    },
-                                    child: const Icon(
-                                      Icons.close,
-                                      color: Colors.black45,
-                                    ),
-                                  ),
+                // ── PageView for students ──
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: classes.length,
+                    onPageChanged: onPageChanged, // 👈 swipe se tab change
+                    itemBuilder: (context, pageIndex) {
+                      // Show loader for current swiped page while loading
+                      if (!studentsMap.containsKey(pageIndex)) {
+                        return const Center(
+                          child: CupertinoActivityIndicator(
+                            radius: 20,
+                            color: Colors.black54,
+                          ),
+                        );
+                      }
+
+                      final pageStudents = getSorted(
+                        pageIndex == selectedTab
+                            ? currentStudents
+                            : studentsMap[pageIndex] ?? [],
+                      );
+
+                      final boys = pageStudents
+                          .where((x) =>
+                      x["gender"]?.toLowerCase() == "male")
+                          .length;
+                      final girls = pageStudents
+                          .where((x) =>
+                      x["gender"]?.toLowerCase() == "female")
+                          .length;
+
+                      return Column(
+                        children: [
+                          // ── Stats Row ──
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
+                            child: Row(
+                              mainAxisAlignment:
+                              MainAxisAlignment.center,
+                              children: [
+                                infoBox(Icons.people, "Total",
+                                    "${pageStudents.length}"),
+                                // infoBox(Icons.boy, "Boy(s)", "$boys"),
+                                // infoBox(
+                                //     Icons.girl, "Girl(s)", "$girls"),
                               ],
                             ),
                           ),
-                        ),
-                      ),
-                    ],
+                          Divider(height: 1.sp, color: Colors.grey),
+
+                          // ── Sort Buttons ──
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
+                            child: Row(
+                              children: [
+                                sortButton("Roll No", "roll"),
+                                const SizedBox(width: 8),
+                                sortButton("Adm No", "adm_no"),
+                                const SizedBox(width: 8),
+                                sortButton("Name", "student_name"),
+                              ],
+                            ),
+                          ),
+                          Divider(height: 1.sp, color: Colors.grey),
+
+                          // ── Grid ──
+                          Expanded(
+                            child: studentsLoading &&
+                                pageIndex == selectedTab
+                                ? const Center(
+                                child: CupertinoActivityIndicator(
+                                    radius: 20,
+                                    color: Colors.black54))
+                                : pageStudents.isEmpty
+                                ? const Center(
+                                child: Text(
+                                    "No students found"))
+                                : GridView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount:
+                              pageStudents.length,
+                              gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 1,
+                              ),
+                              itemBuilder:
+                                  (context, index) {
+                                var stu =
+                                pageStudents[index];
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            StudentAttendanceScreen(
+                                              id: stu['student']
+                                              ["id"],
+                                              studentId: stu[
+                                              'student']
+                                              ["student_id"]
+                                                  .toString(),
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppColors2
+                                            .primary,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        const SizedBox(
+                                            height: 10),
+                                        Container(
+                                          width: 90.sp,
+                                          height: 90.sp,
+                                          decoration:
+                                          BoxDecoration(
+                                            shape: BoxShape
+                                                .circle,
+                                            border:
+                                            Border.all(
+                                              color: AppColors2
+                                                  .primary,
+                                              width: 3,
+                                            ),
+                                          ),
+                                          child: ClipOval(
+                                            child:
+                                            CachedNetworkImage(
+                                              imageUrl: stu[
+                                              'student']
+                                              [
+                                              "picture_data"] ??
+                                                  "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                                              fit: BoxFit
+                                                  .cover,
+                                              placeholder: (context,
+                                                  url) =>
+                                                  Container(
+                                                    color: Colors
+                                                        .grey
+                                                        .shade200,
+                                                    child:
+                                                    const Center(
+                                                      child: Icon(
+                                                          Icons
+                                                              .person,
+                                                          color: Colors
+                                                              .grey,
+                                                          size:
+                                                          35),
+                                                    ),
+                                                  ),
+                                              errorWidget: (context,
+                                                  url,
+                                                  error) =>
+                                                  Container(
+                                                    color: Colors
+                                                        .grey
+                                                        .shade200,
+                                                    child:
+                                                    const Center(
+                                                      child: Icon(
+                                                          Icons
+                                                              .error,
+                                                          color: Colors
+                                                              .red,
+                                                          size:
+                                                          35),
+                                                    ),
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                            height: 10),
+                                        Text(
+                                          stu['student'][
+                                          "student_name"]
+                                              .toString(),
+                                          style: const TextStyle(
+                                              fontWeight:
+                                              FontWeight
+                                                  .bold,
+                                              fontSize: 15),
+                                          textAlign:
+                                          TextAlign
+                                              .center,
+                                          maxLines: 1,
+                                          overflow:
+                                          TextOverflow
+                                              .ellipsis,
+                                        ),
+                                        const SizedBox(
+                                            height: 6),
+                                        Text(
+                                            "Adm: ${stu['student']['adm_no']}"),
+                                        Text(
+                                            "Roll: ${stu['student']['roll_no']}"),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          // ── Search Bar ──
+                          Padding(
+                            padding: EdgeInsets.only(bottom: 18.sp),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 10),
+                              color: AppColors2.primary,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius:
+                                  BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.search,
+                                        color: Colors.black54),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: searchCtrl,
+                                        decoration:
+                                        const InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText:
+                                          "Search by Name, Roll No...",
+                                        ),
+                                        onChanged: filterSearch,
+                                      ),
+                                    ),
+                                    if (searchCtrl.text.isNotEmpty)
+                                      GestureDetector(
+                                        onTap: () {
+                                          searchCtrl.clear();
+                                          filterSearch("");
+                                        },
+                                        child: const Icon(
+                                            Icons.close,
+                                            color: Colors.black45),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // ---------------- UI Widgets ----------------
-  Widget rowTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 20, bottom: 4),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          color: Colors.black54,
-        ),
-      ),
-    );
-  }
-
-  Widget dropdownBox({required Widget child}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: Offset(1, 2),
-            ),
-          ],
-        ),
-        child: child,
-      ),
-    );
-  }
-
+  // ─── Helper Widgets ──────────────────────────────────────────
   Widget infoBox(IconData icon, String title, String value) {
     return Row(
       children: [
@@ -562,7 +622,6 @@ class _AllStudentsState extends State<AllStudents> {
 
   Widget sortButton(String label, String type) {
     bool active = sortBy == type;
-
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => sortBy = type),
@@ -588,6 +647,7 @@ class _AllStudentsState extends State<AllStudents> {
                   style: TextStyle(
                     color: active ? Colors.white : Colors.black87,
                     fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
                 ),
               ],

@@ -535,6 +535,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
     final Map<String, dynamic> summary = attendanceData!;
     final List months = summary.values.toList();
     final chart = calculateChartData(summary);
+
     Map<String, double> getTotalSummary(List months) {
       double totalWorking = 0;
       double totalPresent = 0;
@@ -562,15 +563,22 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
         "percent": percent,
       };
     }
+
     final totals = getTotalSummary(months);
 
     bool isAllZero =
-        (chart["present"] ?? 0) == 0 &&
-            (chart["absent"] ?? 0) == 0 &&
-            (chart["leave"] ?? 0) == 0 &&
-            (chart["holiday"] ?? 0) == 0;
+        totals["present"] == 0 &&
+            totals["absent"] == 0 &&
+            totals["leave"] == 0 &&
+            totals["holiday"] == 0;
 
-
+    // ── Date range label ──────────────────────────────────────────
+    final now = DateTime.now();
+    final monthNames = [
+      'Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec'
+    ];
+    final todayFormatted = "${now.day} ${monthNames[now.month - 1]} ${now.year}";
 
     return SingleChildScrollView(
       child: Padding(
@@ -580,7 +588,24 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
           children: [
 
             // -------------------------------------------------
-            //               DONUT CHART + STATS
+            //          DATE RANGE HEADER
+            // -------------------------------------------------
+            Center(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: 8.sp, left: 4.sp),
+                child: Text(
+                  "From 1 April 2025 to $todayFormatted",
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+
+            // -------------------------------------------------
+            //          DONUT CHART + STATS  (totals se)
             // -------------------------------------------------
             Container(
               padding: EdgeInsets.all(10.sp),
@@ -590,94 +615,116 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
               ),
               child: Row(
                 children: [
-                  // Donut
+
+                  // ── Donut ──────────────────────────────────
                   SizedBox(
                     height: 120.sp,
                     width: 150.sp,
-                    child: PieChart(
-                      PieChartData(
-                        centerSpaceRadius: 35,
-                        sectionsSpace: 3,
-                        sections: isAllZero
-                            ? [
-                          /// 🩶 When no data
-                          PieChartSectionData(
-                            value: 100,
-                            title: "0.0 %",
-                            color: Colors.grey,
-                            radius: 45,
-                            titleStyle: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ]
-                            : [
-                          PieChartSectionData(
-                            value: chart["present"],
-                            title: "${chart["present"]!.toStringAsFixed(1)} %",
-                            color: Colors.green,
-                            radius: 45,
-                            titleStyle: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            value: chart["absent"],
-                            title: "${chart["absent"]!.toStringAsFixed(1)} %",
-                            color: Colors.red,
-                            radius: 45,
-                            titleStyle: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            value: chart["leave"],
-                            title: "${chart["leave"]!.toStringAsFixed(1)} %",
-                            color: Colors.orange,
-                            radius: 45,
-                            titleStyle: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            value: chart["holiday"],
-                            title: "${chart["holiday"]!.toStringAsFixed(1)} %",
-                            color: Colors.purple,
-                            radius: 45,
-                            titleStyle: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        PieChart(
+                          PieChartData(
+                            centerSpaceRadius: 42,  // ← thoda bada center
+                            sectionsSpace: 3,
+                            sections: isAllZero
+                                ? [
+                              PieChartSectionData(
+                                value: 100,
+                                title: "",
+                                color: Colors.grey,
+                                radius: 35,
+                              ),
+                            ]
+                                : [
+                              PieChartSectionData(
+                                value: totals["present"],
+                                title: "${totals["present"]!.toInt()}",
+                                color: Colors.green,
+                                radius: 35,
+                                titleStyle: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11.sp,
+                                ),
+                              ),
+                              PieChartSectionData(
+                                value: totals["absent"],
+                                title: "${totals["absent"]!.toInt()}",
+                                color: Colors.red,
+                                titleStyle: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11.sp,
+                                ),
+                                radius: 35,
+                              ),
+                              PieChartSectionData(
+                                value: totals["leave"],
+                                title:  "${totals["leave"]!.toInt()}",
+                                color: Colors.orange,
+                                titleStyle: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11.sp,
+                                ),
+                                radius: 35,
+                              ),
 
+                            ],
+                          ),
+                        ),
+
+                        // ── Center Text Overlay ──────────────────────────────
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Total Working\nDays",
+                              style: TextStyle(
+                                fontSize: 7.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(
+                              height: 3.sp,
+                            ),
+                            Text(
+                              "${totals["working"]!.toInt()}",
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
+
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-
                   SizedBox(width: 20),
 
-                  // Stats
+                  // ── Stats ──────────────────────────────────
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        statRow("Present", Colors.green, chart["present"].toString()),
-                        statRow("Absent", Colors.red, chart["absent"].toString()),
-                        statRow("Leave", Colors.orange, chart["leave"].toString()),
-                        statRow("Holiday", Colors.purple, chart["holiday"].toString()),
+                        statRow(" Total Working Days", Colors.blue,
+                            totals["working"]!.toInt().toString()),
+                        statRow("Total Present", Colors.green,
+                            totals["present"]!.toInt().toString()),
+                        statRow("Total Absent", Colors.red,
+                            totals["absent"]!.toInt().toString()),
+                        statRow("Total Leave", Colors.orange,
+                            totals["leave"]!.toInt().toString()),
+
                       ],
                     ),
                   ),
+
                 ],
               ),
             ),
@@ -685,12 +732,11 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
             SizedBox(height: 25),
 
             // -------------------------------------------------
-            //                    TABLE HEADER
+            //                TABLE HEADER
             // -------------------------------------------------
             Container(
               padding: EdgeInsets.symmetric(vertical: 12.sp),
               decoration: BoxDecoration(
-                // color: Colors.blue.shade50,
                 color: AppColors2.primary,
                 borderRadius: BorderRadius.circular(0),
               ),
@@ -701,8 +747,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
                   tableHeader("Present"),
                   tableHeader("Absent"),
                   tableHeader("Leave"),
-                  tableHeader("Holiday"),
-                  // tableHeader("%"),
+                  // tableHeader("Holiday"),
                 ],
               ),
             ),
@@ -710,7 +755,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
             SizedBox(height: 10),
 
             // -------------------------------------------------
-            //                    DYNAMIC ROWS
+            //                DYNAMIC ROWS
             // -------------------------------------------------
             ...months.map((m) {
               return buildRowDynamic(
@@ -719,13 +764,10 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
                 m["present"],
                 m["absent"],
                 m["leave"],
-                m["holiday"],
-                // m["percentage"].toString(),
               );
             }).toList(),
 
-    SizedBox(height: 10),
-
+            SizedBox(height: 10),
 
             buildRowDynamic(
               "TOTAL",
@@ -733,9 +775,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
               totals["present"]!.toInt(),
               totals["absent"]!.toInt(),
               totals["leave"]!.toInt(),
-              totals["holiday"]!.toInt(),
-              // totals["percent"]!.toStringAsFixed(1) + "%",
-              isTotal: true,   // EXTRA PARAMETER
+              isTotal: true,
             ),
 
           ],
@@ -749,7 +789,6 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
       int present,
       int absent,
       int leave,
-      int holiday,
       // String percentage,
       {
         bool isTotal = false,
@@ -769,7 +808,6 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
           tableValue("$present"),
           tableValue("$absent"),
           tableValue("$leave"),
-          tableValue("$holiday"),
           // tableValue(percentage),
         ],
       ),
@@ -1246,12 +1284,12 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
           Text(
             "$title: ",
             style: GoogleFonts.poppins(
-                fontSize: 14, fontWeight: FontWeight.w600),
+                fontSize: 14, fontWeight: FontWeight.w600,color: color),
           ),
           Text(
-            '$value %',
+            '$value',
             style: GoogleFonts.poppins(
-                fontSize: 14, fontWeight: FontWeight.bold),
+                fontSize: 14, fontWeight: FontWeight.bold,color: color),
           ),
         ],
       ),

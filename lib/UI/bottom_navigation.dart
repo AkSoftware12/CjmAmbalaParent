@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:avi/UI/Notification/notification.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +7,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-
 import '../TecaherUi/UI/BirthdayScreen/birthday_screen.dart';
 import '../UI/Dashboard/HomeScreen .dart';
 import '../constants.dart';

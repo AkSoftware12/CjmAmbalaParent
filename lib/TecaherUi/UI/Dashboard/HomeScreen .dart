@@ -182,9 +182,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     fetchStudentData();
     fetchBannerData();
     fetchData();
+    updateDatetime();
   }
 
+  Future<void> updateDatetime() async {
+    final prefs = await SharedPreferences.getInstance();
 
+    final teacherToken = prefs.getString('teachertoken');
+    final userToken = prefs.getString('token');
+
+    // ✅ jo token mile use karo
+    final token = (teacherToken != null && teacherToken.isNotEmpty)
+        ? teacherToken
+        : userToken;
+
+    if (token == null || token.isEmpty) {
+      print('No token found');
+      return;
+    }
+
+    final uri = Uri.parse(ApiRoutes.appReport);
+
+    final request = http.MultipartRequest('POST', uri);
+
+    // ✅ Only ONE token header
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // datetime field
+    request.fields['datetime'] =
+        DateTime.now().toLocal().toString().substring(0, 19);
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['success'] == true) {
+          print('AppReport: ${data['message']}');
+        } else {
+          print('AppReport Failed: ${data['message']}');
+        }
+      } else {
+        print('HTTP Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Update datetime error: $e');
+    }
+  }
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('teachertoken');

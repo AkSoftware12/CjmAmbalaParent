@@ -1,4 +1,5 @@
 import 'package:avi/utils/date_time_utils.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -133,8 +134,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           child: Column(
             children: [
               Container(
-                height: 150,
-                padding:  EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                height: 120.sp,
+                padding:  EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                 decoration:  BoxDecoration(
                   gradient: LinearGradient(
                     colors: [AppColors2.primary, AppColors2.primary],
@@ -150,33 +151,42 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                   children: [
                     // Profile Image
                     SizedBox(
-                      height: 120,
-                      width: 120,
+                      height: 120.sp,
+                      width: 120.sp,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
-                        child: Image.network(
-                          teacherData?['photo'] ?? '', // Use an empty string if the photo is null
-                          // fit: BoxFit.fill,
-                          errorBuilder: (context, error, stackTrace) {
-                            // This widget will be displayed if the image fails to load
-                            return Container(
-                              height: 120,
-                              width: 120,
-                              color: Colors.white,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: Image.asset(
-                                  AppAssets.cjmlogo,  // Assuming AppAssets.logo is a string path to an asset
-                                  fit: BoxFit.cover,  // Ensures the logo fills the avatar space
-                                ),
+                        child: CachedNetworkImage(
+                          imageUrl: teacherData?['photo'] ?? '',
+                          fit: BoxFit.cover,
+                          height: 120.sp,
+                          width: 120.sp,
+
+                          // ✅ Jab image load ho rahi ho (shimmer/placeholder)
+                          placeholder: (context, url) => Container(
+                            height: 140.sp,
+                            width: 120.sp,
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2,color: Colors.red,),
+                            ),
+                          ),
+
+                          // ✅ Agar image load na ho ya URL empty ho
+                          errorWidget: (context, url, error) => Container(
+                            height: 140.sp,
+                            width: 120.sp,
+                            color: Colors.white,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(
+                                AppAssets.cjmlogo,
+                                fit: BoxFit.cover,
                               ),
-                            );
-                          },
+                            ),
+                          ),
                         ),
                       ),
-
-                    ),
-                    // User Info
+                    ),                    // User Info
                     Expanded(
 
                       child: Container(
@@ -248,8 +258,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               // ]),
               const SizedBox(height: 20),
               _buildAnimatedSection('Contact Information', [
-                buildProfileRow('Father Name', teacherData?['fs_name']??''),
-                buildProfileRow('Father Contact', teacherData?['fs_phone']??''),
+                buildProfileRow('${teacherData?['fs_relation']??'Father'} Name', teacherData?['fs_name']??''),
+                buildProfileRow('${teacherData?['fs_relation']??'Father'} Contact', teacherData?['fs_phone']??''),
                 buildProfileRow('Contact Number', teacherData?['phone']??''),
                 buildProfileRow('Email', teacherData?['email']??''),
                 buildProfileRow('Address', teacherData?['permanent_address']??''),

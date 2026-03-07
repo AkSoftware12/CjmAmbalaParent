@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:scrollable_clean_calendar/controllers/clean_calendar_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -152,8 +153,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (!mounted) return;
       ref.read(dashboardDataProvider.notifier).fetchDashboardData();
     });
-  }
 
+    updateDatetime();
+  }
+  Future<void> updateDatetime() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final teacherToken = prefs.getString('teachertoken');
+    final userToken = prefs.getString('token');
+
+    // ✅ jo token mile use karo
+    final token = (teacherToken != null && teacherToken.isNotEmpty)
+        ? teacherToken
+        : userToken;
+
+    if (token == null || token.isEmpty) {
+      print('No token found');
+      return;
+    }
+
+    final uri = Uri.parse(ApiRoutes.appReport);
+
+    final request = http.MultipartRequest('POST', uri);
+
+    // ✅ Only ONE token header
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // ✅ 24 hour format datetime
+    String formattedDate =
+    DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+
+    request.fields['datetime'] = formattedDate;
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['success'] == true) {
+          print('AppReport: ${data['message']}');
+        } else {
+          print('AppReport Failed: ${data['message']}');
+        }
+      } else {
+        print('HTTP Error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Update datetime error: $e');
+    }
+  }
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
