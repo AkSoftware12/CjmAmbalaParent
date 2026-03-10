@@ -192,7 +192,7 @@ class _AssignmentListScreenState extends State<TeacherMesssageListScreen> {
               children: [
                 // Conversations text
                 Text(
-                  'Conversations (${totalChat})',
+                  'Conversations ($totalChat)',
                   style: GoogleFonts.montserrat(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
@@ -345,7 +345,7 @@ class _AssignmentListScreenState extends State<TeacherMesssageListScreen> {
                           messageSendPermissionsApp:
                           widget.messageSendPermissionsApp,
                           name: assignment['partner_name'],
-                          msgSendId: assignment['partner_id'],
+                          msgSendId: assignment['partner_id'].toString(),
                           designation:
                           '${assignment['partnerclass'].toString()}(${assignment['partnersection'].toString()})',
                         ),

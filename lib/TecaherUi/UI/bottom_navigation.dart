@@ -1,3 +1,4 @@
+import 'package:avi/TecaherUi/UI/AdminTransactionLibrary/admin_transaction_library.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +38,7 @@ import 'TeacherMessage/message.dart';
 import 'TeachingStaff/teaching_staff.dart';
 import 'TeachingStaffProfile/teaching_staff_profile.dart';
 import 'TimeTable/time_table_teacher.dart';
+import 'TransactionLibrary/teacher_transaction_library.dart';
 
 class TeacherBottomNavBarScreen extends StatefulWidget {
   // final String token;
@@ -1197,14 +1199,30 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               ),
                             ),
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return IssuedBooksScreen();
-                                  },
-                                ),
-                              );
+
+                              final role = int.tryParse(teacherData?['role_manual'].toString() ?? '') ?? 0;
+
+                              if (role == 2) {
+                                // ✅ AdminTimeTable open
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AdminBooksScreen(),
+                                  ),
+                                );
+                              } else {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return TeacherIssuedBooksScreen();
+                                    },
+                                  ),
+                                );
+                              }
+
+
+
                             },
                           ),
                           Padding(

@@ -351,7 +351,7 @@ class AchievementDetailsWaveScreen extends StatelessWidget {
                         children: [
                           _Chip(icon: Icons.place_rounded, text: item.venue ?? "—"),
                           _Chip(icon: Icons.event_rounded, text: AppDateTimeUtils.date(item.eventDate) ?? "—"),
-                          _Chip(icon: Icons.calendar_month_rounded, text: "Entry: ${AppDateTimeUtils.date(item.entryDate) ?? "-"}"),
+                          // _Chip(icon: Icons.calendar_month_rounded, text: "Entry: ${AppDateTimeUtils.date(item.entryDate) ?? "-"}"),
                         ],
                       ),
                     ],
@@ -650,24 +650,8 @@ class _AchievementCard extends StatelessWidget {
                     children: [
                       _Chip(icon: Icons.place_rounded, text: item.venue ?? "—"),
                       _Chip(icon: Icons.event_rounded, text: AppDateTimeUtils.date(item.eventDate) ?? "—"),
-                    ],
-                  ),
-                  SizedBox(height: 0.h),
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_month_rounded, size: 16.sp, color: Colors.black45),
-                      SizedBox(width: 6.w),
-                      Text(
-                        "Entry: ${AppDateTimeUtils.date(item.entryDate) ?? "-"}",
-                        style: GoogleFonts.poppins(
-                          fontSize: 11.5.sp,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Spacer(),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                        padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 6.h),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withOpacity(.10),
                           borderRadius: BorderRadius.circular(30.r),
@@ -681,6 +665,7 @@ class _AchievementCard extends StatelessWidget {
                           ),
                         ),
                       ),
+
                     ],
                   ),
                 ],

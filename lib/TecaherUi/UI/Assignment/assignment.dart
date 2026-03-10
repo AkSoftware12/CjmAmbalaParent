@@ -1,9 +1,7 @@
-
 import 'package:avi/TecaherUi/UI/Assignment/update_assignments.dart';
 import 'package:avi/TecaherUi/UI/Assignment/upload_assignments.dart' show AssignmentUploadScreen;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
@@ -13,9 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../CommonCalling/data_not_found.dart';
 import '../../../constants.dart';
-import '../../../utils/textSize.dart';
 import 'package:html/parser.dart' as html_parser;
-
 import 'assinment_detail.dart';
 
 class AssignmentListScreen extends StatefulWidget {
@@ -25,792 +21,852 @@ class AssignmentListScreen extends StatefulWidget {
 
 class _AssignmentListScreenState extends State<AssignmentListScreen> {
   bool isLoading = true;
-  List assignments = []; // Declare a list to hold API data
+  List assignments = [];
+
+  static const Color _red = Color(0xFFB71C1C);
+  static const Color _redDark = Color(0xFF7F0000);
+  static const Color _redLight = Color(0xFFEF5350);
+  static const Color _redBg = Color(0xFFFFF5F5);
+  static const Color _redTint = Color(0xFFFFEBEE);
 
   @override
   void initState() {
     super.initState();
-
-    DateTime.now().subtract(const Duration(days: 30));
-
     fetchAssignmentsData();
   }
 
+  // ✅ FIX: Simple call, no setState wrapping
   void _refresh() {
-    setState(() {
-      fetchAssignmentsData();
-    });
+    fetchAssignmentsData();
   }
 
   Future<void> fetchAssignmentsData() async {
-    setState(() {
-      isLoading = true; // Show progress bar
-    });
+    setState(() => isLoading = true);
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('teachertoken');
-    print("Token: $token");
-
-    final response = await http.get(
-      Uri.parse(ApiRoutes.getTeacherAssignments),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    print('Url :- ${ApiRoutes.getTeacherAssignments}');
-
-    if (response.statusCode == 200) {
-      final jsonResponse = json.decode(response.body);
-      setState(() {
-        assignments = jsonResponse['data'];
-        isLoading = false; // Stop progress bar
-// Update state with fetched data
-      });
-    } else {
-      setState(() {
-        isLoading = false;
-      });
+    try {
+      final response = await http.get(
+        Uri.parse(ApiRoutes.getTeacherAssignments),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final j = json.decode(response.body);
+        if (mounted) setState(() { assignments = j['data']; isLoading = false; });
+      } else {
+        if (mounted) setState(() => isLoading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => isLoading = false);
     }
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      body: Stack(
-        children: [
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  // HexColor('#003366').withOpacity(0.5),
-                  AppColors2.primary,
-                  AppColors2.primary,
-                ],
-                // Change colors as needed
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.red,
+        iconTheme: const IconThemeData(color: Colors.white),
+        automaticallyImplyLeading: true,
+        title: Text(
+          'Assignments',
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 5.sp),
+            child: GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                _slideRoute(AssignmentUploadScreen(onReturn: _refresh)),
+              ),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.sp, vertical: 5.sp),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.add_rounded, color: _red, size: 18.sp),
+                  SizedBox(width: 5.sp),
+                  Text('Create',
+                      style: GoogleFonts.poppins(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: _red)),
+                ]),
               ),
             ),
           ),
-          Column(
-            children: [
-              Card(
-                // color: HexColor('#7a211b'),
-                color: AppColors2.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(30), // Optional rounded corners
-                ),
-                elevation: 1,
-                // Adds shadow for better visibility
-                margin: EdgeInsets.all(0),
-                // Adds some space around the card
-                child: Container(
-                  // color: Colors.transparent,
-                  width: double.infinity, // Makes the card expand horizontally
-                  padding: EdgeInsets.all(5.sp), // Adds padding inside the card
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 40.sp,
-                      ),
-                      Stack(
-                        children: [
-                          Container(
-                            height: 55.sp,
-                            child: Padding(
-                              padding: const EdgeInsets.all(0.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Row(
-                                    children: [
-                                      IconButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        icon: Icon(Icons.arrow_back_ios,
-                                            size: 20.sp, color: Colors.white),
-                                      ),
-                                      SizedBox(
-                                        width: 10.sp,
-                                      ),
-                                      Text(
-                                        'Assignment',
-                                        style: GoogleFonts.poppins(
-                                          textStyle: Theme.of(context)
-                                              .textTheme
-                                              .displayLarge,
-                                          fontSize: TextSizes.textmedium,
-                                          fontWeight: FontWeight.w600,
-                                          fontStyle: FontStyle.normal,
-                                          color: AppColors2.textblack,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Padding(
-                                      padding: EdgeInsets.only(right: 8.sp),
-                                      child: Container(
-                                        height: 30.sp,
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [
-                                              Colors.blue,
-                                              Colors.purple
-                                            ], // Gradient colors
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          borderRadius: BorderRadius.circular(20
-                                              .sp), // Optional: Rounded corners
-                                        ),
-                                        child: ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.transparent,
-                                            // Make button transparent
-                                            shadowColor: Colors.transparent,
-                                            // Remove shadow
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 0),
-                                          ),
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              PageRouteBuilder(
-                                                transitionDuration:
-                                                    Duration(milliseconds: 500),
-                                                // Animation Speed
-                                                pageBuilder: (context,
-                                                        animation,
-                                                        secondaryAnimation) =>
-                                                    AssignmentUploadScreen(
-                                                        onReturn: _refresh),
-                                                transitionsBuilder: (context,
-                                                    animation,
-                                                    secondaryAnimation,
-                                                    child) {
-                                                  var begin = Offset(1.0,
-                                                      0.0); // Right to Left
-                                                  var end = Offset.zero;
-                                                  var tween = Tween(
-                                                          begin: begin,
-                                                          end: end)
-                                                      .chain(CurveTween(
-                                                          curve: Curves
-                                                              .easeInOut));
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: isLoading
+                ? Center(
+                child: CupertinoActivityIndicator(radius: 18.sp, color: _red))
+                : assignments.isEmpty
+                ? Center(
+                child: DataNotFoundWidget(
+                    title: 'No Assignments Available.'))
+                : ListView.builder(
+              itemCount: assignments.length,
+              padding: EdgeInsets.fromLTRB(8.sp, 8.sp, 8.sp, 8.sp),
+              itemBuilder: (context, index) {
+                final a = assignments[index];
+                final String description =
+                    html_parser.parse(a['description']).body?.text ?? '';
 
-                                                  return SlideTransition(
-                                                    position:
-                                                        animation.drive(tween),
-                                                    child: child,
-                                                  );
-                                                },
-                                              ),
-                                            );
-                                          },
-                                          icon: Icon(
-                                            Icons.cloud_upload_outlined,
-                                            size: 16.sp,
-                                            color: Colors.white,
-                                          ),
-                                          // Upload icon
-                                          label: Text(
-                                            'Create Task',
-                                            style: GoogleFonts.poppins(
-                                              textStyle: Theme.of(context)
-                                                  .textTheme
-                                                  .displayLarge,
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w700,
-                                              fontStyle: FontStyle.normal,
-                                              color: AppColors2.textwhite,
-                                            ),
-                                          ),
-                                        ),
-                                      )),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: 25.sp,
-              ),
-              Row(
-                children: [
-                  SizedBox(width: 5.sp),
-                  Icon(
-                    Icons.assignment, // Assignment icon
-                    color: AppColors2.textwhite, // Match text color
-                    size: 22.sp, // Adjust size as needed
-                  ),
-                  SizedBox(width: 8.sp), // Spacing between icon and text
-                  Text(
-                    'Assignment List',
-                    style: GoogleFonts.poppins(
-                      textStyle: Theme.of(context).textTheme.displayLarge,
-                      fontSize: TextSizes.textmedium,
-                      fontWeight: FontWeight.w600,
-                      fontStyle: FontStyle.normal,
-                      color: AppColors2.textwhite,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 5.sp,
-              ),
-              Expanded(
-                child: isLoading
-                    ? Center(
-                        child: Container(
-                            height: MediaQuery.of(context).size.height * 0.5,
-                            child: CupertinoActivityIndicator(
-                              radius: 25,
-                              color: AppColors2.primary,
-                            )))
-                    : assignments.isEmpty
-                        ? Center(
-                            child: DataNotFoundWidget(
-                            title: 'Assignments  Not Available.',
-                          ))
-                        : Stack(
+                final String startDate = (a['start_date'] != null &&
+                    a['start_date'].toString().isNotEmpty)
+                    ? DateFormat('dd MMM yyyy')
+                    .format(DateTime.parse(a['start_date']))
+                    : 'N/A';
+                final String endDate = (a['end_date'] != null &&
+                    a['end_date'].toString().isNotEmpty)
+                    ? DateFormat('dd MMM yyyy')
+                    .format(DateTime.parse(a['end_date']))
+                    : 'N/A';
+                final bool isExpired = a['end_date'] != null &&
+                    DateTime.tryParse(a['end_date'].toString()) != null &&
+                    DateTime.parse(a['end_date'].toString())
+                        .isBefore(DateTime.now());
+
+                return Container(
+                  margin: EdgeInsets.only(bottom: 14.sp),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          width: 1, color: Colors.grey.shade300)),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(8.sp),
+                          child: Column(
+                            crossAxisAlignment:
+                            CrossAxisAlignment.start,
                             children: [
-                              Positioned.fill(
-                                child: ListView.builder(
-                                  itemCount: assignments.length,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 0, vertical: 0),
-                                  itemBuilder: (context, index) {
-                                    final assignment = assignments[index];
-                                    String description = html_parser
-                                            .parse(assignment['description'])
-                                            .body
-                                            ?.text ??
-                                        '';
-                                    String startDate = (assignment['start_date'] != null &&
-                                        assignment['start_date'].toString().isNotEmpty)
-                                        ? DateFormat('dd-MM-yyyy')
-                                        .format(DateTime.parse(assignment['start_date']))
-                                        : 'N/A';
-
-                                    String endDate = (assignment['end_date'] != null &&
-                                        assignment['end_date'].toString().isNotEmpty)
-                                        ? DateFormat('dd-MM-yyyy')
-                                        .format(DateTime.parse(assignment['end_date']))
-                                        : 'N/A';
-
-                                    return GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  AssignmentDetailScreen(id: assignment['id'],)),
-                                        );
-                                      },
-                                      child: Card(
-                                        margin: EdgeInsets.symmetric(
-                                            vertical: 5.sp, horizontal: 5.sp),
-                                        elevation: 0,
-                                        color: Colors.grey.shade200,
-                                        // Light background
-                                        shadowColor: Colors.black26,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            Padding(
-                                              padding: EdgeInsets.all(6.sp),
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  /// **Title & Index**
-                                                  Row(
-                                                    children: [
-                                                      Container(
-                                                        height: 35.sp,
-                                                        width: 35.sp,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color:
-                                                              Colors.blueAccent,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(15),
-                                                        ),
-                                                        child: Center(
-                                                          child: Text(
-                                                            '${index + 1}',
-                                                            style: GoogleFonts
-                                                                .poppins(
-                                                              fontSize: 20,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              color:
-                                                                  Colors.white,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: 15),
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                              assignment[
-                                                                      'title']
-                                                                  .toString()
-                                                                  .toUpperCase(),
-                                                              style: GoogleFonts
-                                                                  .poppins(
-                                                                fontSize: 16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700,
-                                                                color: Colors
-                                                                    .black87,
-                                                              ),
-                                                            ),
-                                                            SizedBox(height: 5),
-                                                            Text(
-                                                              description
-                                                                  .toUpperCase(),
-                                                              maxLines: 1,
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                              style: GoogleFonts
-                                                                  .poppins(
-                                                                fontSize: 13,
-                                                                color: Colors
-                                                                    .grey[600],
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-
-                                                  SizedBox(height: 5.sp),
-
-                                                  /// **Dates**
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      _buildDateInfo(
-                                                          'Start',
-                                                          startDate,
-                                                          Icons.calendar_today),
-                                                      _buildDateInfo(
-                                                          'End',
-                                                          endDate,
-                                                          Icons.calendar_today),
-
-
-
-                                                    ],
-                                                  ),
-
-                                                  SizedBox(height: 10.sp),
-
-                                                  Divider(
-                                                    height: 2.sp,
-                                                    color: Colors.black
-                                                        .withOpacity(0.1),
-                                                    thickness: 2.sp,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                  // color: Colors.black26,
-                                                  // gradient: LinearGradient(
-                                                  //   colors: [HexColor('#7a211b').withOpacity(0.8), HexColor('#003366').withOpacity(0.8)],
-                                                  //   // Change colors as needed
-                                                  //   begin: Alignment.topLeft,
-                                                  //   end: Alignment.bottomRight,
-                                                  // ),
-
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          10)),
-                                              child: Padding(
-                                                padding: EdgeInsets.all(5.sp),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    _buildButton(
-                                                      text: 'View',
-                                                      icon: Icons
-                                                          .remove_red_eye_outlined,
-                                                      color: Colors.blueAccent,
-                                                      onTap: () async {
-
-                                                        if (await canLaunchUrl(Uri.parse(assignment['attach_url'].toString()))) {
-                                                          await launchUrl(Uri.parse(assignment['attach_url'].toString()), mode: LaunchMode.externalApplication);
-                                                        } else {
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            const SnackBar(content: Text('Could not download file')),
-                                                          );
-                                                        }
-                                                        // Navigator.push(
-                                                        //   context,
-                                                        //   MaterialPageRoute(builder: (context) =>  WebViewPage(url: '${assignment['attach_url'].toString()}',
-                                                        //
-                                                        //   )),
-                                                        // );
-
-
-
-                                                        // final Uri _url = Uri
-                                                        //     .parse(assignment[
-                                                        //             'attach_url']
-                                                        //         .toString());
-                                                        //
-                                                        // if (!await launchUrl(
-                                                        //     _url)) {
-                                                        //   throw Exception(
-                                                        //       'Could not launch $_url');
-                                                        // }
-
-                                                      },
-                                                    ),
-                                                    _buildButton(
-                                                      text: 'Edit',
-                                                      icon: Icons.edit,
-                                                      color: Colors.orange,
-                                                      onTap: () {
-                                                        _showUpdateConfirmationDialog(
-                                                          assignment['id'],
-                                                          assignment[
-                                                                  'start_date']
-                                                              .toString(),
-                                                          assignment['end_date']
-                                                              .toString(),
-                                                          assignment['title']
-                                                              .toString(),
-                                                          assignment[
-                                                                  'description']
-                                                              .toString(),
-                                                          assignment[
-                                                                  'total_marks']
-                                                              .toString(),
-                                                        );
-                                                      },
-                                                      // onTap: () {
-                                                      //   Navigator.push(
-                                                      //     context,
-                                                      //     MaterialPageRoute(builder: (context) =>  MyAppDiolog(
-                                                      //
-                                                      //     )),
-                                                      //   );
-                                                      // },
-                                                    ),
-                                                    _buildButton(
-                                                      text: 'DELETE',
-                                                      icon: Icons.delete,
-                                                      color: Colors.redAccent,
-                                                      onTap: () =>
-                                                          _showDeleteConfirmationDialog(
-                                                              assignment['id']
-                                                                  .toString()), // Call delete confirmation
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            )
+                              // Index + Title + Status
+                              Row(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 40.sp,
+                                      height: 40.sp,
+                                      decoration: BoxDecoration(
+                                        gradient: isExpired
+                                            ? null
+                                            : const LinearGradient(
+                                          colors: [
+                                            Colors.red,
+                                            Colors.red
                                           ],
+                                          begin:
+                                          Alignment.topLeft,
+                                          end: Alignment
+                                              .bottomRight,
+                                        ),
+                                        color: isExpired
+                                            ? Colors.grey.shade200
+                                            : null,
+                                        borderRadius:
+                                        BorderRadius.circular(12),
+                                        boxShadow: isExpired
+                                            ? []
+                                            : [
+                                          BoxShadow(
+                                              color: _red
+                                                  .withOpacity(
+                                                  0.35),
+                                              blurRadius: 8,
+                                              offset:
+                                              const Offset(
+                                                  0, 3)),
+                                        ],
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 15.sp,
+                                            fontWeight:
+                                            FontWeight.w800,
+                                            color: isExpired
+                                                ? Colors.grey
+                                                : Colors.white,
+                                          ),
                                         ),
                                       ),
-                                    );
-                                  },
+                                    ),
+                                    SizedBox(width: 12.sp),
+                                    Expanded(
+                                      child: Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment
+                                              .start,
+                                          children: [
+                                            Text(
+                                              a['title'].toString(),
+                                              style:
+                                              GoogleFonts.poppins(
+                                                fontSize: 14.sp,
+                                                fontWeight:
+                                                FontWeight.w700,
+                                                color: const Color(
+                                                    0xFF1A0000),
+                                                height: 1.35,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow
+                                                  .ellipsis,
+                                            ),
+                                            if (description
+                                                .isNotEmpty) ...[
+                                              SizedBox(height: 2.sp),
+                                              Text(
+                                                description,
+                                                maxLines: 1,
+                                                overflow: TextOverflow
+                                                    .ellipsis,
+                                                style: GoogleFonts
+                                                    .poppins(
+                                                    fontSize:
+                                                    11.sp,
+                                                    color: Colors
+                                                        .grey
+                                                        .shade500),
+                                              ),
+                                            ],
+                                          ]),
+                                    ),
+                                    SizedBox(width: 8.sp),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 9.sp,
+                                          vertical: 4.sp),
+                                      decoration: BoxDecoration(
+                                        color: isExpired
+                                            ? Colors.grey.shade100
+                                            : Colors.green.shade100,
+                                        borderRadius:
+                                        BorderRadius.circular(20),
+                                        border: Border.all(
+                                            color: isExpired
+                                                ? Colors.grey.shade300
+                                                : Colors.green),
+                                      ),
+                                      child: Row(
+                                          mainAxisSize:
+                                          MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: 6,
+                                              height: 6,
+                                              decoration:
+                                              BoxDecoration(
+                                                shape:
+                                                BoxShape.circle,
+                                                color: isExpired
+                                                    ? Colors.grey
+                                                    : Colors.green,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              isExpired
+                                                  ? 'Expired'
+                                                  : 'Active',
+                                              style:
+                                              GoogleFonts.poppins(
+                                                fontSize: 9.sp,
+                                                fontWeight:
+                                                FontWeight.w700,
+                                                color: isExpired
+                                                    ? Colors
+                                                    .grey.shade500
+                                                    : Colors.green,
+                                              ),
+                                            ),
+                                          ]),
+                                    ),
+                                  ]),
+
+                              SizedBox(height: 8.sp),
+
+                              // Dates
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 12.sp, vertical: 0.sp),
+                                decoration: BoxDecoration(
+                                  color: _redBg,
+                                  borderRadius:
+                                  BorderRadius.circular(12),
+                                  border:
+                                  Border.all(color: _redTint),
                                 ),
+                                child: Row(children: [
+                                  Expanded(
+                                    child: Row(children: [
+                                      Icon(
+                                          Icons
+                                              .play_circle_fill_rounded,
+                                          size: 15.sp,
+                                          color: _red),
+                                      SizedBox(width: 6.sp),
+                                      Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment
+                                              .start,
+                                          children: [
+                                            Text('Start Date',
+                                                style: GoogleFonts
+                                                    .poppins(
+                                                    fontSize:
+                                                    9.sp,
+                                                    color: Colors
+                                                        .grey
+                                                        .shade400,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .w500)),
+                                            Text(startDate,
+                                                style: GoogleFonts
+                                                    .poppins(
+                                                    fontSize:
+                                                    11.sp,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .w700,
+                                                    color: const Color(
+                                                        0xFF1A0000))),
+                                          ]),
+                                    ]),
+                                  ),
+                                  Container(
+                                      height: 32.sp,
+                                      width: 1,
+                                      color: _redTint),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                          left: 12.sp),
+                                      child: Row(children: [
+                                        Icon(Icons.flag_rounded,
+                                            size: 15.sp,
+                                            color: isExpired
+                                                ? Colors.grey.shade400
+                                                : _redLight),
+                                        SizedBox(width: 6.sp),
+                                        Column(
+                                            crossAxisAlignment:
+                                            CrossAxisAlignment
+                                                .start,
+                                            children: [
+                                              Text('Due Date',
+                                                  style: GoogleFonts
+                                                      .poppins(
+                                                      fontSize:
+                                                      9.sp,
+                                                      color: Colors
+                                                          .grey
+                                                          .shade400,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .w500)),
+                                              Text(endDate,
+                                                  style: GoogleFonts
+                                                      .poppins(
+                                                      fontSize:
+                                                      11.sp,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .w700,
+                                                      color: const Color(
+                                                          0xFF1A0000))),
+                                            ]),
+                                      ]),
+                                    ),
+                                  ),
+                                ]),
                               ),
+
+                              SizedBox(height: 8.sp),
+
+                              // Action Buttons
+                              Row(children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                AssignmentDetailScreen(
+                                                    id: a['id']))),
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 5.sp),
+                                      decoration: BoxDecoration(
+                                          color: const Color(
+                                              0xFFE3F2FD),
+                                          borderRadius:
+                                          BorderRadius.circular(
+                                              12)),
+                                      child: Column(
+                                          mainAxisSize:
+                                          MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.info_rounded,
+                                                color: const Color(
+                                                    0xFF1565C0),
+                                                size: 15.sp),
+                                            Text('Report',
+                                                style: GoogleFonts.poppins(
+                                                    fontSize: 9.sp,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .w700,
+                                                    color: const Color(
+                                                        0xFF1565C0))),
+                                          ]),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 7.sp),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      final url =
+                                      a['attach_url'].toString();
+                                      if (await canLaunchUrl(
+                                          Uri.parse(url))) {
+                                        await launchUrl(
+                                            Uri.parse(url),
+                                            mode: LaunchMode
+                                                .externalApplication);
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: const Text(
+                                                  'Could not open file'),
+                                              backgroundColor: _red,
+                                              behavior: SnackBarBehavior
+                                                  .floating,
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                  BorderRadius
+                                                      .circular(
+                                                      10))),
+                                        );
+                                      }
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 5.sp),
+                                      decoration: BoxDecoration(
+                                          color: const Color(
+                                              0xFFE8F5E9),
+                                          borderRadius:
+                                          BorderRadius.circular(
+                                              12)),
+                                      child: Column(
+                                          mainAxisSize:
+                                          MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                                Icons
+                                                    .open_in_new_rounded,
+                                                color: const Color(
+                                                    0xFF2E7D32),
+                                                size: 15.sp),
+                                            Text('View',
+                                                style: GoogleFonts.poppins(
+                                                    fontSize: 9.sp,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .w700,
+                                                    color: const Color(
+                                                        0xFF2E7D32))),
+                                          ]),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 7.sp),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => _showUpdateDialog(
+                                      a['id'],
+                                      a['start_date'].toString(),
+                                      a['end_date'].toString(),
+                                      a['title'].toString(),
+                                      a['description'].toString(),
+                                      a['total_marks'].toString(),
+                                    ),
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 5.sp),
+                                      decoration: BoxDecoration(
+                                          color: const Color(
+                                              0xFFFFF3E0),
+                                          borderRadius:
+                                          BorderRadius.circular(
+                                              12)),
+                                      child: Column(
+                                          mainAxisSize:
+                                          MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.edit_rounded,
+                                                color: const Color(
+                                                    0xFFE65100),
+                                                size: 15.sp),
+                                            Text('Edit',
+                                                style: GoogleFonts.poppins(
+                                                    fontSize: 9.sp,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .w700,
+                                                    color: const Color(
+                                                        0xFFE65100))),
+                                          ]),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 7.sp),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () => _showDeleteDialog(
+                                        a['id'].toString()),
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 5.sp),
+                                      decoration: BoxDecoration(
+                                          color: _redTint,
+                                          borderRadius:
+                                          BorderRadius.circular(
+                                              12)),
+                                      child: Column(
+                                          mainAxisSize:
+                                          MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                                Icons.delete_rounded,
+                                                color: _red,
+                                                size: 15.sp),
+                                            Text('Delete',
+                                                style: GoogleFonts.poppins(
+                                                    fontSize: 9.sp,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .w700,
+                                                    color: _red)),
+                                          ]),
+                                    ),
+                                  ),
+                                ),
+                              ]),
                             ],
                           ),
-              )
-            ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// **Reusable Widget for Date**
-  Widget _buildDateInfo(String label, String date, IconData icon) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
-          ),
-        ),
-        Row(
-          children: [
-            Icon(icon, size: 16, color: Colors.black54), // Add Icon
-            SizedBox(width: 4), // Space between icon and text
-            Text(
-              date,
-              style: GoogleFonts.poppins(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+  void _showDeleteDialog(String id) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: EdgeInsets.all(22.sp),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 60.sp,
+              height: 60.sp,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                    colors: [_redDark, _red],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                      color: _red.withOpacity(0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4))
+                ],
               ),
+              child: Icon(Icons.delete_forever_rounded,
+                  color: Colors.white, size: 28.sp),
             ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  /// **Reusable Button Widget**
-  Widget _buildButton({
-    required String text,
-    required Color color,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 120, // Increased width to fit the icon
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        padding: EdgeInsets.symmetric(vertical: 10),
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min, // Adjust to fit content
-            children: [
-              Icon(icon, color: Colors.white, size: 16), // Icon added
-              SizedBox(width: 5), // Space between icon and text
-              Text(
-                text.toUpperCase(),
+            SizedBox(height: 14.sp),
+            Text('Delete Assignment',
                 style: GoogleFonts.poppins(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1A0000)),
+                textAlign: TextAlign.center),
+            SizedBox(height: 6.sp),
+            Text('This action cannot be undone. Are you sure?',
+                style: GoogleFonts.poppins(
+                    fontSize: 12.sp,
+                    color: Colors.grey.shade500,
+                    height: 1.5),
+                textAlign: TextAlign.center),
+            SizedBox(height: 22.sp),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade300),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: EdgeInsets.symmetric(vertical: 12.sp),
+                  ),
+                  child: Text('Cancel',
+                      style: GoogleFonts.poppins(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade600)),
                 ),
               ),
-            ],
-          ),
+              SizedBox(width: 10.sp),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient:
+                    const LinearGradient(colors: [_redDark, _red]),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                          color: _red.withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3))
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _deleteAssignment(id);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: EdgeInsets.symmetric(vertical: 12.sp),
+                    ),
+                    child: Text('Delete',
+                        style: GoogleFonts.poppins(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white)),
+                  ),
+                ),
+              ),
+            ]),
+          ]),
         ),
       ),
     );
   }
 
-  void _showDeleteConfirmationDialog(String assignmentId) {
+  void _showUpdateDialog(
+      int id, String start, String end, String title, String desc, String marks) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15), // Rounded Corners
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
-              // Warning Icon
-              SizedBox(width: 10),
-              Text("Confirm Delete",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: Text(
-            "Are you sure you want to delete this assignment?",
-            style: TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context), // Cancel
-              child: Text("Cancel", style: TextStyle(color: Colors.grey)),
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: EdgeInsets.all(22.sp),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 60.sp,
+              height: 60.sp,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                    colors: [Color(0xFFE65100), Color(0xFFF4511E)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                      color: const Color(0xFFE65100).withOpacity(0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4))
+                ],
+              ),
+              child:
+              Icon(Icons.edit_rounded, color: Colors.white, size: 28.sp),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // Red Delete Button
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            SizedBox(height: 14.sp),
+            Text('Update Assignment',
+                style: GoogleFonts.poppins(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1A0000)),
+                textAlign: TextAlign.center),
+            SizedBox(height: 6.sp),
+            Text('Open editor to make changes to this assignment?',
+                style: GoogleFonts.poppins(
+                    fontSize: 12.sp,
+                    color: Colors.grey.shade500,
+                    height: 1.5),
+                textAlign: TextAlign.center),
+            SizedBox(height: 22.sp),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade300),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: EdgeInsets.symmetric(vertical: 12.sp),
+                  ),
+                  child: Text('Cancel',
+                      style: GoogleFonts.poppins(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade600)),
                 ),
               ),
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-                _deleteAssignment(assignmentId); // Call API
-              },
-              child: Text("Delete", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showUpdateConfirmationDialog(int id, String startDate, String endDate,
-      String title, String descripation, String marks) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.info_outline, color: Colors.blue, size: 50),
-                SizedBox(height: 12),
-                Text(
-                  "Update Assignment",
-                  style:
-                      TextStyle(fontWeight: FontWeight.bold, fontSize: 18.sp),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  "Are you sure you want to update this assignment?",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black54),
-                ),
-                SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text("Cancel".toUpperCase(),
-                          style: TextStyle(color: Colors.white)),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
+              SizedBox(width: 10.sp),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        colors: [Color(0xFFE65100), Color(0xFFF4511E)]),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                          color: const Color(0xFFE65100).withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3))
+                    ],
+                  ),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
                           context,
-                          PageRouteBuilder(
-                            transitionDuration: Duration(milliseconds: 500),
-                            // Animation Speed
-                            pageBuilder:
-                                (context, animation, secondaryAnimation) =>
-                                    AssignmentUpdateScreen(
-                              onReturn: _refresh,
-                              startDate: startDate,
-                              endDate: endDate,
-                              id: id,
-                              title: title,
-                              descripation: descripation,
-                              marks: marks,
-                            ),
-                            transitionsBuilder: (context, animation,
-                                secondaryAnimation, child) {
-                              var begin = Offset(1.0, 0.0); // Right to Left
-                              var end = Offset.zero;
-                              var tween = Tween(begin: begin, end: end)
-                                  .chain(CurveTween(curve: Curves.easeInOut));
-
-                              return SlideTransition(
-                                position: animation.drive(tween),
-                                child: child,
-                              );
-                            },
-                          ),
-                        );
-                      },
-                      child: Text("Update".toUpperCase(),
-                          style: TextStyle(color: Colors.white)),
+                          _slideRoute(AssignmentUpdateScreen(
+                            onReturn: _refresh,
+                            startDate: start,
+                            endDate: end,
+                            id: id,
+                            title: title,
+                            descripation: desc,
+                            marks: marks,
+                          )));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding: EdgeInsets.symmetric(vertical: 12.sp),
                     ),
-                  ],
-                )
-              ],
-            ),
-          ),
-        );
-      },
+                    child: Text('Edit Now',
+                        style: GoogleFonts.poppins(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white)),
+                  ),
+                ),
+              ),
+            ]),
+          ]),
+        ),
+      ),
     );
   }
 
-  Future<void> _deleteAssignment(String assignmentId) async {
+  Future<void> _deleteAssignment(String id) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('teachertoken'); // Retrieve Token
-      print("Token: $token");
-
-      String apiUrl = "${ApiRoutes.deleteTeacherAssignment}/$assignmentId"; // API URL
-
-      final response = await http.get(
-        Uri.parse(apiUrl),
+      final token = prefs.getString('teachertoken');
+      final res = await http.get(
+        Uri.parse('${ApiRoutes.deleteTeacherAssignment}/$id'),
         headers: {
-          "Authorization": "Bearer $token", // Include token
-          "Content-Type": "application/json",
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json'
         },
       );
-
-      if (response.statusCode == 200) {
-        print("Assignment Deleted Successfully!");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Assignment Deleted Successfully!")),
-        );
-        _refresh();
-
-        // Refresh List After Deletion
-        setState(() {
-          assignments.removeWhere((item) => item['id'] == assignmentId);
-        });
+      if (res.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Row(children: [
+              const Icon(Icons.check_circle_outline,
+                  color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text('Assignment deleted!',
+                  style: GoogleFonts.poppins(fontSize: 13.sp)),
+            ]),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(14.sp),
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ));
+          _refresh();
+        }
       } else {
-        print("Failed to Delete: ${response.statusCode}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to delete assignment")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed to delete',
+                style: GoogleFonts.poppins(fontSize: 13.sp)),
+            backgroundColor: _red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(14.sp),
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ));
+        }
       }
-    } catch (e) {
-      print("Error Deleting Assignment: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error occurred while deleting")),
-      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error while deleting',
+              style: GoogleFonts.poppins(fontSize: 13.sp)),
+          backgroundColor: _red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(14.sp),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
+      }
     }
   }
+
+  PageRouteBuilder _slideRoute(Widget page) => PageRouteBuilder(
+    transitionDuration: const Duration(milliseconds: 450),
+    pageBuilder: (_, __, ___) => page,
+    transitionsBuilder: (_, anim, __, child) => SlideTransition(
+      position: Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+          .chain(CurveTween(curve: Curves.easeInOut))
+          .animate(anim),
+      child: child,
+    ),
+  );
 }

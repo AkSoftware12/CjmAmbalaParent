@@ -151,14 +151,14 @@ class IssuedBookModel {
 /// API: http://192.168.1.9/cjm_ambala12/api/issued-books
 /// TOKEN: token OR teachertoken (multi teacher)
 /// =======================================================
-class IssuedBooksScreen extends StatefulWidget {
-  const IssuedBooksScreen({super.key});
+class TeacherIssuedBooksScreen extends StatefulWidget {
+  const TeacherIssuedBooksScreen({super.key});
 
   @override
-  State<IssuedBooksScreen> createState() => _IssuedBooksScreenState();
+  State<TeacherIssuedBooksScreen> createState() => _IssuedBooksScreenState();
 }
 
-class _IssuedBooksScreenState extends State<IssuedBooksScreen> {
+class _IssuedBooksScreenState extends State<TeacherIssuedBooksScreen> {
   bool isLoading = false;
   List<IssuedBookModel> list = [];
 
@@ -173,8 +173,8 @@ class _IssuedBooksScreenState extends State<IssuedBooksScreen> {
 
     final prefs = await SharedPreferences.getInstance();
 
-    // ✅ MULTI TOKEN SUPPORT (student token + teacher token)
-    final token = prefs.getString('token');
+    final teacherToken = prefs.getString('teachertoken');
+
 
     final url =
     Uri.parse(ApiRoutes.getIssuedBooks);
@@ -183,7 +183,7 @@ class _IssuedBooksScreenState extends State<IssuedBooksScreen> {
       final res = await http.get(
         url,
         headers: {
-          'Authorization': 'Bearer $token',
+          'Authorization': 'Bearer $teacherToken',
           'Accept': 'application/json',
         },
       );
