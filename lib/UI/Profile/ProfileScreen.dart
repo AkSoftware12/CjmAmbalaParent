@@ -196,7 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               Text(
                                 studentData!['student_name'],
                                 style: GoogleFonts.montserrat(
-                                  fontSize: 15.sp,
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
@@ -252,9 +252,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               ]),
               const SizedBox(height: 20),
               _buildAnimatedSection('Contact Information', [
-                buildProfileRow('Contact Person', studentData!['contact_person']??''),
-                buildProfileRow('Contact Number', studentData!['contact_no']??''),
-                buildProfileRow('Email', studentData!['email']??''),
+                buildProfileRow('Mother Name', studentData!['mother_name']??''),
+                buildProfileRow('Mother Contact no.', studentData!['mother_mobile']??''),
+                buildProfileRow('Mother Email', studentData!['mother_email']??''),
+                // buildProfileRow('Contact Person', studentData!['contact_person']??''),
+                // buildProfileRow('Contact Number', studentData!['contact_no']??''),
+                // buildProfileRow('Email', studentData!['email']??''),
                 buildProfileRow('Address', studentData!['address']??''),
               ]),
               const SizedBox(height: 20),

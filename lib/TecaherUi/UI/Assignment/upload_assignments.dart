@@ -135,8 +135,8 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen>
         final Map<String, dynamic> responseData = json.decode(response.body);
         setState(() {
           classes = List<Map<String, dynamic>>.from(responseData['classes']);
-          subject = List<Map<String, dynamic>>.from(responseData['subjects']);
-          section = List<Map<String, dynamic>>.from(responseData['sections']);
+          // subject = List<Map<String, dynamic>>.from(responseData['subjects']);
+          // section = List<Map<String, dynamic>>.from(responseData['sections']);
           isLoading = false;
         });
       }
@@ -144,6 +144,31 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen>
       setState(() => isLoading = false);
     }
   }
+  Future<void> fetchSubject(int id) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('teachertoken');
+      final response = await http.get(
+        Uri.parse('${ApiRoutes.getTeacherTeacherSubject}?class=$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        setState(() {
+          // classes = List<Map<String, dynamic>>.from(responseData['classes']);
+          subject = List<Map<String, dynamic>>.from(responseData['subjects']);
+          // section = List<Map<String, dynamic>>.from(responseData['sections']);
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
+  }
+
 
   Future<void> uploadAssignmentApi() async {
     final isValid = _formKey.currentState!.validate();
@@ -264,7 +289,11 @@ class _AssignmentUploadScreenState extends State<AssignmentUploadScreen>
                       ),
                     );
                   }).toList(),
-                  onChanged: (v) => setState(() => selectedClass = v),
+                  onChanged: (v) {
+                    setState(() => selectedClass = v);
+                    if (v != null) fetchSubject(v); // 👈 yahan call
+                  },
+                  // onChanged: (v) => setState(() => selectedClass = v),
                 ),
                 SizedBox(height: 10.h),
                 _buildDropdownCard(

@@ -7,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../NewUserBottombarPage/new_user_bottombar_page.dart';
 import '../../TecaherUi/UI/bottom_navigation.dart';
+import '../ChangePassword/change_password.dart';
 import '/constants.dart';
 import '../../strings.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -208,42 +209,59 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200) {
         final jsonResponse = response.data;
         if (jsonResponse['success'] == true) {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setString(
-            'studentList',
-            jsonEncode(jsonResponse['students']),
-          );
-          // Save the student_id of the logged-in user
-          if (jsonResponse['students'] != null &&
-              jsonResponse['students'].isNotEmpty &&
-              jsonResponse['students'][0]['student_id'] != null) {
-            await prefs.setString(
-              'selected_student_id',
-              jsonResponse['students'][0]['student_id'].toString(),
-            );
-          }
-          await _saveCredentials();
 
-          setState(() {
-            loginStudent = List<Map<String, dynamic>>.from(
-              jsonResponse['students'],
-            );
-          });
-
-          loginHistory = await _getStoredLoginList();
-          for (var student in loginStudent) {
-            bool exists = loginHistory.any(
-              (s) => s['adm_no'] == student['adm_no'],
-            );
-            if (!exists) loginHistory.insert(0, student);
-          }
-          await _saveLoginList(loginHistory);
 
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => LoginStudentPage()),
-            );
+            // Check password_update field
+            final int passwordUpdate = jsonResponse['students'][0]['password_update'] ?? 0;
+            final int id = jsonResponse['students'][0]['id'];
+
+            if (passwordUpdate == 0) {
+              // Password not updated yet → go to ChangePassword
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChangePasswordScreen(id: id,),
+                ),
+              );
+            } else {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.setString(
+                'studentList',
+                jsonEncode(jsonResponse['students']),
+              );
+              // Save the student_id of the logged-in user
+              if (jsonResponse['students'] != null &&
+                  jsonResponse['students'].isNotEmpty &&
+                  jsonResponse['students'][0]['student_id'] != null) {
+                await prefs.setString(
+                  'selected_student_id',
+                  jsonResponse['students'][0]['student_id'].toString(),
+                );
+              }
+              await _saveCredentials();
+
+              setState(() {
+                loginStudent = List<Map<String, dynamic>>.from(
+                  jsonResponse['students'],
+                );
+              });
+
+              loginHistory = await _getStoredLoginList();
+              for (var student in loginStudent) {
+                bool exists = loginHistory.any(
+                      (s) => s['adm_no'] == student['adm_no'],
+                );
+                if (!exists) loginHistory.insert(0, student);
+              }
+              await _saveLoginList(loginHistory);
+
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginStudentPage()),
+              );
+            }
+
           }
 
           return true; // Success

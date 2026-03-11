@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../ChangePassword/change_password.dart';
 import '/UI/bottom_navigation.dart';
 import '/constants.dart';
 import '../../strings.dart';
@@ -81,13 +82,16 @@ class _LoginPageState extends State<LoginStudentPage> {
           String? token = prefs.getString('token');
           print('${'User Token'}$token'); // Debug: Print retrieved token
 
-          // Navigate to the BottomNavBarScreen with the token
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => BottomNavBarScreen(initialIndex: 0,),
+              builder: (context) => BottomNavBarScreen(initialIndex: 0),
             ),
           );
+
+
+
         } else {
           print('${AppStrings.loginFailedDebug}${responseData['message']}'); // Debug: Print failure message
           _showErrorDialog(responseData['message']);

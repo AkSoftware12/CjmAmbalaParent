@@ -347,135 +347,147 @@ class _StaffCardRed extends StatelessWidget {
     const red1 = Color(0xFFE53935);
     const red2 = Color(0xFFB71C1C);
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.r),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFFFFFF), Color(0xFFFFF5F5)],
-        ),
-        border: Border.all(color: Colors.black.withOpacity(.06)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.08),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          )
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8.r),
-        child: Stack(
-          children: [
-            // header
-            Container(
-              height: 58.h,
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [red1, red2],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(right: -25, top: 12, child: _GlassSweep()),
-                ],
-              ),
+    return GestureDetector(
+      onTap: (){
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StaffProfileScreen(
+              staffId: staff.id,
             ),
-
-            Positioned.fill(
-              top: 5.h,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(5.w, 0, 5.w, 5.h),
-                child: Column(
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8.r),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFFFFF), Color(0xFFFFF5F5)],
+          ),
+          border: Border.all(color: Colors.black.withOpacity(.06)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(.08),
+              blurRadius: 22,
+              offset: const Offset(0, 12),
+            )
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8.r),
+          child: Stack(
+            children: [
+              // header
+              Container(
+                height: 58.h,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [red1, red2],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Stack(
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(3.w),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF5252), Color(0xFFB71C1C)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(.12),
-                            blurRadius: 14,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: GestureDetector(
-                        onTap: () {
-                          if (staff.imageUrl.isEmpty) return;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => StaffProfileScreen(
-                                staffId: staff.id,
-                              ),
-                            ),
-                          );
-                        },
-                        child: CircleAvatar(
-                          radius: 60.r,
-                          backgroundColor: Colors.white,
-                          child: ClipOval(
-                            child: staff.imageUrl.isEmpty
-                                ? _AvatarFallback(size: 84.r)
-                                : Image.network(
-                              staff.imageUrl,
-                              width: 120.r,
-                              height: 120.r,
-                              // fit: BoxFit.fill,
-                              errorBuilder: (_, __, ___) =>
-                                  _AvatarFallback(size: 84.r),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      staff.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 13.5.sp,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF111827),
-                      ),
-                    ),
-                    SizedBox(height: 2.h),
-                    Container(
-                      padding:
-                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 2.h),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEBEE),
-                        borderRadius: BorderRadius.circular(999.r),
-                        border: Border.all(
-                          color: const Color(0xFFE53935).withOpacity(.20),
-                        ),
-                      ),
-                      child: Text(
-                        staff.designation,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.montserrat(
-                          fontSize: 11.2.sp,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFFB71C1C),
-                        ),
-                      ),
-                    ),
+                    Positioned(right: -25, top: 12, child: _GlassSweep()),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              Positioned.fill(
+                top: 5.h,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(5.w, 0, 5.w, 5.h),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(3.w),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF5252), Color(0xFFB71C1C)],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(.12),
+                              blurRadius: 14,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: GestureDetector(
+                          onTap: () {
+                            // if (staff.imageUrl.isEmpty) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StaffProfileScreen(
+                                  staffId: staff.id,
+                                ),
+                              ),
+                            );
+                          },
+                          child: CircleAvatar(
+                            radius: 60.r,
+                            backgroundColor: Colors.white,
+                            child: ClipOval(
+                              child: staff.imageUrl.isEmpty
+                                  ? _AvatarFallback(size: 84.r)
+                                  : Image.network(
+                                staff.imageUrl,
+                                width: 120.r,
+                                height: 120.r,
+                                // fit: BoxFit.fill,
+                                errorBuilder: (_, __, ___) =>
+                                    _AvatarFallback(size: 84.r),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        staff.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 13.5.sp,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Container(
+                        padding:
+                        EdgeInsets.symmetric(horizontal: 10.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFEBEE),
+                          borderRadius: BorderRadius.circular(999.r),
+                          border: Border.all(
+                            color: const Color(0xFFE53935).withOpacity(.20),
+                          ),
+                        ),
+                        child: Text(
+                          staff.designation,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.montserrat(
+                            fontSize: 11.2.sp,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFFB71C1C),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
