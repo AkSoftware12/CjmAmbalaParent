@@ -23,6 +23,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../TecaherUi/UI/Notice/notice.dart';
 import '../../constants.dart';
 import '../Assignment/assignment.dart';
+import '../Auth/login_screen.dart';
 import '../Fees/FeesScreen.dart';
 import '../Gallery/Album/album.dart' show GalleryScreen;
 import '../Leaves/leaves_tab.dart';
@@ -100,7 +101,6 @@ class DashboardDataNotifier extends StateNotifier<AsyncValue<DashboardData>> {
   }
 }
 
-// ✅✅✅ FIX: HomeScreen ko ConsumerStatefulWidget bana diya
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -111,6 +111,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 // ✅✅✅ FIX: ConsumerState<HomeScreen>
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   Map<String, dynamic>? studentData;
+  Map<String, dynamic>? _selectedUser; // 👈 Add this
   List assignments = []; // Declare a list to hold API data
   List<dynamic> banners = [];
 
@@ -136,6 +137,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     {'name': 'Gallery', 'image': 'assets/gallery.png', 'count': galleryCount ?? 0},
   ];
+
   @override
   void initState() {
     super.initState();
@@ -146,6 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       maxDate: DateTime.now().add(const Duration(days: 365)),
     );
     fetchStudentData();
+    _loadSelectedUser(); // 👈 Add this
 
     // ✅✅✅ IMPORTANT FIX:
     // HomeScreen open hote hi provider ko current token se force refresh
@@ -156,6 +159,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     updateDatetime();
   }
+
+  // 👇 Add this function to load selected user
+  Future<void> _loadSelectedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final history = prefs.getString('loginHistory');
+    final selectedId = prefs.getString('selected_student_id');
+
+    if (history != null && history.isNotEmpty && selectedId != null) {
+      final loadedList =
+      List<Map<String, dynamic>>.from(jsonDecode(history) as List<dynamic>);
+
+      for (final user in loadedList) {
+        if (user['student_id']?.toString() == selectedId) {
+          if (mounted) {
+            setState(() {
+              _selectedUser = user;
+            });
+          }
+          break;
+        }
+      }
+    }
+  }
+
   Future<void> updateDatetime() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -204,6 +231,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       print('Update datetime error: $e');
     }
   }
+
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -242,17 +270,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
+      /// ⭐⭐⭐ MOST IMPORTANT PART ⭐⭐⭐
+      if (response.statusCode == 440) {
+        showSessionExpiredDialog(context);
+        return;
+      }
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
 
         final Map<String, dynamic> data =
         Map<String, dynamic>.from(decoded['data'] ?? {});
 
-        /// ✅ APPLY COUNTS
         applyDashboardCounts(data);
 
         setState(() {
-          /// ✅ permissions (safe parsing)
           final permissions = (data['permisions'] ?? []) as List;
 
           messageViewPermissionsApp =
@@ -272,6 +304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       debugPrint('Error fetching data: $e');
     }
   }
+
   Future<void> fetchBannerData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -295,6 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       debugPrint('Error fetching data: $e');
     }
   }
+
   void applyDashboardCounts(Map<String, dynamic> data) {
     setState(() {
       messageCount = _toInt(data['message_count']);
@@ -304,6 +338,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       galleryCount = _toInt(data['photo_count']) ?? 0;
     });
   }
+
   int _toInt(dynamic v) {
     if (v == null) return 0;
     if (v is int) return v;
@@ -321,6 +356,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!mounted) return;
     setState(() => isLoading = false);
   }
+
+  // 👇 Updated this function
+  void showSessionExpiredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.6),
+      builder: (context) {
+        return SessionExpiredDialogContent(
+          selectedUser: _selectedUser, // 👈 Pass user data from state
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -328,29 +378,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: isLoading
           ? const Center(child: CupertinoActivityIndicator(radius: 20))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(0.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CarouselExample(banners: banners),
-                  const SizedBox(height: 20),
-                  _buildsellAll('Category', ''),
-                  _buildGridview(),
-                  const SizedBox(height: 10),
-                  _buildSectionTitle('Students Birthday', ''),
-                  BirthdayCard(),
-                  Container(
-                    height: 220,
-                    width: double.infinity,
-                    child: Image.network(
-                      'https://cjmambala.in/images/building.png',
-                      fit: BoxFit.fill,
-                    ),
-                  ),
-                  Divider(thickness: 1.sp, color: Colors.grey),
-                ],
+        padding: const EdgeInsets.all(0.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CarouselExample(banners: banners),
+            const SizedBox(height: 20),
+            _buildsellAll('Category', ''),
+            _buildGridview(),
+            const SizedBox(height: 10),
+            _buildSectionTitle('Students Birthday', ''),
+            BirthdayCard(),
+            Container(
+              height: 220,
+              width: double.infinity,
+              child: Image.network(
+                'https://cjmambala.in/images/building.png',
+                fit: BoxFit.fill,
               ),
             ),
+            Divider(thickness: 1.sp, color: Colors.grey),
+          ],
+        ),
+      ),
     );
   }
 
@@ -453,18 +503,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         LibraryScreen(appBar: '25'),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
-                          var begin = Offset(1.0, 0.0); // Right to Left
-                          var end = Offset.zero;
-                          var tween = Tween(
-                            begin: begin,
-                            end: end,
-                          ).chain(CurveTween(curve: Curves.easeInOut));
+                      var begin = Offset(1.0, 0.0); // Right to Left
+                      var end = Offset.zero;
+                      var tween = Tween(
+                        begin: begin,
+                        end: end,
+                      ).chain(CurveTween(curve: Curves.easeInOut));
 
-                          return SlideTransition(
-                            position: animation.drive(tween),
-                            child: child,
-                          );
-                        },
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
                   ),
                 );
               } else if (items[index]['name'] == 'Leaves') {
@@ -486,7 +536,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 );
               } else if (items[index]['name'] == 'Fees') {
-               await  Navigator.push(
+                await  Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) {
@@ -506,7 +556,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 );
               } else if (items[index]['name'] == 'Messages') {
-               await Navigator.push(
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) {
@@ -621,7 +671,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 }
-
 class CarouselExample extends StatefulWidget {
   final List<dynamic> banners; // ✅ parent se aayega
   const CarouselExample({super.key, required this.banners});
@@ -1333,6 +1382,382 @@ class _BlurBlob extends StatelessWidget {
         height: size,
         width: size,
         decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+class SessionExpiredDialogContent extends StatefulWidget {
+  final Map<String, dynamic>? selectedUser;
+
+  const SessionExpiredDialogContent({
+    Key? key,
+    this.selectedUser,
+  }) : super(key: key);
+
+  @override
+  State<SessionExpiredDialogContent> createState() =>
+      _SessionExpiredDialogContentState();
+}
+
+class _SessionExpiredDialogContentState
+    extends State<SessionExpiredDialogContent>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLoginAgain() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // ✅ 1) Clear tokens
+      await prefs.remove('token');
+      await prefs.remove('newusertoken');
+      await prefs.remove('teachertoken');
+
+      // ✅ 2) Remove selected user from loginHistory
+      final history = prefs.getString('loginHistory');
+      if (history != null && history.isNotEmpty) {
+        final loadedList = List<Map<String, dynamic>>.from(
+            jsonDecode(history) as List<dynamic>);
+
+        final studentId = widget.selectedUser?['student_id']?.toString();
+        loadedList.removeWhere((e) => e['student_id']?.toString() == studentId);
+
+        await prefs.setString('loginHistory', jsonEncode(loadedList));
+      }
+
+      // ✅ 3) Clear selected_student_id
+      await prefs.remove('selected_student_id');
+
+      if (!mounted) return;
+
+      // ✅ 4) Direct navigation
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+            (route) => false,
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final deepRed = AppColors.primary;
+    final darkRed = AppColors.primary;
+    final selectedUser = widget.selectedUser;
+
+    return PopScope(
+      canPop: false,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: AlertDialog(
+              backgroundColor: Colors.white,
+              elevation: 24,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: deepRed, width: 1.5),
+              ),
+
+              // 👇 TITLE - Lock icon + Session Expired
+              title: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 60.sp,
+                    height: 60.sp,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [deepRed, deepRed.withOpacity(0.8)],
+                      ),
+                      borderRadius: BorderRadius.circular(60),
+                      boxShadow: [
+                        BoxShadow(
+                          color: deepRed.withOpacity(0.3),
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.lock_clock_outlined,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  SizedBox(height: 16.sp),
+                  Text(
+                    "Session Expired",
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+
+              // 👇 CONTENT - User info + Message
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ✅ User Card
+                  if (selectedUser != null)
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(5.sp),
+                      margin: EdgeInsets.only(bottom: 10.sp),
+                      decoration: BoxDecoration(
+                        color: deepRed.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: deepRed.withOpacity(0.4),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          // 👈 Avatar
+                          Container(
+                            width: 40.sp,
+                            height: 40.sp,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [deepRed, deepRed.withOpacity(0.7)],
+                              ),
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            child: Center(
+                              child: Text(
+                                (selectedUser['name']?.toString().substring(0, 1) ?? 'U')
+                                    .toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10.sp),
+                          // 👉 User details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  selectedUser['name'] ?? 'Unknown User',
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black87,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+
+                                if (selectedUser['adm_no'] != null &&
+                                    selectedUser['adm_no'].toString() != 'null')
+                                  Text(
+                                    "Adm No: ${selectedUser['adm_no']}",
+                                    style: TextStyle(
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          // ✅ Badge
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.sp,
+                              vertical: 4.sp,
+                            ),
+                            decoration: BoxDecoration(
+                              color: deepRed.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                               Icons.verified,
+                              size: 14.sp,
+                              color: deepRed,
+                            ),
+                          ),                        ],
+                      ),
+                    ),
+
+                  // ✅ Message Box
+                  Container(
+                    padding: EdgeInsets.all(12.sp),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: deepRed.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: deepRed,
+                          size: 20.sp,
+                        ),
+                        SizedBox(width: 10.sp),
+                        Expanded(
+                          child: Text(
+                            "Your session has expired due to inactivity. Please log in again to continue.",
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              // 👇 ACTION BUTTON
+              actions: [
+                SizedBox(
+                  width: double.infinity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [deepRed, deepRed.withOpacity(0.85)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: deepRed.withOpacity(0.35),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _isLoading ? null : _handleLoginAgain,
+                        borderRadius: BorderRadius.circular(12),
+                        splashColor: Colors.white.withOpacity(0.25),
+                        highlightColor: Colors.white.withOpacity(0.15),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 12.sp,
+                            horizontal: 16.sp,
+                          ),
+                          child: _isLoading
+                              ? SizedBox(
+                            height: 22.sp,
+                            width: 22.sp,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                              : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.login_rounded,
+                                color: Colors.white,
+                                size: 20.sp,
+                              ),
+                              SizedBox(width: 10.sp),
+                              Text(
+                                "Login Again",
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              actionsPadding: EdgeInsets.all(16.sp),
+              contentPadding: EdgeInsets.fromLTRB(20.sp, 18.sp, 20.sp, 12.sp),
+              titlePadding: EdgeInsets.fromLTRB(20.sp, 20.sp, 20.sp, 8.sp),
+            ),
+          ),
+        ),
       ),
     );
   }

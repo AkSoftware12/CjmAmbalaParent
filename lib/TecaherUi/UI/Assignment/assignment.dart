@@ -230,9 +230,12 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                                               overflow: TextOverflow
                                                   .ellipsis,
                                             ),
+
+                                            _buildInfoRow(a, 'teacher_first_name', Icons.person),
+                                            SizedBox(height: 2.sp),
+                                            _buildInfoRow(a, 'class_section', Icons.class_),
                                             if (description
                                                 .isNotEmpty) ...[
-                                              SizedBox(height: 2.sp),
                                               Text(
                                                 description,
                                                 maxLines: 1,
@@ -247,6 +250,8 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                                                         .shade500),
                                               ),
                                             ],
+
+
                                           ]),
                                     ),
                                     SizedBox(width: 8.sp),
@@ -588,7 +593,31 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
       ),
     );
   }
+  Widget _buildInfoRow(Map a, String key, IconData icon) {
+    if (!a.containsKey(key) || a[key] == null ||
+        a[key].toString().isEmpty) {
+      return SizedBox.shrink();
+    }
 
+    return Row(
+      children: [
+        Icon(icon, size: 12.sp, color: Colors.black),
+        SizedBox(width: 4.sp),
+        Expanded(
+          child: Text(
+            a[key].toString(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 9.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
   void _showDeleteDialog(String id) {
     showDialog(
       context: context,
