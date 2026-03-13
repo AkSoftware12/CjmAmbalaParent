@@ -219,71 +219,104 @@ class _AssignmentListScreenState extends State<MesssageListScreen> {
                     child: Padding(
                       padding: EdgeInsets.all(10.sp),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          /// **Title & Index**
-                          Row(
+                          Stack(
                             children: [
-                              Container(
-                                height: 35.sp,
-                                width: 35.sp,
-                                decoration: BoxDecoration(
-                                  color: AppColors.secondary,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.chat, // Material chat icon
-                                    size: 20.sp, // Adjust size as needed
-                                    color: Colors.white, // Match original text color
+                              /// **Title & Index**
+                              Row(
+                                children: [
+                                  Container(
+                                    height: 35.sp,
+                                    width: 35.sp,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.secondary,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.chat, // Material chat icon
+                                        size: 20.sp, // Adjust size as needed
+                                        color: Colors.white, // Match original text color
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.sp),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${assignment['partner_name'].toString().toUpperCase()}(${assignment['partner_designation'].toString().toUpperCase()})',
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 13.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        SizedBox(height: 1),
+                                        Text(
+                                          assignment['last_message_at'].toString(),
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 11.sp,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        SizedBox(height: 1),
+                                        if (assignment['last_message'] != null)
+                                          Text(
+                                            assignment['last_message'].toString(),
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 11.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        if (assignment['last_message'] == null)
+                                          Text(
+                                            'Attachment',
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.montserrat(
+                                              fontSize: 11.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (assignment['unread_count'] != null &&
+                                  int.parse(assignment['unread_count'].toString()) > 0)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 6.sp,
+                                      vertical: 2.sp,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.red.withOpacity(0.3),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      '${assignment['unread_count'].toString()} New',
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 8.sp,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              SizedBox(width: 10.sp),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${assignment['partner_name'].toString().toUpperCase()}(${assignment['partner_designation'].toString().toUpperCase()})',
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 13.sp,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    SizedBox(height: 1),
-                                    Text(
-                                      assignment['last_message_at'].toString(),
-                                      style: GoogleFonts.montserrat(
-                                        fontSize: 11.sp,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    SizedBox(height: 1),
-                                    if (assignment['last_message'] != null)
-                                      Text(
-                                        assignment['last_message'].toString(),
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 11.sp,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                    if (assignment['last_message'] == null)
-                                      Text(
-                                        'Attachment',
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 11.sp,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
                             ],
                           ),
                         ],

@@ -194,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             children: [
 
                               Text(
-                                studentData!['student_name'],
+                                studentData!['student_name']??'',
                                 style: GoogleFonts.montserrat(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.bold,
@@ -203,7 +203,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                studentData!['email'],
+                                studentData!['email']??'',
                                 style: GoogleFonts.montserrat(
                                   fontSize: 12.sp,
                                   color: Colors.white70,
@@ -211,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                studentData!['contact_no'],
+                                studentData!['contact_no']??'',
                                 style: GoogleFonts.montserrat(
                                   fontSize: 12.sp,
                                   color: Colors.white70,
