@@ -45,11 +45,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     print("token: $token");
-
-    if (token == null) {
-      if (mounted) _showLoginDialog();
-      return;
-    }
+    //
+    // if (token == null) {
+    //   if (mounted) _showLoginDialog();
+    //   return;
+    // }
 
     final response = await http.get(
       Uri.parse(ApiRoutes.getProfile),
@@ -68,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         _controller.forward(); // Start animation once data is loaded
       }
     } else {
-      if (mounted) _showLoginDialog();
+      // if (mounted) _showLoginDialog();
     }
   }
 

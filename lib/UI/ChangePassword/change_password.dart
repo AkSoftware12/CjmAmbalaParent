@@ -263,26 +263,34 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
                     controller: _newPasswordController,
                     obscureText: !_newPasswordVisible,
                     keyboardType: TextInputType.number,
-                    // ✅ Sirf digits allow
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
+                    // ✅ Only digits + max 5 digits
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(5),
+                    ],
+
                     onChanged: (val) =>
                         setState(() => _newPasswordLength = val.length),
+
                     validator: (val) {
                       if (val == null || val.isEmpty) {
                         return 'Please enter new password';
                       }
                       if (val.length < 5) {
-                        return 'Password must be at least 6 digits';
+                        return 'Password must be 5 digits';
                       }
                       return null;
                     },
+
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF1A1A1A),
                     ),
+
                     decoration: _passwordDecoration(
-                      hint: 'Enter new password (numbers only)',
+                      hint: 'Enter new password (max 5 digits)',
                       isVisible: _newPasswordVisible,
                       onToggle: () => setState(
                               () => _newPasswordVisible = !_newPasswordVisible),
@@ -339,26 +347,37 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
                     controller: _confirmPasswordController,
                     obscureText: !_confirmPasswordVisible,
                     keyboardType: TextInputType.number,
-                    // ✅ Sirf digits allow
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
+                    // ✅ Only digits + max 5 length
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(5),
+                    ],
+
                     onChanged: (val) =>
                         setState(() => _confirmPasswordLength = val.length),
+
                     validator: (val) {
                       if (val == null || val.isEmpty) {
                         return 'Please confirm your password';
+                      }
+                      if (val.length > 5) {
+                        return 'Maximum 5 digits allowed';
                       }
                       if (val != _newPasswordController.text) {
                         return 'Passwords do not match';
                       }
                       return null;
                     },
+
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF1A1A1A),
                     ),
+
                     decoration: _passwordDecoration(
-                      hint: 'Re-enter new password (numbers only)',
+                      hint: 'Re-enter new password (max 5 digits)',
                       isVisible: _confirmPasswordVisible,
                       onToggle: () => setState(() =>
                       _confirmPasswordVisible = !_confirmPasswordVisible),
