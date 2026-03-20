@@ -240,22 +240,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                 // buildProfileRow('Date of Birth', teacherData?['dob']??''),
                 buildProfileRow('Date of Birth', AppDateTimeUtils.date( teacherData?['dob']??'')),
                 buildProfileRow('Qualification', teacherData?['qualification']??''),
-                buildProfileRow('Gender', teacherData?['gender'] == '1' ? 'Male' : 'Female',
-                ),
+                buildProfileRow('Gender', getGender(teacherData?['gender'])),
+
                 buildProfileRow('Nationality', teacherData?['nationality']?? ''),
-                buildProfileRow('Blood Group', teacherData?['blood_group'].toString()??''),
+                buildProfileRow('Blood Group', teacherData?['blood_group'].toString()??'N/A'),
               ]),
-              // const SizedBox(height: 20),
-              // _buildAnimatedSection('Academic Information', [
-              //   buildProfileRow('Class', teacherData?['class_name']??''),
-              //   buildProfileRow('Section', teacherData?['section']?? ''),
-              //   buildProfileRow('Roll Number', teacherData?['roll_no']??''),
-              //   buildProfileRow(
-              //     'Registration Number',
-              //     teacherData?['registration_no']??'',
-              //   ),
-              //   buildProfileRow('Admission Number', teacherData?['adm_no']??''),
-              // ]),
               const SizedBox(height: 20),
               _buildAnimatedSection('Contact Information', [
                 buildProfileRow('${teacherData?['fs_relation']??'Father'} Name', teacherData?['fs_name']??''),
@@ -341,7 +330,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
     );
   }
-
+  String getGender(int? gender) {
+    switch (gender) {
+      case 1:
+        return 'Male';
+      case 2:
+        return 'Female';
+      case 0:
+      default:
+        return 'N/A';
+    }
+  }
   Widget _buildAnimatedSection(String title, List<Widget> rows) {
     return AnimatedContainer(
       duration: const Duration(seconds: 10 ),
