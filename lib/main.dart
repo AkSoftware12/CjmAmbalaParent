@@ -279,7 +279,7 @@ class UpdateChecker {
                 Navigator.pop(context);
                 // Open App Store
                 final appStoreUrl =
-                    'https://apps.apple.com/in/app/cjm-shimla/id6744753885'; // Replace with your App Store URL
+                    'https://apps.apple.com/in/app/cjm-ambala-parent/id6752724101'; // Replace with your App Store URL
                 if (await canLaunchUrl(Uri.parse(appStoreUrl))) {
                   await launchUrl(
                     Uri.parse(appStoreUrl),
