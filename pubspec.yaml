@@ -55,6 +55,7 @@ dependencies:
   shimmer: ^3.0.0
   flutter_widget_from_html: ^0.17.1
   confetti: ^0.7.0
+  upgrader: ^12.5.0
 
 
 

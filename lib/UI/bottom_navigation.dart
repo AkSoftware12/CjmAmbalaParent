@@ -2,14 +2,17 @@ import 'dart:convert';
 import 'package:avi/UI/Notification/notification.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:new_version_plus/new_version_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../TecaherUi/UI/BirthdayScreen/birthday_screen.dart';
 import '../UI/Dashboard/HomeScreen .dart';
 import '../constants.dart';
+import '../splash_sreen.dart';
 import '../strings.dart';
 import 'Achievements/achievements.dart';
 import 'Assignment/assignment.dart';
@@ -46,6 +49,10 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
   bool isLoading = true;
   String currentVersion = '';
 
+  // String currentVersion = '';
+  String release = "";
+  bool _upgradeDialogShown = false;
+
   int? messageViewPermissionsApp;
   int? messageSendPermissionsApp;
 
@@ -79,12 +86,24 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
     fetchData(); // ✅ dashboard (permissions + counts)
     fetchStudentData();
+
+    final newVersion = NewVersionPlus(
+      iOSId: 'com.avisunavi.avi',
+      androidId: 'com.avisunavi.avi',
+      androidPlayStoreCountry: "es_ES",
+      androidHtmlReleaseNotes: true,
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      advancedStatusCheck(newVersion); // ✅ now context is ready
+    });
   }
 
-  Future<void> checkForVersion(BuildContext context) async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    setState(() => currentVersion = packageInfo.version);
-  }
+  // Future<void> checkForVersion(BuildContext context) async {
+  //   PackageInfo packageInfo = await PackageInfo.fromPlatform();
+  //   setState(() => currentVersion = packageInfo.version);
+  // }
 
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -331,6 +350,68 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         ),
       ],
     );
+  }
+
+
+
+  basicStatusCheck(NewVersionPlus newVersion) async {
+    final version = await newVersion.getVersionStatus();
+    if (version != null) {
+      release = version.releaseNotes ?? "";
+      setState(() {});
+    }
+    newVersion.showAlertIfNecessary(
+      context: context,
+      launchModeVersion: LaunchModeVersion.external,
+    );
+  }
+
+  Future<void> advancedStatusCheck(NewVersionPlus newVersion) async {
+    try {
+      final status = await newVersion.getVersionStatus();
+      if (status == null) return;
+
+      debugPrint("releaseNotes: ${status.releaseNotes}");
+      debugPrint("appStoreLink: ${status.appStoreLink}");
+      debugPrint("localVersion: ${status.localVersion}");
+      debugPrint("storeVersion: ${status.storeVersion}");
+      debugPrint("canUpdate: ${status.canUpdate}");
+
+      if (!status.canUpdate) return;
+      if (_upgradeDialogShown) return;
+      if (!mounted) return;
+
+      _upgradeDialogShown = true;
+
+      showDialog(
+        context: context, // ✅ yahi best hai
+        barrierDismissible: false,
+        builder: (dialogCtx) {
+          return PopScope( // ✅ WillPopScope new replacement (Flutter 3.13+)
+            canPop: false,
+            onPopInvoked: (didPop) {
+              SystemNavigator.pop();
+            },
+            child: CustomUpgradeDialog(
+              currentVersion: status.localVersion,
+              newVersion: status.storeVersion,
+              releaseNotes: [
+                (status.releaseNotes ?? "").trim().isEmpty
+                    ? "New update available."
+                    : status.releaseNotes!.trim(),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e, st) {
+      debugPrint("advancedStatusCheck error: $e");
+      debugPrint("$st");
+    }
+  }
+  Future<void> checkForVersion(BuildContext context) async {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    currentVersion = packageInfo.version;
   }
 
   @override

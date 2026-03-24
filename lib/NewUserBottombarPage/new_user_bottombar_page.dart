@@ -2,13 +2,16 @@ import 'package:avi/NewUserBottombarPage/new_user_profile_page.dart';
 import 'package:avi/NewUserBottombarPage/new_user_payment_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:new_version_plus/new_version_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../UI/Auth/login_screen.dart';
 import '../UI/Auth/login_student_userlist.dart';
+import '../splash_sreen.dart';
 import 'documents.dart';
 import '../UI/Gallery/Album/album.dart';
 import '../constants.dart';
@@ -32,7 +35,8 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
   Map<String, dynamic>? studentData;
   bool isLoading = true;
   String currentVersion = '';
-
+  String release = "";
+  bool _upgradeDialogShown = false;
 
   // List of screens
   final List<Widget> _screens = [
@@ -56,6 +60,18 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
     super.initState();
     checkForVersion(context);
     fetchStudentData();
+
+    final newVersion = NewVersionPlus(
+      iOSId: 'com.avisunavi.avi',
+      androidId: 'com.avisunavi.avi',
+      androidPlayStoreCountry: "es_ES",
+      androidHtmlReleaseNotes: true,
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      advancedStatusCheck(newVersion); // ✅ now context is ready
+    });
 
   }
 
@@ -176,6 +192,62 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
         ],
       ),
     );
+  }
+
+  basicStatusCheck(NewVersionPlus newVersion) async {
+    final version = await newVersion.getVersionStatus();
+    if (version != null) {
+      release = version.releaseNotes ?? "";
+      setState(() {});
+    }
+    newVersion.showAlertIfNecessary(
+      context: context,
+      launchModeVersion: LaunchModeVersion.external,
+    );
+  }
+
+  Future<void> advancedStatusCheck(NewVersionPlus newVersion) async {
+    try {
+      final status = await newVersion.getVersionStatus();
+      if (status == null) return;
+
+      debugPrint("releaseNotes: ${status.releaseNotes}");
+      debugPrint("appStoreLink: ${status.appStoreLink}");
+      debugPrint("localVersion: ${status.localVersion}");
+      debugPrint("storeVersion: ${status.storeVersion}");
+      debugPrint("canUpdate: ${status.canUpdate}");
+
+      if (!status.canUpdate) return;
+      if (_upgradeDialogShown) return;
+      if (!mounted) return;
+
+      _upgradeDialogShown = true;
+
+      showDialog(
+        context: context, // ✅ yahi best hai
+        barrierDismissible: false,
+        builder: (dialogCtx) {
+          return PopScope( // ✅ WillPopScope new replacement (Flutter 3.13+)
+            canPop: false,
+            onPopInvoked: (didPop) {
+              SystemNavigator.pop();
+            },
+            child: CustomUpgradeDialog(
+              currentVersion: status.localVersion,
+              newVersion: status.storeVersion,
+              releaseNotes: [
+                (status.releaseNotes ?? "").trim().isEmpty
+                    ? "New update available."
+                    : status.releaseNotes!.trim(),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e, st) {
+      debugPrint("advancedStatusCheck error: $e");
+      debugPrint("$st");
+    }
   }
 
   @override

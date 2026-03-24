@@ -67,8 +67,7 @@ class ApiRoutes {
 // Local  App Url
 
   // static const String baseUrlNewUser = "http://192.168.1.5/cjmweb/api";
-  // static const String baseUrl = "http://192.168.1.9/cjm_ambala12/api";
-  //
+  // static const String baseUrl = "http://192.168.1.12/cjm_ambala12/api";
   // // Download local url
   // static const String downloadUrl = "http://192.168.1.10/cjm_ambala12/";
   // static const String newUserdownloadUrl = "http://192.168.1.9/cjm_ambala12/api/fees/";

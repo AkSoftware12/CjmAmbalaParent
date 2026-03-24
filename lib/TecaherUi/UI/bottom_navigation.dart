@@ -2,9 +2,11 @@ import 'package:avi/TecaherUi/UI/AdminTransactionLibrary/admin_transaction_libra
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:new_version_plus/new_version_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../UI/Achievements/achievements.dart';
@@ -18,6 +20,7 @@ import '../../UI/Notice/notice.dart';
 import '../../UI/TransactionLibrary/transaction_library.dart';
 import '../../UI/Videos/video_screen.dart';
 import '../../constants.dart';
+import '../../splash_sreen.dart';
 import '../../strings.dart';
 import '../UI/Dashboard/HomeScreen%20.dart';
 import 'AdminTimeTable/admin_time_table.dart';
@@ -54,6 +57,8 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
   // Map<String, dynamic>? teacherData;
   bool isLoading = true;
   String currentVersion = '';
+  String release = "";
+  bool _upgradeDialogShown = false;
   int? messageViewPermissionsApp;
   int? messageSendPermissionsApp;
 
@@ -86,6 +91,19 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
     fetchData();
     fetchStudentData();
     _selectedIndex = widget.initialIndex; // Set the initial tab index
+
+
+    final newVersion = NewVersionPlus(
+      iOSId: 'com.avisunavi.avi',
+      androidId: 'com.avisunavi.avi',
+      androidPlayStoreCountry: "es_ES",
+      androidHtmlReleaseNotes: true,
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      advancedStatusCheck(newVersion); // ✅ now context is ready
+    });
 
   }
   Future<void> checkForVersion(BuildContext context) async {
@@ -304,6 +322,65 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
   }
 
 
+  basicStatusCheck(NewVersionPlus newVersion) async {
+    final version = await newVersion.getVersionStatus();
+    if (version != null) {
+      release = version.releaseNotes ?? "";
+      setState(() {});
+    }
+    newVersion.showAlertIfNecessary(
+      context: context,
+      launchModeVersion: LaunchModeVersion.external,
+    );
+  }
+
+  Future<void> advancedStatusCheck(NewVersionPlus newVersion) async {
+    try {
+      final status = await newVersion.getVersionStatus();
+      if (status == null) return;
+
+      debugPrint("releaseNotes: ${status.releaseNotes}");
+      debugPrint("appStoreLink: ${status.appStoreLink}");
+      debugPrint("localVersion: ${status.localVersion}");
+      debugPrint("storeVersion: ${status.storeVersion}");
+      debugPrint("canUpdate: ${status.canUpdate}");
+
+      if (!status.canUpdate) return;
+      if (_upgradeDialogShown) return;
+      if (!mounted) return;
+
+      _upgradeDialogShown = true;
+
+      showDialog(
+        context: context, // ✅ yahi best hai
+        barrierDismissible: false,
+        builder: (dialogCtx) {
+          return PopScope( // ✅ WillPopScope new replacement (Flutter 3.13+)
+            canPop: false,
+            onPopInvoked: (didPop) {
+              SystemNavigator.pop();
+            },
+            child: CustomUpgradeDialog(
+              currentVersion: status.localVersion,
+              newVersion: status.storeVersion,
+              releaseNotes: [
+                (status.releaseNotes ?? "").trim().isEmpty
+                    ? "New update available."
+                    : status.releaseNotes!.trim(),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e, st) {
+      debugPrint("advancedStatusCheck error: $e");
+      debugPrint("$st");
+    }
+  }
+  // Future<void> checkForVersion(BuildContext context) async {
+  //   PackageInfo packageInfo = await PackageInfo.fromPlatform();
+  //   currentVersion = packageInfo.version;
+  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
