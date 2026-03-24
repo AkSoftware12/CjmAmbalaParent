@@ -64,7 +64,7 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
     final newVersion = NewVersionPlus(
       iOSId: 'com.avisunavi.avi',
       androidId: 'com.avisunavi.avi',
-      androidPlayStoreCountry: "es_ES",
+      androidPlayStoreCountry: "in",
       androidHtmlReleaseNotes: true,
     );
 
