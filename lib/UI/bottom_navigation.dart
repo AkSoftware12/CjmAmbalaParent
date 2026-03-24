@@ -88,7 +88,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     fetchStudentData();
 
     final newVersion = NewVersionPlus(
-      iOSId: 'com.avisunavi.avi',
+      iOSId: '6752724101',
+      iOSAppStoreCountry: 'IN',
       androidId: 'com.avisunavi.avi',
       androidPlayStoreCountry: "es_ES",
       androidHtmlReleaseNotes: true,
@@ -155,21 +156,24 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
-        final Map<String, dynamic> data =
-        Map<String, dynamic>.from(decoded['data'] ?? {});
+        final Map<String, dynamic> data = Map<String, dynamic>.from(
+          decoded['data'] ?? {},
+        );
 
         final permissions = (data['permisions'] ?? []) as List;
 
         setState(() {
           // ✅ permissions safe parsing
-          messageViewPermissionsApp = (permissions.isNotEmpty
-              ? (permissions[0]['app_status'] as num?)?.toInt()
-              : 0) ??
+          messageViewPermissionsApp =
+              (permissions.isNotEmpty
+                  ? (permissions[0]['app_status'] as num?)?.toInt()
+                  : 0) ??
               0;
 
-          messageSendPermissionsApp = (permissions.length > 1
-              ? (permissions[1]['app_status'] as num?)?.toInt()
-              : 0) ??
+          messageSendPermissionsApp =
+              (permissions.length > 1
+                  ? (permissions[1]['app_status'] as num?)?.toInt()
+                  : 0) ??
               0;
 
           // ✅ counts (safe)
@@ -255,7 +259,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(.15), blurRadius: 6)
+          BoxShadow(color: Colors.black.withOpacity(.15), blurRadius: 6),
         ],
       ),
       child: Text(
@@ -290,11 +294,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          _menuBadge(badgeValue),
-          const SizedBox(width: 8),
-          iconBox,
-        ],
+        children: [_menuBadge(badgeValue), const SizedBox(width: 8), iconBox],
       ),
       onTap: () async => await onTap(),
     );
@@ -352,8 +352,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
   }
 
-
-
   basicStatusCheck(NewVersionPlus newVersion) async {
     final version = await newVersion.getVersionStatus();
     if (version != null) {
@@ -387,7 +385,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
         context: context, // ✅ yahi best hai
         barrierDismissible: false,
         builder: (dialogCtx) {
-          return PopScope( // ✅ WillPopScope new replacement (Flutter 3.13+)
+          return PopScope(
+            // ✅ WillPopScope new replacement (Flutter 3.13+)
             canPop: false,
             onPopInvoked: (didPop) {
               SystemNavigator.pop();
@@ -409,6 +408,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
       debugPrint("$st");
     }
   }
+
   Future<void> checkForVersion(BuildContext context) async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     currentVersion = packageInfo.version;
@@ -439,7 +439,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                 onTap: () async {
                   await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => NotificationScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => NotificationScreen(),
+                    ),
                   );
                   if (!mounted) return;
                   await _refreshCounts(); // refresh after back
@@ -469,7 +471,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.2),
                                 blurRadius: 6,
-                              )
+                              ),
                             ],
                           ),
                           constraints: const BoxConstraints(
@@ -478,7 +480,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                           ),
                           child: Text(
                             noticeCount! > 99 ? "99+" : "$noticeCount",
-                            style:  TextStyle(
+                            style: TextStyle(
                               color: Colors.red,
                               fontSize: 10.sp,
                               fontWeight: FontWeight.bold,
@@ -490,7 +492,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                   ],
                 ),
               ),
-            )
+            ),
           ],
         ),
 
@@ -558,17 +560,17 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                   },
                   child: CircleAvatar(
                     radius: 40,
-                    backgroundImage: (studentData != null &&
-                        studentData?['photo'] != null &&
-                        studentData!['photo'].toString().isNotEmpty &&
-                        !studentData!['photo']
-                            .toString()
-                            .endsWith("null"))
+                    backgroundImage:
+                        (studentData != null &&
+                            studentData?['photo'] != null &&
+                            studentData!['photo'].toString().isNotEmpty &&
+                            !studentData!['photo'].toString().endsWith("null"))
                         ? NetworkImage(studentData!['photo'])
                         : null,
-                    child: (studentData == null ||
-                        studentData?['photo'] == null ||
-                        studentData!['photo'].toString().isEmpty)
+                    child:
+                        (studentData == null ||
+                            studentData?['photo'] == null ||
+                            studentData!['photo'].toString().isEmpty)
                         ? const Icon(Icons.account_circle, size: 40)
                         : null,
                   ),
@@ -614,8 +616,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: const Icon(Icons.dashboard,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  Icons.dashboard,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
@@ -632,8 +637,11 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: const Icon(CupertinoIcons.clock,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  CupertinoIcons.clock,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
@@ -650,15 +658,19 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: const Icon(CupertinoIcons.bell,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  CupertinoIcons.bell,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => NoticeScreen()),
+                                    builder: (context) => NoticeScreen(),
+                                  ),
                                 );
                                 if (!mounted) return;
                                 await _refreshCounts();
@@ -672,24 +684,29 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 'Birthday List',
                                 style: GoogleFonts.cabin(
                                   textStyle: TextStyle(
-                                      color: AppColors2.textblack,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold),
+                                    color: AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               trailing: Container(
                                 height: 20,
                                 width: 20,
                                 color: AppColors2.primary,
-                                child: Icon(CupertinoIcons.gift,
-                                    color: AppColors2.textblack, size: 18),
+                                child: Icon(
+                                  CupertinoIcons.gift,
+                                  color: AppColors2.textblack,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => BirthdayScreen()),
+                                    builder: (context) => BirthdayScreen(),
+                                  ),
                                 );
                                 // if (!mounted) return;
                                 // await _refreshCounts();
@@ -704,16 +721,20 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: const Icon(CupertinoIcons.person,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  CupertinoIcons.person,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) =>
-                                          ProfileScreen(appBar: 'app')),
+                                    builder: (context) =>
+                                        ProfileScreen(appBar: 'app'),
+                                  ),
                                 );
                                 // if (!mounted) return;
                                 // await _refreshCounts();
@@ -728,16 +749,20 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: const Icon(CupertinoIcons.person_2_alt,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  CupertinoIcons.person_2_alt,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) =>
-                                          TeacherListPremiumScreen()),
+                                    builder: (context) =>
+                                        TeacherListPremiumScreen(),
+                                  ),
                                 );
                                 // if (!mounted) return;
                                 // await _refreshCounts();
@@ -752,16 +777,19 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: const Icon(CupertinoIcons.creditcard,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  CupertinoIcons.creditcard,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) =>
-                                          IssuedBooksScreen()),
+                                    builder: (context) => IssuedBooksScreen(),
+                                  ),
                                 );
                                 // if (!mounted) return;
                                 // await _refreshCounts();
@@ -784,8 +812,9 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) =>
-                                          AssignmentListScreen()),
+                                    builder: (context) =>
+                                        AssignmentListScreen(),
+                                  ),
                                 );
                                 if (!mounted) return;
                                 await _refreshCounts(); // ✅ back aate hi refresh
@@ -801,16 +830,20 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: const Icon(Icons.currency_rupee,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  Icons.currency_rupee,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) =>
-                                          FeesScreen(title: 'aa')),
+                                    builder: (context) =>
+                                        FeesScreen(title: 'aa'),
+                                  ),
                                 );
                                 if (!mounted) return;
                                 await _refreshCounts();
@@ -832,7 +865,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => TimeTableScreen()),
+                                    builder: (context) => TimeTableScreen(),
+                                  ),
                                 );
                               },
                             ),
@@ -855,7 +889,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                   MaterialPageRoute(
                                     builder: (context) => MesssageListScreen(
                                       messageSendPermissionsApp:
-                                      messageSendPermissionsApp,
+                                          messageSendPermissionsApp,
                                     ),
                                   ),
                                 );
@@ -880,7 +914,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => GalleryScreen()),
+                                    builder: (context) => GalleryScreen(),
+                                  ),
                                 );
                                 if (!mounted) return;
                                 await _refreshCounts();
@@ -897,15 +932,19 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: const Icon(CupertinoIcons.video_camera,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  CupertinoIcons.video_camera,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => VideoGallery()),
+                                    builder: (context) => VideoGallery(),
+                                  ),
                                 );
                               },
                             ),
@@ -919,16 +958,20 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: const Icon(CupertinoIcons.rosette,
-                                    color: Colors.white, size: 18),
+                                child: const Icon(
+                                  CupertinoIcons.rosette,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                               onTap: () async {
                                 Navigator.pop(context);
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) =>
-                                          AchievementsWaveScreen()),
+                                    builder: (context) =>
+                                        AchievementsWaveScreen(),
+                                  ),
                                 );
                               },
                             ),
@@ -948,7 +991,8 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => EbooksScreen()),
+                                    builder: (context) => EbooksScreen(),
+                                  ),
                                 );
                               },
                             ),
@@ -1013,13 +1057,16 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                   ),
                                 ),
                               ),
-                              trailing: const Icon(Icons.logout,
-                                  color: Colors.white, size: 20),
+                              trailing: const Icon(
+                                Icons.logout,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                               onTap: () async {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>  LogoutUserList(),
+                                    builder: (context) => LogoutUserList(),
                                   ),
                                 );
                                 // final prefs =
@@ -1063,10 +1110,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   Widget _divider() => Padding(
     padding: const EdgeInsets.only(left: 8, right: 8),
-    child: Divider(
-      height: 1,
-      color: Colors.grey.shade300,
-      thickness: 1,
-    ),
+    child: Divider(height: 1, color: Colors.grey.shade300, thickness: 1),
   );
 }

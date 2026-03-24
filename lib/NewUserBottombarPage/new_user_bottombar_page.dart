@@ -21,11 +21,8 @@ import 'dart:convert';
 import 'message_main.dart';
 import 'message_psge.dart';
 
-
-
 class NewUserBottombarPage extends StatefulWidget {
-
-  const NewUserBottombarPage({super.key,});
+  const NewUserBottombarPage({super.key});
   @override
   _BottomNavBarScreenState createState() => _BottomNavBarScreenState();
 }
@@ -40,21 +37,19 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
 
   // List of screens
   final List<Widget> _screens = [
-
     MessageMainScreen(),
-    MessageListScreen(appbar: 'AppBar',),
+    MessageListScreen(appbar: 'AppBar'),
     NewUserPaymentScreen(),
     DocumentsScreen(),
     NewUserProfileScreen(),
   ];
-
-
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
+
   @override
   void initState() {
     super.initState();
@@ -62,7 +57,8 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
     fetchStudentData();
 
     final newVersion = NewVersionPlus(
-      iOSId: 'com.avisunavi.avi',
+      iOSId: '6752724101',
+      iOSAppStoreCountry: 'IN',
       androidId: 'com.avisunavi.avi',
       androidPlayStoreCountry: "es_ES",
       androidHtmlReleaseNotes: true,
@@ -72,10 +68,7 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
       if (!mounted) return;
       advancedStatusCheck(newVersion); // ✅ now context is ready
     });
-
   }
-
-
 
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -93,12 +86,9 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
         studentData = data['student'];
         isLoading = false;
         print(studentData);
-
       });
-    } else {
-    }
+    } else {}
   }
-
 
   Future<void> checkForVersion(BuildContext context) async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
@@ -227,7 +217,8 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
         context: context, // ✅ yahi best hai
         barrierDismissible: false,
         builder: (dialogCtx) {
-          return PopScope( // ✅ WillPopScope new replacement (Flutter 3.13+)
+          return PopScope(
+            // ✅ WillPopScope new replacement (Flutter 3.13+)
             canPop: false,
             onPopInvoked: (didPop) {
               SystemNavigator.pop();
@@ -255,7 +246,6 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(
-
         backgroundColor: AppColors.secondary,
         drawerEnableOpenDragGesture: false,
 
@@ -263,13 +253,12 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
           backgroundColor: AppColors.secondary,
           automaticallyImplyLeading: false,
           iconTheme: IconThemeData(color: AppColors.textwhite),
-          title: Column(children: [
-            _buildAppBar(),
-            Divider(
-              thickness: 2,
-              color: Colors.red.shade900,
-            )
-          ]),
+          title: Column(
+            children: [
+              _buildAppBar(),
+              Divider(thickness: 2, color: Colors.red.shade900),
+            ],
+          ),
           actions: [
             // Padding(
             //   padding: const EdgeInsets.all(15.0),
@@ -296,8 +285,6 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
           ],
         ),
 
-
-
         body: _screens[_selectedIndex], // Display the selected screen
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
@@ -305,18 +292,20 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
           backgroundColor: Colors.red.shade900,
           selectedItemColor: Colors.white,
           unselectedItemColor: AppColors.grey,
-          showSelectedLabels: true,  // ✅ Ensures selected labels are always visible
-          showUnselectedLabels: true, // ✅ Ensures unselected labels are also visible
+          showSelectedLabels:
+              true, // ✅ Ensures selected labels are always visible
+          showUnselectedLabels:
+              true, // ✅ Ensures unselected labels are also visible
           type: BottomNavigationBarType.fixed,
-          items:  <BottomNavigationBarItem>[
+          items: <BottomNavigationBarItem>[
             BottomNavigationBarItem(
               icon: const Icon(Icons.dashboard),
-              label:'DashBoard',
+              label: 'DashBoard',
               backgroundColor: AppColors.primary,
             ),
             BottomNavigationBarItem(
               icon: Icon(CupertinoIcons.chat_bubble_text),
-              label:'Messages',
+              label: 'Messages',
               backgroundColor: AppColors.primary,
             ),
 
@@ -349,24 +338,24 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                 SizedBox(height: 70),
 
                 GestureDetector(
-                  onTap: () {
-
-                  },
+                  onTap: () {},
                   child: CircleAvatar(
                     radius: 40,
                     backgroundImage:
-                    (studentData != null &&
-                        studentData?['picture_data'] != null &&
-                        studentData!['picture_data'].toString().isNotEmpty &&
-                        !studentData!['picture_data'].toString().endsWith(
-                          "null",
-                        ))
+                        (studentData != null &&
+                            studentData?['picture_data'] != null &&
+                            studentData!['picture_data']
+                                .toString()
+                                .isNotEmpty &&
+                            !studentData!['picture_data'].toString().endsWith(
+                              "null",
+                            ))
                         ? NetworkImage(studentData!['picture_data'])
                         : null,
                     child:
-                    (studentData == null ||
-                        studentData?['picture_data'] == null ||
-                        studentData!['picture_data'].toString().isEmpty)
+                        (studentData == null ||
+                            studentData?['picture_data'] == null ||
+                            studentData!['picture_data'].toString().isEmpty)
                         ? const Icon(Icons.account_circle, size: 40)
                         : null,
                   ),
@@ -382,9 +371,7 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                           studentData?['name'] ?? 'Student',
                           // Fallback to 'Student' if null
                           style: GoogleFonts.montserrat(
-                            textStyle: Theme.of(
-                              context,
-                            ).textTheme.displayLarge,
+                            textStyle: Theme.of(context).textTheme.displayLarge,
                             fontSize: 14.sp,
                             fontWeight: FontWeight.bold,
                             fontStyle: FontStyle.normal,
@@ -405,9 +392,7 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                           studentData?['email'] ?? '',
                           // Fallback to 'Student' if null
                           style: GoogleFonts.montserrat(
-                            textStyle: Theme.of(
-                              context,
-                            ).textTheme.displayLarge,
+                            textStyle: Theme.of(context).textTheme.displayLarge,
                             fontSize: 11.sp,
                             fontWeight: FontWeight.w600,
                             fontStyle: FontStyle.normal,
@@ -459,7 +444,8 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                               onTap: () {
                                 Navigator.pop(context); // Drawer close karega
                                 setState(() {
-                                  _selectedIndex = 0; // BottomNavigation ka index 0 pe set karega
+                                  _selectedIndex =
+                                      0; // BottomNavigation ka index 0 pe set karega
                                 });
 
                                 // Navigator.push(
@@ -481,7 +467,6 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                               ),
                             ),
 
-
                             ListTile(
                               title: Text(
                                 'Messages ',
@@ -497,10 +482,7 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors.primary,
-                                child: Icon(
-                                  Icons.chat,
-                                  color: Colors.white,
-                                ),
+                                child: Icon(Icons.chat, color: Colors.white),
                               ),
                               onTap: () {
                                 Navigator.pop(context); // Drawer close karega
@@ -508,10 +490,9 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        MessageListScreen(appbar: '',),
+                                        MessageListScreen(appbar: ''),
                                   ),
                                 );
-
                               },
                             ),
                             Padding(
@@ -522,9 +503,6 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                                 thickness: 1,
                               ),
                             ),
-
-
-
 
                             ListTile(
                               title: Text(
@@ -558,7 +536,6 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                               },
                             ),
 
-
                             Padding(
                               padding: EdgeInsets.only(left: 8, right: 8),
                               child: Divider(
@@ -581,16 +558,12 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                               trailing: Container(
                                 height: 20,
                                 width: 20,
-                                child: Icon(
-                                  Icons.logout,
-                                  color: Colors.white,
-                                ),
+                                child: Icon(Icons.logout, color: Colors.white),
                               ),
                               onTap: () async {
                                 final prefs =
-                                await SharedPreferences.getInstance();
-                                await prefs
-                                    .clear(); // Clear the stored token
+                                    await SharedPreferences.getInstance();
+                                await prefs.clear(); // Clear the stored token
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
@@ -602,7 +575,6 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                           ],
                         ),
                       ),
-
                     ],
                   ),
                 ),
@@ -619,20 +591,11 @@ class _BottomNavBarScreenState extends State<NewUserBottombarPage> {
                   ),
                 ),
                 Padding(padding: EdgeInsets.only(bottom: 15.sp)),
-
-
               ],
             ),
           ),
         ),
-
-
       ),
-
-
     );
-
-
   }
 }
-
