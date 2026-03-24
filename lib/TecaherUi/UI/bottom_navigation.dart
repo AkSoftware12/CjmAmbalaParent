@@ -73,17 +73,16 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
   final List<Widget> _screens = [
     HomeScreen(),
     AttendanceTabScreen(),
-    LibraryScreen(appBar: '',),
-    ProfileScreen(appBar: '',),
+    LibraryScreen(appBar: ''),
+    ProfileScreen(appBar: ''),
   ];
-
-
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
+
   @override
   void initState() {
     super.initState();
@@ -92,9 +91,9 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
     fetchStudentData();
     _selectedIndex = widget.initialIndex; // Set the initial tab index
 
-
     final newVersion = NewVersionPlus(
-      iOSId: 'com.avisunavi.avi',
+      iOSId: '6752724101',
+      iOSAppStoreCountry: 'IN',
       androidId: 'com.avisunavi.avi',
       androidPlayStoreCountry: "in",
       androidHtmlReleaseNotes: true,
@@ -104,16 +103,19 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
       if (!mounted) return;
       advancedStatusCheck(newVersion); // ✅ now context is ready
     });
-
   }
+
   Future<void> checkForVersion(BuildContext context) async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     currentVersion = packageInfo.version;
   }
+
   Future<void> fetchData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('teachertoken');
-    final url = Uri.parse(ApiRoutes.getTeacherDashboard); // Ensure ApiRoutes.getDashboard is valid
+    final url = Uri.parse(
+      ApiRoutes.getTeacherDashboard,
+    ); // Ensure ApiRoutes.getDashboard is valid
 
     try {
       final response = await http.get(
@@ -143,24 +145,23 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
               : (noticeCount ?? 0);
         });
       } else {
-        setState(() {
-
-        });
+        setState(() {});
       }
     } catch (e) {
       setState(() {
         // attendancePercent = 0.0; // Default value for error case
-
       });
       // Optionally log the error for debugging
       debugPrint('Error fetching data: $e');
     }
   }
+
   int _toInt(dynamic v) {
     if (v == null) return 0;
     if (v is int) return v;
     return int.tryParse(v.toString()) ?? 0;
   }
+
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('teachertoken');
@@ -177,11 +178,10 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
         teacherData = data['teacher'];
         isLoading = false;
         print(teacherData);
-
       });
-    } else {
-    }
+    } else {}
   }
+
   Future<void> _refreshCounts() async {
     if (!mounted) return;
     await fetchData();
@@ -209,7 +209,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(.15), blurRadius: 6)
+          BoxShadow(color: Colors.black.withOpacity(.15), blurRadius: 6),
         ],
       ),
       child: Text(
@@ -244,11 +244,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          _menuBadge(badgeValue),
-          const SizedBox(width: 8),
-          iconBox,
-        ],
+        children: [_menuBadge(badgeValue), const SizedBox(width: 8), iconBox],
       ),
       onTap: () async => await onTap(),
     );
@@ -257,25 +253,26 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
   Widget _buildAppBar() {
     return Row(
       children: [
-
         Builder(
           builder: (context) => Padding(
             padding: EdgeInsets.all(0),
             child: GestureDetector(
-                onTap: () {
-                  Scaffold.of(context).openDrawer();
-                },
+              onTap: () {
+                Scaffold.of(context).openDrawer();
+              },
               child: SizedBox(
                 height: 30,
                 width: 30,
-                child: Image.asset('assets/menu.png',color: AppColors2.textblack,),
+                child: Image.asset(
+                  'assets/menu.png',
+                  color: AppColors2.textblack,
+                ),
               ),
             ),
           ), // Ensure Scaffold is in context
         ),
 
-
-         SizedBox(width: 16),
+        SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -300,7 +297,8 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
               child: Row(
                 children: [
                   Text(
-                    '${teacherData?['first_name']??'Teacher'} ${teacherData?['last_name']??''}' ?? 'Teacher', // Fallback to 'Student' if null
+                    '${teacherData?['first_name'] ?? 'Teacher'} ${teacherData?['last_name'] ?? ''}' ??
+                        'Teacher', // Fallback to 'Student' if null
                     style: GoogleFonts.montserrat(
                       textStyle: Theme.of(context).textTheme.displayLarge,
                       fontSize: 16,
@@ -313,14 +311,11 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                 ],
               ),
             ),
-
-
           ],
         ),
       ],
     );
   }
-
 
   basicStatusCheck(NewVersionPlus newVersion) async {
     final version = await newVersion.getVersionStatus();
@@ -355,7 +350,8 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
         context: context, // ✅ yahi best hai
         barrierDismissible: false,
         builder: (dialogCtx) {
-          return PopScope( // ✅ WillPopScope new replacement (Flutter 3.13+)
+          return PopScope(
+            // ✅ WillPopScope new replacement (Flutter 3.13+)
             canPop: false,
             onPopInvoked: (didPop) {
               SystemNavigator.pop();
@@ -377,6 +373,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
       debugPrint("$st");
     }
   }
+
   // Future<void> checkForVersion(BuildContext context) async {
   //   PackageInfo packageInfo = await PackageInfo.fromPlatform();
   //   currentVersion = packageInfo.version;
@@ -387,19 +384,11 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
       backgroundColor: AppColors2.primary,
       drawerEnableOpenDragGesture: false,
 
-
-
       appBar: AppBar(
         backgroundColor: AppColors2.primary,
         automaticallyImplyLeading: false,
-        iconTheme: IconThemeData(
-          color: AppColors2.textblack
-        ),
-        title: Column(
-          children: [
-            _buildAppBar(),
-          ],
-        ),
+        iconTheme: IconThemeData(color: AppColors2.textblack),
+        title: Column(children: [_buildAppBar()]),
         actions: [
           Padding(
             padding: const EdgeInsets.all(15.0),
@@ -437,7 +426,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             BoxShadow(
                               color: Colors.black.withOpacity(0.2),
                               blurRadius: 6,
-                            )
+                            ),
                           ],
                         ),
                         constraints: const BoxConstraints(
@@ -446,7 +435,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                         ),
                         child: Text(
                           noticeCount! > 99 ? "99+" : "$noticeCount",
-                          style:  TextStyle(
+                          style: TextStyle(
                             color: Colors.red,
                             fontSize: 10.sp,
                             fontWeight: FontWeight.bold,
@@ -458,8 +447,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                 ],
               ),
             ),
-          )
-
+          ),
         ],
       ),
       body: _screens[_selectedIndex], // Display the selected screen
@@ -469,11 +457,13 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
         backgroundColor: Colors.red.shade900,
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.grey,
-          showSelectedLabels: true,  // ✅ Ensures selected labels are always visible
-          showUnselectedLabels: true, // ✅ Ensures unselected labels are also visible
-          type: BottomNavigationBarType.fixed,
+        showSelectedLabels:
+            true, // ✅ Ensures selected labels are always visible
+        showUnselectedLabels:
+            true, // ✅ Ensures unselected labels are also visible
+        type: BottomNavigationBarType.fixed,
         selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
-        items:  <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.home),
             label: AppStrings.homeLabel,
@@ -488,7 +478,6 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
             icon: Icon(CupertinoIcons.book_fill),
             label: AppStrings.libraryLabel,
             backgroundColor: AppColors2.primary,
-
           ),
 
           BottomNavigationBarItem(
@@ -499,9 +488,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
         ],
       ),
       drawer: Drawer(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         width: MediaQuery.sizeOf(context).width * .65,
         // backgroundColor: Theme.of(context).colorScheme.background,
         backgroundColor: AppColors2.primary,
@@ -509,9 +496,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: <Widget>[
-              SizedBox(
-                height: 50.sp,
-              ),
+              SizedBox(height: 50.sp),
 
               GestureDetector(
                 onTap: () {
@@ -538,7 +523,10 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                       width: 160.sp,
                       color: Colors.grey[200],
                       child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2,color: Colors.red,),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.red,
+                        ),
                       ),
                     ),
 
@@ -558,11 +546,10 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                   child: Padding(
                     padding: EdgeInsets.only(top: 0, bottom: 3.sp),
                     child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                      ),
+                      decoration: BoxDecoration(shape: BoxShape.circle),
                       child: Text(
-                        '${teacherData?['first_name']??'Teacher'} ${teacherData?['last_name']??''}' ?? 'Teacher', // Fallback to 'Student' if null
+                        '${teacherData?['first_name'] ?? 'Teacher'} ${teacherData?['last_name'] ?? ''}' ??
+                            'Teacher', // Fallback to 'Student' if null
                         style: GoogleFonts.montserrat(
                           textStyle: Theme.of(context).textTheme.displayLarge,
                           fontSize: 14.sp,
@@ -584,9 +571,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                         teacherData?['email'] ?? '',
                         // Fallback to 'Student' if null
                         style: GoogleFonts.montserrat(
-                          textStyle: Theme.of(
-                            context,
-                          ).textTheme.displayLarge,
+                          textStyle: Theme.of(context).textTheme.displayLarge,
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
                           fontStyle: FontStyle.normal,
@@ -615,34 +600,32 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-
                           ListTile(
                             title: Text(
                               'Dashboard',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
+                                  color: AppColors2.textblack,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             trailing: Container(
                               height: 20,
                               width: 20,
                               color: AppColors2.primary,
-                              child:Icon(Icons.dashboard,color:AppColors2.textblack,),
-
-
-              ),
+                              child: Icon(
+                                Icons.dashboard,
+                                color: AppColors2.textblack,
+                              ),
+                            ),
                             onTap: () {
                               Navigator.pop(context);
-
-                             
                             },
                           ),
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -655,17 +638,20 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               'Students Profile',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
+                                  color: AppColors2.textblack,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             trailing: Container(
                               height: 20,
                               width: 20,
                               color: AppColors2.primary,
-                              child: Icon(CupertinoIcons.person_2_alt,color:AppColors2.textblack,),
-
+                              child: Icon(
+                                CupertinoIcons.person_2_alt,
+                                color: AppColors2.textblack,
+                              ),
                             ),
                             onTap: () {
                               Navigator.pop(context);
@@ -674,15 +660,14 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
-                                    return  AllStudents();
+                                    return AllStudents();
                                   },
                                 ),
                               );
                             },
                           ),
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -690,39 +675,39 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
-
                           ListTile(
                             title: Text(
                               'Birthday List',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
+                                  color: AppColors2.textblack,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             trailing: Container(
                               height: 20,
                               width: 20,
                               color: AppColors2.primary,
-                              child: Icon(CupertinoIcons.gift,color:AppColors2.textblack,),
-
+                              child: Icon(
+                                CupertinoIcons.gift,
+                                color: AppColors2.textblack,
+                              ),
                             ),
                             onTap: () {
-
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
-                                    return  BirthdayScreen();
+                                    return BirthdayScreen();
                                   },
                                 ),
                               );
                             },
                           ),
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -735,33 +720,34 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               'Class Teachers',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
+                                  color: AppColors2.textblack,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             trailing: Container(
                               height: 20,
                               width: 20,
                               color: AppColors2.primary,
-                              child: Icon(CupertinoIcons.person_2,color:AppColors2.textblack,),
-
+                              child: Icon(
+                                CupertinoIcons.person_2,
+                                color: AppColors2.textblack,
+                              ),
                             ),
                             onTap: () {
-
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
-                                    return  ClassTeacher();
+                                    return ClassTeacher();
                                   },
                                 ),
                               );
                             },
                           ),
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -769,83 +755,91 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
-                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')!= 2)
-
-                          ListTile(
-                            title: Text(
-                              'Staff List',
-                              style: GoogleFonts.cabin(
-                                textStyle: TextStyle(
-                                    color:AppColors2.textblack,
+                          if (int.tryParse(
+                                teacherData?['role_manual'].toString() ?? '',
+                              ) !=
+                              2)
+                            ListTile(
+                              title: Text(
+                                'Staff List',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: AppColors2.textblack,
                                     fontSize: 15,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            trailing: Container(
-                              height: 20,
-                              width: 20,
-                              color: AppColors2.primary,
-                              child: Icon(CupertinoIcons.person_2,color:AppColors2.textblack,),
-
-                            ),
-                            onTap: () {
-
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return  TeachingStaff();
-                                  },
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              );
-                            },
-                          ),
-                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')!= 2)
-
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors2.primary,
+                                child: Icon(
+                                  CupertinoIcons.person_2,
+                                  color: AppColors2.textblack,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return TeachingStaff();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          if (int.tryParse(
+                                teacherData?['role_manual'].toString() ?? '',
+                              ) !=
+                              2)
                             Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
-                            child: Divider(
-                              height: 1,
-                              color: Colors.grey.shade300,
-                              thickness: 1,
-                            ),
-                          ),
-
-                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')== 2)
-
-                          ListTile(
-                            title: Text(
-                              'Staff Profile',
-                              style: GoogleFonts.cabin(
-                                textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
+                              padding: EdgeInsets.only(left: 8, right: 8),
+                              child: Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                                thickness: 1,
                               ),
                             ),
-                            trailing: Container(
-                              height: 20,
-                              width: 20,
-                              color: AppColors2.primary,
-                              child: Icon(CupertinoIcons.person_2,color:AppColors2.textblack,),
 
-                            ),
-                            onTap: () {
-
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return  TeachingStaffProfile();
-                                  },
+                          if (int.tryParse(
+                                teacherData?['role_manual'].toString() ?? '',
+                              ) ==
+                              2)
+                            ListTile(
+                              title: Text(
+                                'Staff Profile',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors2.primary,
+                                child: Icon(
+                                  CupertinoIcons.person_2,
+                                  color: AppColors2.textblack,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return TeachingStaffProfile();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -858,24 +852,28 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               'Attendance',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
+                                  color: AppColors2.textblack,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             trailing: Container(
                               height: 20,
                               width: 20,
                               color: AppColors2.primary,
-                              child: Icon(CupertinoIcons.clock,color:AppColors2.textblack,),
-
+                              child: Icon(
+                                CupertinoIcons.clock,
+                                color: AppColors2.textblack,
+                              ),
                             ),
                             onTap: () {
                               Navigator.pop(context);
 
                               // Navigate to the Profile screen in the BottomNavigationBar
                               setState(() {
-                                _selectedIndex = 1; // Index of the Profile screen in _screens
+                                _selectedIndex =
+                                    1; // Index of the Profile screen in _screens
                               });
                               // Navigator.push(
                               //   context,
@@ -888,8 +886,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             },
                           ),
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -897,28 +894,26 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
-
-
                           ListTile(
                             title: Text(
                               'Assignments',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
+                                  color: AppColors2.textblack,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             trailing: Container(
                               height: 20,
                               width: 20,
                               color: AppColors2.primary,
-                              child:  Image.asset(
+                              child: Image.asset(
                                 'assets/assignments.png',
                                 height: 80, // Adjust the size as needed
                                 width: 80,
                               ),
-
                             ),
                             onTap: () {
                               Navigator.push(
@@ -933,15 +928,17 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                           ),
 
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
                               thickness: 1,
                             ),
                           ),
-                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')== 2)
+                          if (int.tryParse(
+                                teacherData?['role_manual'].toString() ?? '',
+                              ) ==
+                              2)
                             ListTile(
                               title: Text(
                                 'Salary Slip',
@@ -957,7 +954,10 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors2.primary,
-                                child: Icon(Icons.currency_rupee,color: Colors.white,),
+                                child: Icon(
+                                  Icons.currency_rupee,
+                                  color: Colors.white,
+                                ),
                               ),
                               onTap: () {
                                 Navigator.push(
@@ -970,15 +970,17 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
 
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
                               thickness: 1,
                             ),
                           ),
-                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')== 2)
+                          if (int.tryParse(
+                                teacherData?['role_manual'].toString() ?? '',
+                              ) ==
+                              2)
                             ListTile(
                               title: Text(
                                 'App Report',
@@ -994,21 +996,20 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                 height: 20,
                                 width: 20,
                                 color: AppColors2.primary,
-                                child: Icon(Icons.report,color: Colors.white,),
+                                child: Icon(Icons.report, color: Colors.white),
                               ),
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>  AppReportScreen(),
+                                    builder: (context) => AppReportScreen(),
                                   ),
                                 );
                               },
                             ),
 
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -1021,31 +1022,37 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               'Time Table',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
+                                  color: AppColors2.textblack,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             trailing: Container(
                               height: 20,
                               width: 20,
                               color: AppColors2.primary,
-                              child:  Image.asset(
+                              child: Image.asset(
                                 'assets/watch.png',
                                 height: 80, // Adjust the size as needed
                                 width: 80,
                               ),
-
                             ),
                             onTap: () {
-                              final role = int.tryParse(teacherData?['role_manual'].toString() ?? '') ?? 0;
+                              final role =
+                                  int.tryParse(
+                                    teacherData?['role_manual'].toString() ??
+                                        '',
+                                  ) ??
+                                  0;
 
                               if (role == 2) {
                                 // ✅ AdminTimeTable open
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => AdminTimeTableTabScreen(),
+                                    builder: (context) =>
+                                        AdminTimeTableTabScreen(),
                                   ),
                                 );
                               } else {
@@ -1053,15 +1060,15 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => TimeTableTeacherScreen(),
+                                    builder: (context) =>
+                                        TimeTableTeacherScreen(),
                                   ),
                                 );
                               }
                             },
                           ),
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -1069,40 +1076,43 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
-                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '')== 2)
-
+                          if (int.tryParse(
+                                teacherData?['role_manual'].toString() ?? '',
+                              ) ==
+                              2)
                             ListTile(
                               title: Text(
                                 'Free Teachers ',
                                 style: GoogleFonts.cabin(
                                   textStyle: TextStyle(
-                                      color:AppColors2.textblack,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold),
+                                    color: AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               trailing: Container(
                                 height: 20,
                                 width: 20,
                                 color: AppColors2.primary,
-                                child: Icon(CupertinoIcons.person_2,color:AppColors2.textblack,),
-
+                                child: Icon(
+                                  CupertinoIcons.person_2,
+                                  color: AppColors2.textblack,
+                                ),
                               ),
                               onTap: () {
-
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) {
-                                      return  FreeTeachers();
+                                      return FreeTeachers();
                                     },
                                   ),
                                 );
                               },
                             ),
                           Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -1116,15 +1126,19 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               height: 20,
                               width: 20,
                               color: AppColors.primary,
-                              child:  Icon(CupertinoIcons.bell,
-                                  color: Colors.white, size: 20.sp),
+                              child: Icon(
+                                CupertinoIcons.bell,
+                                color: Colors.white,
+                                size: 20.sp,
+                              ),
                             ),
                             onTap: () async {
                               Navigator.pop(context);
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => NoticeScreen()),
+                                  builder: (context) => NoticeScreen(),
+                                ),
                               );
                               if (!mounted) return;
                               await _refreshCounts();
@@ -1150,11 +1164,14 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                             onTap: () async {
                               Navigator.pop(context);
-                              await  Navigator.push(
+                              await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
-                                    return  TeacherMesssageListScreen(messageSendPermissionsApp: messageSendPermissionsApp,);
+                                    return TeacherMesssageListScreen(
+                                      messageSendPermissionsApp:
+                                          messageSendPermissionsApp,
+                                    );
                                   },
                                 ),
                               );
@@ -1276,8 +1293,12 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               ),
                             ),
                             onTap: () {
-
-                              final role = int.tryParse(teacherData?['role_manual'].toString() ?? '') ?? 0;
+                              final role =
+                                  int.tryParse(
+                                    teacherData?['role_manual'].toString() ??
+                                        '',
+                                  ) ??
+                                  0;
 
                               if (role == 2) {
                                 // ✅ AdminTimeTable open
@@ -1297,9 +1318,6 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                   ),
                                 );
                               }
-
-
-
                             },
                           ),
                           Padding(
@@ -1335,7 +1353,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
-                                    return ProfileScreen(appBar: 'app',);
+                                    return ProfileScreen(appBar: 'app');
                                   },
                                 ),
                               );
@@ -1363,14 +1381,15 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => GalleryScreen()),
+                                  builder: (context) => GalleryScreen(),
+                                ),
                               );
                               if (!mounted) return;
                               await _refreshCounts();
                             },
-                          ),                          Padding(
-                            padding:
-                            EdgeInsets.only(left: 8, right: 8),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(left: 8, right: 8),
                             child: Divider(
                               height: 1,
                               color: Colors.grey.shade300,
@@ -1386,15 +1405,19 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               height: 20,
                               width: 20,
                               color: AppColors.primary,
-                              child: const Icon(CupertinoIcons.video_camera,
-                                  color: Colors.white, size: 18),
+                              child: const Icon(
+                                CupertinoIcons.video_camera,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
                             onTap: () async {
                               Navigator.pop(context);
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => VideoGallery()),
+                                  builder: (context) => VideoGallery(),
+                                ),
                               );
                               if (!mounted) return;
                               await _refreshCounts();
@@ -1417,16 +1440,20 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               height: 20,
                               width: 20,
                               color: AppColors.primary,
-                              child: const Icon(CupertinoIcons.rosette,
-                                  color: Colors.white, size: 18),
+                              child: const Icon(
+                                CupertinoIcons.rosette,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
                             onTap: () async {
                               Navigator.pop(context);
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) =>
-                                        AchievementsWaveScreen()),
+                                  builder: (context) =>
+                                      AchievementsWaveScreen(),
+                                ),
                               );
                               if (!mounted) return;
                               await _refreshCounts();
@@ -1446,23 +1473,25 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               'Logout',
                               style: GoogleFonts.cabin(
                                 textStyle: TextStyle(
-                                    color:AppColors2.textblack,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold),
+                                  color: AppColors2.textblack,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             trailing: Container(
-                                height: 20,
-                                width: 20,
-                                child: Icon(
-                                  Icons.logout,
-                                  color:AppColors2.textblack,
-                                )),
+                              height: 20,
+                              width: 20,
+                              child: Icon(
+                                Icons.logout,
+                                color: AppColors2.textblack,
+                              ),
+                            ),
                             onTap: () async {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>  LogoutUserList(),
+                                  builder: (context) => LogoutUserList(),
                                 ),
                               );
                               // final prefs = await SharedPreferences.getInstance();
@@ -1491,14 +1520,11 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                     ),
                   ],
                 ),
-              )
-
+              ),
             ],
           ),
         ),
       ),
-
     );
   }
 }
-

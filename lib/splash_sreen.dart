@@ -15,8 +15,6 @@ import 'TecaherUi/UI/bottom_navigation.dart';
 import 'UI/Auth/login_screen.dart';
 import 'UI/bottom_navigation.dart';
 
-
-
 class SplashScreen extends StatefulWidget {
   @override
   _SplashScreenState createState() => _SplashScreenState();
@@ -69,7 +67,9 @@ class _SplashScreenState extends State<SplashScreen> {
         print('CheckToken:$token');
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => BottomNavBarScreen(initialIndex: 0)),
+          MaterialPageRoute(
+            builder: (_) => BottomNavBarScreen(initialIndex: 0),
+          ),
         );
       } else if (newUsertoken != null && newUsertoken.isNotEmpty) {
         print('CheckNewToken:$newUsertoken');
@@ -84,13 +84,10 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => TeacherBottomNavBarScreen(initialIndex: 0,),
+            builder: (context) => TeacherBottomNavBarScreen(initialIndex: 0),
           ),
         );
-
-      }
-
-      else {
+      } else {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => LoginPage()),
@@ -104,14 +101,15 @@ class _SplashScreenState extends State<SplashScreen> {
     super.dispose();
   }
 
-
   // Show Cupertino dialog when there's no internet
   void _showNoInternetDialog() {
     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
         title: const Text('No Internet Connection'),
-        content: const Text('Please check your internet connection and try again.'),
+        content: const Text(
+          'Please check your internet connection and try again.',
+        ),
         actions: [
           CupertinoDialogAction(
             child: const Text('Reload'),
@@ -135,14 +133,20 @@ class _SplashScreenState extends State<SplashScreen> {
             color: AppColors.background, // Moved color inside decoration
             borderRadius: BorderRadius.circular(20),
           ),
-          padding: EdgeInsets.all(10), // Optional: Add some padding inside the container
+          padding: EdgeInsets.all(
+            10,
+          ), // Optional: Add some padding inside the container
           child: _isConnected
               ? Image.asset(
-            AppAssets.cjmlogo,
-            width: MediaQuery.of(context).size.width * 0.5, // Responsive width
-            height: MediaQuery.of(context).size.height * 0.25, // Responsive height
-            fit: BoxFit.contain,
-          )
+                  AppAssets.cjmlogo,
+                  width:
+                      MediaQuery.of(context).size.width *
+                      0.5, // Responsive width
+                  height:
+                      MediaQuery.of(context).size.height *
+                      0.25, // Responsive height
+                  fit: BoxFit.contain,
+                )
               : const CircularProgressIndicator(), // Show loading spinner if not connected
         ),
       ),
@@ -150,11 +154,11 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-
-
 class CustomUpgradeDialog extends StatelessWidget {
-  final String androidAppUrl = 'https://play.google.com/store/apps/details?id=com.avisunavi.avi&pcampaignid=web_share';
-  final String iosAppUrl = 'https://apps.apple.com/in/app/cjm-ambala-parent/id6752724101'; // Replace with your iOS app URL
+  final String androidAppUrl =
+      'https://play.google.com/store/apps/details?id=com.avisunavi.avi&pcampaignid=web_share';
+  final String iosAppUrl =
+      'https://apps.apple.com/in/app/cjm-ambala-parent/id6752724101'; // Replace with your iOS app URL
   final String currentVersion; // Old version
   final String newVersion; // New version
   final List<String> releaseNotes; // Release notes
@@ -173,19 +177,13 @@ class CustomUpgradeDialog extends StatelessWidget {
     try {
       if (Platform.isIOS) {
         if (await canLaunchUrl(iosUri)) {
-          await launchUrl(
-            iosUri,
-            mode: LaunchMode.externalApplication,
-          );
+          await launchUrl(iosUri, mode: LaunchMode.externalApplication);
         } else {
           throw 'Could not launch iOS App Store';
         }
       } else if (Platform.isAndroid) {
         if (await canLaunchUrl(androidUri)) {
-          await launchUrl(
-            androidUri,
-            mode: LaunchMode.externalApplication,
-          );
+          await launchUrl(androidUri, mode: LaunchMode.externalApplication);
         } else {
           throw 'Could not launch Play Store';
         }
@@ -194,6 +192,7 @@ class CustomUpgradeDialog extends StatelessWidget {
       debugPrint('Launch error: $e');
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -206,7 +205,7 @@ class CustomUpgradeDialog extends StatelessWidget {
         padding: EdgeInsets.all(25.sp),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppColors.primary,AppColors.primary],
+            colors: [AppColors.primary, AppColors.primary],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -239,7 +238,7 @@ class CustomUpgradeDialog extends StatelessWidget {
                 child: Icon(
                   Icons.rocket_launch_outlined,
                   size: 52.sp,
-                  color:AppColors.primary,
+                  color: AppColors.primary,
                 ),
               ),
               SizedBox(height: 10.sp),
@@ -305,53 +304,62 @@ class CustomUpgradeDialog extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 10.sp),
-                    ...releaseNotes.asMap().entries.map((entry) => Padding(
-                      padding: EdgeInsets.only(bottom: 8.sp),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "• ",
-                            style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              entry.value,
+                    ...releaseNotes.asMap().entries.map(
+                      (entry) => Padding(
+                        padding: EdgeInsets.only(bottom: 8.sp),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "• ",
                               style: GoogleFonts.poppins(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 10.sp,
+                                color: Colors.white,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ),
-                        ],
+                            Expanded(
+                              child: Text(
+                                entry.value,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    )),
+                    ),
                   ],
                 ),
               ),
               SizedBox(height: 15.sp),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:AppColors.primary,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.blue,
-                  padding: EdgeInsets.symmetric(horizontal: 28.sp, vertical: 12.sp),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 28.sp,
+                    vertical: 12.sp,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20.sp),
                     side: BorderSide(color: Colors.white, width: 1.sp),
                   ),
                 ),
-                icon: Icon(Icons.rocket_launch, size: 20.sp,color: Colors.white,),
+                icon: Icon(
+                  Icons.rocket_launch,
+                  size: 20.sp,
+                  color: Colors.white,
+                ),
                 label: Text(
                   "Update Now".toUpperCase(),
                   style: GoogleFonts.poppins(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
                   ),
                 ),
                 onPressed: () async {
@@ -365,4 +373,5 @@ class CustomUpgradeDialog extends StatelessWidget {
     );
   }
 }
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
