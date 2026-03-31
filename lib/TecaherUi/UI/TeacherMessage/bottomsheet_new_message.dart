@@ -30,12 +30,11 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
   final TextEditingController messageController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
 
-  // ─── Scroll controller for students infinite scroll ───
   final ScrollController _studentScrollController = ScrollController();
 
   bool isLoading = false;
-  List messsage = [];   // teachers
-  List students = [];   // students (accumulated across pages)
+  List messsage = [];
+  List students = [];
   List filteredMessages = [];
   List filteredMessages2 = [];
   Set<String> selectedTeachers = {};
@@ -46,15 +45,15 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
   PlatformFile? selectedFile;
   bool isSending = false;
 
+  List<int> selectedClasses = [];
   List<Map<String, dynamic>> classes = [];
   List<Map<String, dynamic>> section = [];
   int? selectedClass;
   int? selectedSection;
 
-  // ─── Pagination state for students ───
   int _studentCurrentPage = 1;
   int _studentLastPage = 1;
-  int _studentTotalCount = 0; // total from pagination
+  int _studentTotalCount = 0;
   bool _isLoadingMoreStudents = false;
 
   @override
@@ -64,7 +63,6 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
     _searchController.addListener(_filterMessages);
     _tabController.addListener(_onTabChanged);
 
-    // ─── Infinite scroll listener ───
     _studentScrollController.addListener(() {
       if (_studentScrollController.position.pixels >=
           _studentScrollController.position.maxScrollExtent - 200) {
@@ -161,7 +159,6 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
     }
   }
 
-  // ─── Main fetch (page 1 reset) ───
   Future<void> fetchAssignmentsData({bool resetPage = false}) async {
     if (resetPage) {
       _studentCurrentPage = 1;
@@ -185,8 +182,9 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       final queryParams = <String, String>{
         'page': _studentCurrentPage.toString(),
       };
-      if (selectedClass != null) {
-        queryParams['class_id'] = selectedClass.toString();
+
+      if (selectedClasses.isNotEmpty) {
+        queryParams['class_id'] = selectedClasses.join(',');
       }
 
       final uri = Uri.parse(ApiRoutes.getAllTeacherMessages)
@@ -200,7 +198,6 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
 
-        // Teachers only on first page / reset
         if (resetPage || _studentCurrentPage == 1) {
           messsage = jsonResponse['users'] ?? [];
         }
@@ -233,11 +230,10 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
     }
   }
 
-  // ─── Load next page for students ───
   Future<void> _loadMoreStudents() async {
     if (_isLoadingMoreStudents) return;
     if (_studentCurrentPage >= _studentLastPage) return;
-    if (_tabController.index != 1) return; // only when student tab active
+    if (_tabController.index != 1) return;
 
     setState(() => _isLoadingMoreStudents = true);
 
@@ -280,7 +276,7 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
         });
       } else {
         setState(() {
-          _studentCurrentPage--; // rollback
+          _studentCurrentPage--;
           _isLoadingMoreStudents = false;
         });
       }
@@ -315,11 +311,15 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
     });
   }
 
-  // ─── Send message ───
   Future<void> _sendMessage() async {
     if (isSending) return;
 
-    if (messageController.text.trim().isEmpty && selectedFile == null) {
+    final text = messageController.text
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .trim();
+
+    if (text.isEmpty && selectedFile == null) {
       _showErrorSnackBar('Please enter a message or select a file');
       return;
     }
@@ -344,33 +344,22 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       final request = http.MultipartRequest('POST', uri);
       request.headers['Authorization'] = 'Bearer $token';
 
-      // ─── Select All flags ───
-      if (selectAllTeachers) {
-        request.fields['all_teachers'] = 'true';
-      } else {
-        request.fields['all_teachers'] = 'false';
-      }
+      request.fields['all_teachers'] = selectAllTeachers ? 'true' : 'false';
+      // request.fields['all_students'] = (selectAllStudents && selectedClass == null) ? 'true' : 'false';
+      request.fields['all_students'] = (selectAllStudents) ? 'true' : 'false';
 
-      // ─── Students: class selected hai to IDs bhejo, nahi to flag ───
-      if (selectAllStudents && selectedClass == null) {
-        // No class filter → all_students: true, backend sab bhejega
-        request.fields['all_students'] = 'true';
-      } else {
-        request.fields['all_students'] = 'false';
-      }
-
-      // ─── Receivers array ───
       List<String> receivers = [];
       if (!selectAllTeachers) receivers.addAll(selectedTeachers);
-      // Class selected + selectAll → selectedStudents mein IDs hain
-      // Class nahi + selectAll → all_students=true, IDs mat bhejo
       if (!(selectAllStudents && selectedClass == null)) {
         receivers.addAll(selectedStudents);
       }
+
       request.fields['receivers'] = jsonEncode(receivers);
+      request.fields['body'] = text;
 
       debugPrint('🚀 ═══════════════ SEND MESSAGE ═══════════════');
-      debugPrint('📨 [BODY] ${messageController.text.trim()}');
+      debugPrint('📨 [BODY WITH LINE BREAKS]');
+      debugPrint(text);
       debugPrint('📎 [FILE] ${selectedFile?.name ?? "No file"}');
       debugPrint('👩‍🏫 [ALL_TEACHERS] ${request.fields['all_teachers']}');
       debugPrint('👨‍🎓 [ALL_STUDENTS] ${request.fields['all_students']}');
@@ -378,8 +367,6 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       debugPrint('👥 [RECEIVERS] $receivers');
       debugPrint('🔢 [RECEIVERS COUNT] ${receivers.length}');
       debugPrint('═══════════════════════════════════════════════');
-
-      request.fields['body'] = messageController.text.trim();
 
       if (selectedFile != null && selectedFile!.path != null) {
         request.files.add(
@@ -493,71 +480,78 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
     );
   }
 
+  // ✅ FIX: _toggleSelection — students branch mein selectAll ON ho to pehle sab IDs load karo
   void _toggleSelection(int id) {
     setState(() {
       if (_tabController.index == 0) {
         final teacherId = "user_$id";
+
         if (selectedTeachers.contains(teacherId)) {
           selectedTeachers.remove(teacherId);
-          debugPrint('🔴 [TEACHER DESELECTED] id=$teacherId');
+          debugPrint('🔴 Teacher removed $teacherId');
         } else {
           selectedTeachers.add(teacherId);
-          debugPrint('✅ [TEACHER SELECTED] id=$teacherId');
+          debugPrint('✅ Teacher added $teacherId');
         }
-        selectAllTeachers = selectedTeachers.length == messsage.length;
-        debugPrint('📋 [TEACHERS SELECTED] total=${selectedTeachers.length}/${messsage.length} | selectAll=$selectAllTeachers');
-        debugPrint('📦 [TEACHERS LIST] $selectedTeachers');
+
+        selectAllTeachers =
+            selectedTeachers.length == filteredMessages.length;
       } else {
         final studentId = "student_$id";
+
+        // ✅ FIX: Agar selectAll ON hai lekin Set empty hai to pehle sab IDs populate karo
+        if (selectAllStudents && selectedStudents.isEmpty) {
+          selectedStudents.addAll(
+              filteredMessages2.map((s) => "student_${s['id']}"));
+        }
+
         if (selectedStudents.contains(studentId)) {
           selectedStudents.remove(studentId);
-          debugPrint('🔴 [STUDENT DESELECTED] id=$studentId');
+          debugPrint('🔴 Student removed $studentId');
         } else {
           selectedStudents.add(studentId);
-          debugPrint('✅ [STUDENT SELECTED] id=$studentId');
+          debugPrint('✅ Student added $studentId');
         }
-        selectAllStudents = selectedStudents.length == students.length;
-        debugPrint('📋 [STUDENTS SELECTED] total=${selectedStudents.length}/${students.length} | selectAll=$selectAllStudents');
-        debugPrint('📦 [STUDENTS LIST] $selectedStudents');
+
+        selectAllStudents =
+            selectedStudents.length == filteredMessages2.length;
+
+        debugPrint('Students Selected: $selectedStudents');
       }
     });
   }
 
+  // ✅ FIX: _toggleSelectAll — students mein bhi sab IDs Set mein daalo (teachers jaisa)
   void _toggleSelectAll() {
     setState(() {
       if (_tabController.index == 0) {
         if (selectAllTeachers) {
           selectedTeachers.clear();
           selectAllTeachers = false;
-          debugPrint('🔴 [SELECT ALL TEACHERS] → DESELECTED ALL');
+          debugPrint('🔴 [SELECT ALL TEACHERS] → DESELECTED');
         } else {
-          selectedTeachers.addAll(messsage.map((u) => "user_${u['id']}"));
+          selectedTeachers.clear();
+          selectedTeachers
+              .addAll(filteredMessages.map((u) => "user_${u['id']}"));
           selectAllTeachers = true;
-          debugPrint('✅ [SELECT ALL TEACHERS] → ALL SELECTED | count=${selectedTeachers.length}');
-          debugPrint('📦 [TEACHERS LIST] $selectedTeachers');
+          debugPrint(
+              '✅ [SELECT ALL TEACHERS] → ${selectedTeachers.length} selected');
         }
       } else {
         if (selectAllStudents) {
+          // ✅ Deselect: Set clear karo, flag false karo
           selectedStudents.clear();
           selectAllStudents = false;
-          debugPrint('🔴 [SELECT ALL STUDENTS] → DESELECTED ALL');
+          debugPrint('🔴 [SELECT ALL STUDENTS] → DESELECTED');
         } else {
-          if (selectedClass != null) {
-            // ─── Class selected → sirf loaded students ke IDs add karo ───
-            selectedStudents.clear();
-            selectedStudents.addAll(students.map((s) => "student_${s['id']}"));
-            selectAllStudents = true;
-            debugPrint('✅ [SELECT ALL STUDENTS] Class=$selectedClass selected → IDs add kiye');
-            debugPrint('📋 [STUDENTS SELECTED] count=${selectedStudents.length}/${students.length}');
-            debugPrint('📦 [STUDENTS LIST] $selectedStudents');
-            debugPrint('🚩 [API WILL SEND] all_students=false | receivers=${selectedStudents.toList()}');
-          } else {
-            // ─── No class → sirf flag true, backend sab handle karega ───
-            selectedStudents.clear();
-            selectAllStudents = true;
-            debugPrint('✅ [SELECT ALL STUDENTS] No class selected → only flag set');
-            debugPrint('🚩 [API WILL SEND] all_students=true | receivers=[]');
-          }
+          // ✅ FIX: Teachers ki tarah — sab IDs Set mein daalo
+          selectedStudents.clear();
+          selectedStudents
+              .addAll(filteredMessages2.map((s) => "student_${s['id']}"));
+          // selectAllStudents = true;
+          debugPrint(
+              '✅ [SELECT ALL STUDENTS] → ${selectedStudents.length} selected');
+          debugPrint('📦 [STUDENTS LIST] $selectedStudents');
         }
       }
     });
@@ -758,90 +752,116 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                           Padding(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 8.sp, vertical: 5.sp),
-                            child: Text('Class',
-                                style: GoogleFonts.montserrat(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black)),
+                            child: Text(
+                              'Class',
+                              style: GoogleFonts.montserrat(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black),
+                            ),
                           ),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 8.sp),
-                            child: Container(
-                              width: double.infinity,
-                              height: 40.sp,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.blue.withOpacity(0.2),
-                                    blurRadius: 8,
-                                    spreadRadius: 2,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
+                            child: GestureDetector(
+                              onTap: () async {
+                                final result = await showDialog<List<int>>(
+                                  context: context,
+                                  builder: (context) {
+                                    List<int> tempSelected =
+                                    List.from(selectedClasses);
+
+                                    return StatefulBuilder(
+                                      builder: (context, setDialogState) {
+                                        return AlertDialog(
+                                          title: const Text("Select Classes"),
+                                          content: SizedBox(
+                                            width: double.maxFinite,
+                                            child: ListView.builder(
+                                              shrinkWrap: true,
+                                              itemCount: classes.length,
+                                              itemBuilder: (context, index) {
+                                                final item = classes[index];
+                                                final id = item['id'];
+
+                                                return CheckboxListTile(
+                                                  value: tempSelected.contains(id),
+                                                  title: Text(
+                                                      '${item["academic_class"]['title']} (${item["section"]['title']})'),
+                                                  onChanged: (value) {
+                                                    setDialogState(() {
+                                                      if (value == true) {
+                                                        tempSelected.add(id);
+                                                      } else {
+                                                        tempSelected.remove(id);
+                                                      }
+                                                    });
+                                                  },
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              child: const Text("Cancel"),
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                            ),
+                                            ElevatedButton(
+                                              child: const Text("OK"),
+                                              onPressed: () =>
+                                                  Navigator.pop(context, tempSelected),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                );
+
+                                if (result != null) {
+                                  setState(() {
+                                    selectedClasses = result;
+                                    selectedStudents.clear();
+                                    selectAllStudents = false;
+                                  });
+
+                                  debugPrint(
+                                      "🏫 Selected Classes: $selectedClasses");
+
+                                  fetchAssignmentsData(resetPage: true);
+                                }
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                height: 40.sp,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.blue.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      spreadRadius: 2,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
                                 padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
+                                const EdgeInsets.symmetric(horizontal: 12),
                                 child: Row(
                                   children: [
                                     Expanded(
-                                      child: FocusScope(
-                                        canRequestFocus: false,
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButtonFormField<int?>(
-                                            value: classes.isNotEmpty &&
-                                                classes.any((c) =>
-                                                c["id"] == selectedClass)
-                                                ? selectedClass
-                                                : null,
-                                            decoration: const InputDecoration(
-                                              hintText: "Select Class",
-                                              border: InputBorder.none,
-                                              contentPadding:
-                                              EdgeInsets.symmetric(
-                                                  horizontal: 16,
-                                                  vertical: 0),
-                                            ),
-                                            icon: const SizedBox.shrink(),
-                                            items: classes.isNotEmpty
-                                                ? classes.map((c) {
-                                              return DropdownMenuItem<int>(
-                                                value: c["id"],
-                                                child: Text(
-                                                    '${c["academic_class"]['title']}(${c["section"]['title']})'),
-                                              );
-                                            }).toList()
-                                                : [
-                                              const DropdownMenuItem<int>(
-                                                value: null,
-                                                child: Text(
-                                                    "No Classes Available"),
-                                              ),
-                                            ],
-                                            onChanged: classes.isNotEmpty
-                                                ? (value) {
-                                              debugPrint('🏫 [CLASS CHANGED] selectedClass=$value');
-                                              setState(() {
-                                                selectedClass = value;
-                                                // Reset students on class change
-                                                selectedStudents.clear();
-                                                selectAllStudents = false;
-                                              });
-                                              debugPrint('🔄 [RESET] selectedStudents cleared, selectAllStudents=false');
-                                              fetchAssignmentsData(
-                                                  resetPage: true);
-                                            }
-                                                : null,
-                                          ),
-                                        ),
+                                      child: Text(
+                                        selectedClasses.isEmpty
+                                            ? "Select Class"
+                                            : "${selectedClasses.length} Classes Selected",
+                                        style: TextStyle(
+                                            fontSize: 13.sp,
+                                            color: Colors.black),
                                       ),
                                     ),
-                                    const Center(
-                                      child: Icon(Icons.arrow_drop_down,
-                                          size: 24, color: Colors.black),
-                                    ),
+                                    const Icon(Icons.arrow_drop_down,
+                                        color: Colors.black),
                                   ],
                                 ),
                               ),
@@ -855,7 +875,6 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
               ),
             ),
           ),
-
           SizedBox(height: 10.sp),
 
           // ─── Select All row ───
@@ -975,7 +994,6 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                         title: 'No Students Found.'))
                     : ListView.builder(
                   controller: _studentScrollController,
-                  // +1 for the loading indicator at bottom
                   itemCount: filteredMessages2.length +
                       (_isLoadingMoreStudents ? 1 : 0),
                   itemBuilder: (context, index) {
@@ -984,14 +1002,18 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 12),
                         child: Center(
-                            child: CircularProgressIndicator(color: Colors.white,)),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            )),
                       );
                     }
 
                     final assignment = filteredMessages2[index];
-                    final isSelected = selectAllStudents ||
-                        selectedStudents.contains(
-                            'student_${assignment['id']}');
+
+                    // ✅ FIX: Sirf Set check karo — selectAllStudents || hata diya
+                    final isSelected = selectedStudents.contains(
+                        'student_${assignment['id']}');
+
                     return GestureDetector(
                       onLongPress: () =>
                           _toggleSelection(assignment['id']),
@@ -1090,9 +1112,21 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                             Expanded(
                               child: TextField(
                                 controller: messageController,
-                                decoration: const InputDecoration(
+                                maxLines: null,
+                                keyboardType: TextInputType.multiline,
+                                textCapitalization:
+                                TextCapitalization.sentences,
+                                style: TextStyle(
+                                    fontSize: 14.sp, color: Colors.black87),
+                                decoration: InputDecoration(
                                   hintText: 'Type a message...',
+                                  hintStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                      fontSize: 14.sp),
                                   border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 6),
                                 ),
                               ),
                             ),
@@ -1102,8 +1136,7 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                 child: Text(
                                   selectedFile!.name,
                                   style: const TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 12),
+                                      color: Colors.black54, fontSize: 12),
                                 ),
                               ),
                           ],

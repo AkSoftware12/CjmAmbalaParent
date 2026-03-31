@@ -219,8 +219,93 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
     }
   }
 
+  // Future<void> _sendMessage() async {
+  //   final text = messageController.text.trim();
+  //
+  //   if (text.isEmpty && selectedFile == null) {
+  //     _showErrorSnackBar('Please enter a message or select a file');
+  //     return;
+  //   }
+  //
+  //   if (currentUserType != "App\\Models\\Student") {
+  //     _showErrorSnackBar('Only students can send messages');
+  //     return;
+  //   }
+  //
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final token = prefs.getString('token');
+  //
+  //   if (token == null) {
+  //     _showErrorSnackBar('No authentication token found');
+  //     return;
+  //   }
+  //
+  //   final fileToSend = selectedFile;
+  //
+  //   // ✅ Optimistic UI (instant show)
+  //   final optimistic = MessageModel(
+  //     senderId: currentUserId,
+  //     senderType: currentUserType,
+  //     senderName: "Me",
+  //     body: text,
+  //     attachmentUrl: fileToSend != null ? "uploading" : null, // marker
+  //     createdAt: DateTime.now().toIso8601String(),
+  //     seenByReceiver: "0",
+  //   );
+  //
+  //   if (mounted) {
+  //     setState(() {
+  //       // ✅ reverse:true => newest at index 0
+  //       _messages.insert(0, optimistic);
+  //       messageController.clear();
+  //       selectedFile = null;
+  //     });
+  //     _scrollToBottom();
+  //   }
+  //
+  //   try {
+  //     final uri = Uri.parse(ApiRoutes.sendMessage);
+  //     final request = http.MultipartRequest('POST', uri);
+  //
+  //     request.headers['Authorization'] = 'Bearer $token';
+  //
+  //     request.fields['receivers[]'] = 'user_${widget.msgSendId}';
+  //     request.fields['body'] = text;
+  //
+  //     if (fileToSend != null && fileToSend.path != null) {
+  //       request.files.add(
+  //         await http.MultipartFile.fromPath(
+  //           'attachment',
+  //           fileToSend.path!,
+  //           filename: fileToSend.name,
+  //         ),
+  //       );
+  //     } else {
+  //       request.fields['attachment'] = '';
+  //     }
+  //
+  //     final response = await request.send();
+  //
+  //     if (!mounted) return;
+  //
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       // ✅ after success, fetch latest from server (replace optimistic)
+  //       await _fetchMessages(widget.id);
+  //     } else {
+  //       _showErrorSnackBar('Failed to send message: ${response.statusCode}');
+  //       await _fetchMessages(widget.id);
+  //     }
+  //   } catch (e) {
+  //     _showErrorSnackBar('Error sending message: $e');
+  //     await _fetchMessages(widget.id);
+  //   }
+  // }
   Future<void> _sendMessage() async {
-    final text = messageController.text.trim();
+    // ✅ Line breaks preserve
+    final text = messageController.text
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .trim();
 
     if (text.isEmpty && selectedFile == null) {
       _showErrorSnackBar('Please enter a message or select a file');
@@ -242,20 +327,19 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
 
     final fileToSend = selectedFile;
 
-    // ✅ Optimistic UI (instant show)
+    // ✅ Optimistic UI
     final optimistic = MessageModel(
       senderId: currentUserId,
       senderType: currentUserType,
       senderName: "Me",
-      body: text,
-      attachmentUrl: fileToSend != null ? "uploading" : null, // marker
+      body: text, // multiline safe
+      attachmentUrl: fileToSend != null ? "uploading" : null,
       createdAt: DateTime.now().toIso8601String(),
       seenByReceiver: "0",
     );
 
     if (mounted) {
       setState(() {
-        // ✅ reverse:true => newest at index 0
         _messages.insert(0, optimistic);
         messageController.clear();
         selectedFile = null;
@@ -270,6 +354,8 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       request.headers['Authorization'] = 'Bearer $token';
 
       request.fields['receivers[]'] = 'user_${widget.msgSendId}';
+
+      // ✅ Important — multiline message send
       request.fields['body'] = text;
 
       if (fileToSend != null && fileToSend.path != null) {
@@ -289,7 +375,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       if (!mounted) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // ✅ after success, fetch latest from server (replace optimistic)
         await _fetchMessages(widget.id);
       } else {
         _showErrorSnackBar('Failed to send message: ${response.statusCode}');
@@ -300,7 +385,6 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
       await _fetchMessages(widget.id);
     }
   }
-
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -324,7 +408,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
           margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
           decoration: BoxDecoration(
-            color: isMe ? AppColors.primary : Colors.grey.shade300,
+            color: isMe ? Colors.grey.shade200 : Colors.grey.shade300,
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(12),
               topRight: const Radius.circular(12),
@@ -346,7 +430,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
               Text(
                 message.body,
                 style: TextStyle(
-                  color: isMe ? Colors.white : Colors.black87,
+                  color: isMe ? Colors.black : Colors.black87,
                   fontSize: 16,
                 ),
               ),
@@ -411,7 +495,7 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                     ? message.createdAt.substring(0, 16)
                     : message.createdAt,
                 style: TextStyle(
-                  color: isMe ? Colors.white70 : Colors.black54,
+                  color: isMe ? Colors.black : Colors.black54,
                   fontSize: 12,
                 ),
               ),
@@ -514,14 +598,34 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                           child: Row(
                             children: [
                               Expanded(
-                                child: TextField(
-                                  controller: messageController,
-                                  enabled: !isSending,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Type a message...',
-                                    border: InputBorder.none,
-                                  ),
-                                ),
+                                child:TextField(
+    controller: messageController,
+    // focusNode: _focusNode,
+    // enabled: !_isSending,
+    maxLines: null,
+    keyboardType: TextInputType.multiline,
+    textCapitalization: TextCapitalization.sentences,
+    style:
+    TextStyle(fontSize: 14.sp, color: Colors.black87),
+    decoration: InputDecoration(
+    hintText: 'Type a message...',
+    hintStyle: TextStyle(
+    color: Colors.grey.shade400, fontSize: 14.sp),
+    border: InputBorder.none,
+    isDense: true,
+    contentPadding:
+    const EdgeInsets.symmetric(vertical: 6),
+    ),
+    )
+
+                                // TextField(
+                                //   controller: messageController,
+                                //   enabled: !isSending,
+                                //   decoration: const InputDecoration(
+                                //     hintText: 'Type a message...',
+                                //     border: InputBorder.none,
+                                //   ),
+                                // ),
                               ),
                               if (selectedFile != null)
                                 Padding(

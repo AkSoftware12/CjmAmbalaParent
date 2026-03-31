@@ -2,7 +2,7 @@ name: avi
 description: "A new Flutter project."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.38+38
+version: 1.0.39+39
 
 
 environment:
@@ -18,8 +18,8 @@ dependencies:
   flutter_launcher_icons: ^0.13.1
   connectivity_plus: ^6.1.2
   scrollable_clean_calendar: ^1.5.0
-  google_fonts: ^8.0.2
-#  google_fonts: ^6.2.1
+#  google_fonts: ^8.0.2
+  google_fonts: ^6.2.1
   carousel_slider_plus: ^7.1.0
   table_calendar: ^3.0.9
   intl: ^0.20.2
@@ -50,7 +50,8 @@ dependencies:
   pdf: ^3.11.3
   animated_search_bar: ^2.8.0
   new_version_plus: ^0.1.1
-  fl_chart: ^1.1.1
+#  fl_chart: ^1.1.1
+  fl_chart: ^0.71.0
   lottie: ^3.1.2
   syncfusion_flutter_pdfviewer: ^30.2.7
   shimmer: ^3.0.0

@@ -163,10 +163,86 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
 
   // ── Send ─────────────────────────────────────
 
+  // Future<void> _handleSend() async {
+  //   if (_isSending) return;
+  //   final text = _messageController.text.trim();
+  //   if (text.isEmpty && _selectedFile == null) return;
+  //   if ((widget.messageSendPermissionsApp ?? 1) == 0) {
+  //     _showSnackBar('Permission denied', isError: true);
+  //     return;
+  //   }
+  //
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final token = prefs.getString('teachertoken');
+  //   if (token == null) return;
+  //
+  //   final fileToSend = _selectedFile;
+  //
+  //   // Optimistic — send: 1 (mera message)
+  //   final optimistic = MessageModel(
+  //     senderId: 0,
+  //     senderType: "App\\Models\\User",
+  //     senderName: "Me",
+  //     body: text,
+  //     attachmentUrl: fileToSend != null ? "uploading" : null,
+  //     createdAt: DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now()),
+  //     seenByReceiver: null,
+  //     send: 1, // ✅ mera message
+  //   );
+  //
+  //   setState(() {
+  //     _isSending = true;
+  //     _messages.insert(0, optimistic);
+  //     _messageController.clear();
+  //     _selectedFile = null;
+  //   });
+  //   _scrollToBottom();
+  //
+  //   try {
+  //     final uri = Uri.parse(ApiRoutes.sendTeacherMessage);
+  //     final request = http.MultipartRequest('POST', uri)
+  //       ..headers['Authorization'] = 'Bearer $token'
+  //       ..fields['receivers[]'] = widget.msgSendId
+  //       ..fields['body'] = text;
+  //
+  //     if (fileToSend?.path != null) {
+  //       request.files.add(await http.MultipartFile.fromPath(
+  //         'attachment',
+  //         fileToSend!.path!,
+  //         filename: fileToSend.name,
+  //       ));
+  //     } else {
+  //       request.fields['attachment'] = '';
+  //     }
+  //
+  //     final response = await request.send();
+  //     final responseBody = await response.stream.bytesToString();
+  //     debugPrint('Send [${response.statusCode}]: $responseBody');
+  //
+  //     if (!mounted || _isDisposed) return;
+  //     await _fetchMessages();
+  //   } catch (e) {
+  //     debugPrint('Send error: $e');
+  //     if (mounted) _showSnackBar('Error: $e', isError: true);
+  //     await _fetchMessages();
+  //   } finally {
+  //     if (mounted) setState(() => _isSending = false);
+  //   }
+  // }
+
+  // ── File Picker ──────────────────────────────
+
+
   Future<void> _handleSend() async {
     if (_isSending) return;
-    final text = _messageController.text.trim();
+
+    final text = _messageController.text
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .trim();
+
     if (text.isEmpty && _selectedFile == null) return;
+
     if ((widget.messageSendPermissionsApp ?? 1) == 0) {
       _showSnackBar('Permission denied', isError: true);
       return;
@@ -178,7 +254,6 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
 
     final fileToSend = _selectedFile;
 
-    // Optimistic — send: 1 (mera message)
     final optimistic = MessageModel(
       senderId: 0,
       senderType: "App\\Models\\User",
@@ -187,7 +262,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
       attachmentUrl: fileToSend != null ? "uploading" : null,
       createdAt: DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now()),
       seenByReceiver: null,
-      send: 1, // ✅ mera message
+      send: 1,
     );
 
     setState(() {
@@ -196,6 +271,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
       _messageController.clear();
       _selectedFile = null;
     });
+
     _scrollToBottom();
 
     try {
@@ -203,7 +279,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
       final request = http.MultipartRequest('POST', uri)
         ..headers['Authorization'] = 'Bearer $token'
         ..fields['receivers[]'] = widget.msgSendId
-        ..fields['body'] = text;
+        ..fields['body'] = text; // yaha multiline text jayega
 
       if (fileToSend?.path != null) {
         request.files.add(await http.MultipartFile.fromPath(
@@ -211,26 +287,20 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
           fileToSend!.path!,
           filename: fileToSend.name,
         ));
-      } else {
-        request.fields['attachment'] = '';
       }
 
       final response = await request.send();
       final responseBody = await response.stream.bytesToString();
-      debugPrint('Send [${response.statusCode}]: $responseBody');
 
-      if (!mounted || _isDisposed) return;
+      debugPrint(responseBody);
       await _fetchMessages();
     } catch (e) {
       debugPrint('Send error: $e');
-      if (mounted) _showSnackBar('Error: $e', isError: true);
-      await _fetchMessages();
+      _showSnackBar('Error sending message', isError: true);
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
   }
-
-  // ── File Picker ──────────────────────────────
 
   Future<void> _pickFile() async {
     try {
@@ -498,16 +568,16 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
         msg.attachmentUrl != null &&
         msg.attachmentUrl!.isNotEmpty;
 
-    final bubbleColor = isMe ? AppColors.primary : Colors.white;
-    final textColor = isMe ? Colors.white : const Color(0xFF1C1C1E);
-    final timeColor = isMe ? Colors.white60 : Colors.grey.shade500;
+    final bubbleColor = isMe ? Colors.grey.shade200 : Colors.white;
+    final textColor = isMe ? Colors.black : const Color(0xFF1C1C1E);
+    final timeColor = isMe ? Colors.black : Colors.grey.shade500;
     final isSeen =
         msg.seenByReceiver != null && msg.seenByReceiver!.isNotEmpty;
 
     return Flexible(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.68),
+            maxWidth: MediaQuery.of(context).size.width * 0.78),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
