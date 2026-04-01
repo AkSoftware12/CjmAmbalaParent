@@ -544,14 +544,23 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
           selectAllStudents = false;
           debugPrint('🔴 [SELECT ALL STUDENTS] → DESELECTED');
         } else {
-          // ✅ FIX: Teachers ki tarah — sab IDs Set mein daalo
+
           selectedStudents.clear();
           selectedStudents
               .addAll(filteredMessages2.map((s) => "student_${s['id']}"));
-          // selectAllStudents = true;
+          // selectAllStudents = true;  ❌ mat karo — API issue
+          selectAllStudents = selectedStudents.length == filteredMessages2.length; // ✅ length se derive hoga
           debugPrint(
               '✅ [SELECT ALL STUDENTS] → ${selectedStudents.length} selected');
           debugPrint('📦 [STUDENTS LIST] $selectedStudents');
+          // // ✅ FIX: Teachers ki tarah — sab IDs Set mein daalo
+          // selectedStudents.clear();
+          // selectedStudents
+          //     .addAll(filteredMessages2.map((s) => "student_${s['id']}"));
+          // // selectAllStudents = true;
+          // debugPrint(
+          //     '✅ [SELECT ALL STUDENTS] → ${selectedStudents.length} selected');
+          // debugPrint('📦 [STUDENTS LIST] $selectedStudents');
         }
       }
     });
@@ -890,10 +899,18 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                       horizontal: 10.sp, vertical: 5.sp),
                   child: Row(
                     children: [
+                      // Checkbox(
+                      //   value: _tabController.index == 0
+                      //       ? selectAllTeachers
+                      //       : selectAllStudents,
+                      //   onChanged: (value) => _toggleSelectAll(),
+                      //   activeColor: AppColors.primary,
+                      // ),
+
                       Checkbox(
                         value: _tabController.index == 0
                             ? selectAllTeachers
-                            : selectAllStudents,
+                            : selectedStudents.length == filteredMessages2.length && filteredMessages2.isNotEmpty,
                         onChanged: (value) => _toggleSelectAll(),
                         activeColor: AppColors.primary,
                       ),
