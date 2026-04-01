@@ -275,6 +275,8 @@ class _FeesScreenState extends State<FeesScreen> {
 
         print('FEE List : $fees');
       });
+      _autoSelectCurrentMonthFees(); // ✅ YEH ADD KARO
+
     } else {
       setState(() {
         isLoading = false;
@@ -282,17 +284,79 @@ class _FeesScreenState extends State<FeesScreen> {
     }
   }
 
-  void _toggleSelection(int id, double amount) {
-    setState(() {
-      if (selectedFees1.contains(id.toString())) {
-        selectedFees1.remove(id.toString());
-        totalAmount -= amount;
-      } else {
-        selectedFees1.add(id.toString());
-        totalAmount += amount;
+  void _toggleSelection(int installmentId, double amount) {
+    int index = fees.indexWhere(
+          (e) => e['installment_id'].toString() == installmentId.toString(),
+    );
+
+    if (index == -1) return;
+
+    String id = installmentId.toString();
+
+    /// -------- SELECT LOGIC ----------
+    if (!selectedFees1.contains(id)) {
+      /// previous installment check
+      if (index > 0) {
+        String prevStatus =
+        fees[index - 1]['pay_status'].toString().toLowerCase();
+
+        bool prevSelected = selectedFees1.contains(
+          fees[index - 1]['installment_id'].toString(),
+        );
+
+        if (prevStatus != "paid" && !prevSelected) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Please select previous installment first"),
+              backgroundColor: Colors.blue,
+            ),
+          );
+          return;
+        }
       }
-    });
+
+      setState(() {
+        selectedFees1.add(id);
+        totalAmount += amount;
+      });
+    }
+
+    /// -------- UNSELECT LOGIC ----------
+    else {
+      /// check next installment selected hai kya
+      if (index < fees.length - 1) {
+        bool nextSelected = selectedFees1.contains(
+          fees[index + 1]['installment_id'].toString(),
+        );
+
+        if (nextSelected) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Please unselect next installment first"),
+              backgroundColor: Colors.blue,
+            ),
+          );
+          return;
+        }
+      }
+
+      setState(() {
+        selectedFees1.remove(id);
+        totalAmount -= amount;
+      });
+    }
   }
+  // void _toggleSelection(int id, double amount) {
+  //   setState(() {
+  //     if (selectedFees1.contains(id.toString())) {
+  //       selectedFees1.remove(id.toString());
+  //       totalAmount -= amount;
+  //     } else {
+  //       selectedFees1.add(id.toString());
+  //       totalAmount += amount;
+  //     }
+  //   });
+  // }
 
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -608,6 +672,56 @@ class _FeesScreenState extends State<FeesScreen> {
     }
   }
 
+
+  void _autoSelectCurrentMonthFees() {
+    final now = DateTime.now();
+    int currentMonth = now.month;
+    int currentYear = now.year;
+
+    setState(() {
+      selectedFees1.clear();
+      totalAmount = 0.0;
+
+      for (int i = 0; i < fees.length; i++) {
+        final fee = fees[i];
+        final payStatus = fee['pay_status'].toString().toLowerCase();
+
+        if (payStatus == 'paid') continue;
+
+        final String dueDateStr = fee['due_date']?.toString() ?? '';
+        if (dueDateStr.isEmpty) continue;
+
+        DateTime? dueDate;
+
+        try {
+          dueDate = DateTime.parse(dueDateStr);
+        } catch (e) {
+          List parts = dueDateStr.split("-");
+          dueDate = DateTime(
+            int.parse(parts[2]),
+            int.parse(parts[1]),
+            int.parse(parts[0]),
+          );
+        }
+
+        /// ✅ Month based selection (date ignore)
+        bool shouldSelect =
+            dueDate.year < currentYear ||
+                (dueDate.year == currentYear && dueDate.month <= currentMonth);
+
+        if (shouldSelect) {
+          final installmentId = fee['installment_id'].toString();
+          final amount =
+              double.tryParse(fee['to_pay_amount'].toString()) ?? 0.0;
+
+          if (!selectedFees1.contains(installmentId)) {
+            selectedFees1.add(installmentId);
+            totalAmount += amount;
+          }
+        }
+      }
+    });
+  }
   @override
   void dispose() {
     _timer?.cancel();
@@ -647,9 +761,24 @@ class _FeesScreenState extends State<FeesScreen> {
                         itemBuilder: (context, index) {
                           String dueDate = fees[index]['due_date'].toString();
                           String monthName = "";
+                          // if (dueDate.isNotEmpty) {
+                          //   DateTime parsedDate = DateTime.parse(dueDate);
+                          //   monthName = DateFormat('MMMM').format(parsedDate);
+                          // }
+
                           if (dueDate.isNotEmpty) {
-                            DateTime parsedDate = DateTime.parse(dueDate);
-                            monthName = DateFormat('MMMM').format(parsedDate);
+                            try {
+                              DateTime parsedDate;
+
+                              if (dueDate.contains('-') && dueDate.split('-')[0].length == 2) {
+                                parsedDate = DateFormat('dd-MM-yyyy').parse(dueDate);
+                              } else {
+                                parsedDate = DateTime.parse(dueDate);
+                              }
+                              monthName = DateFormat('MMMM').format(parsedDate);
+                            } catch (e) {
+                              monthName = '';
+                            }
                           }
 
                           return PaymentCard(
@@ -716,6 +845,10 @@ class _FeesScreenState extends State<FeesScreen> {
                           ),
                         ),
                       ),
+
+                    SizedBox(
+                      height: 50,
+                    )
                   ],
                 ),
               ],
