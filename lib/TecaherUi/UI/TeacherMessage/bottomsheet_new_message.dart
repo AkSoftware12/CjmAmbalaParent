@@ -759,68 +759,163 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8.sp, vertical: 5.sp),
+                            padding: EdgeInsets.symmetric(horizontal: 8.sp, vertical: 5.sp),
                             child: Text(
                               'Class',
                               style: GoogleFonts.montserrat(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black),
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 8.sp),
-                            child: GestureDetector(
+                            child:// Class Selector Widget — Improved UI
+                            GestureDetector(
                               onTap: () async {
                                 final result = await showDialog<List<int>>(
                                   context: context,
                                   builder: (context) {
-                                    List<int> tempSelected =
-                                    List.from(selectedClasses);
-
+                                    List<int> tempSelected = List.from(selectedClasses);
                                     return StatefulBuilder(
                                       builder: (context, setDialogState) {
-                                        return AlertDialog(
-                                          title: const Text("Select Classes"),
-                                          content: SizedBox(
-                                            width: double.maxFinite,
-                                            child: ListView.builder(
-                                              shrinkWrap: true,
-                                              itemCount: classes.length,
-                                              itemBuilder: (context, index) {
-                                                final item = classes[index];
-                                                final id = item['id'];
+                                        bool isAllSelected = tempSelected.length == classes.length;
+                                        return Dialog(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(0),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                // Header
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 20, vertical: 16),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red.shade50,
+                                                    borderRadius: const BorderRadius.vertical(
+                                                        top: Radius.circular(16)),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      const Icon(Icons.class_outlined,
+                                                          color: Colors.red, size: 20),
+                                                      const SizedBox(width: 8),
+                                                      const Text(
+                                                        "Select Classes",
+                                                        style: TextStyle(
+                                                            fontWeight: FontWeight.w600,
+                                                            fontSize: 16),
+                                                      ),
+                                                      const Spacer(),
+                                                      if (tempSelected.isNotEmpty)
+                                                        Container(
+                                                          padding: const EdgeInsets.symmetric(
+                                                              horizontal: 10, vertical: 3),
+                                                          decoration: BoxDecoration(
+                                                            color: Colors.red,
+                                                            borderRadius: BorderRadius.circular(999),
+                                                          ),
+                                                          child: Text(
+                                                            '${tempSelected.length}',
+                                                            style: const TextStyle(
+                                                                color: Colors.white,
+                                                                fontSize: 12,
+                                                                fontWeight: FontWeight.w600),
+                                                          ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                ),
 
-                                                return CheckboxListTile(
-                                                  value: tempSelected.contains(id),
-                                                  title: Text(
-                                                      '${item["academic_class"]['title']} (${item["section"]['title']})'),
+                                                // Select All
+                                                CheckboxListTile(
+                                                  activeColor: Colors.red,
+                                                  value: isAllSelected,
+                                                  title: const Text("Select All",
+                                                      style: TextStyle(fontWeight: FontWeight.w600)),
                                                   onChanged: (value) {
                                                     setDialogState(() {
-                                                      if (value == true) {
-                                                        tempSelected.add(id);
-                                                      } else {
-                                                        tempSelected.remove(id);
-                                                      }
+                                                      tempSelected = value == true
+                                                          ? classes.map<int>((e) => e['id'] as int).toList()
+                                                          : [];
                                                     });
                                                   },
-                                                );
-                                              },
+                                                ),
+                                                const Divider(height: 0),
+
+                                                // List
+                                                ConstrainedBox(
+                                                  constraints: const BoxConstraints(maxHeight: 300),
+                                                  child: ListView.builder(
+                                                    shrinkWrap: true,
+                                                    itemCount: classes.length,
+                                                    itemBuilder: (context, index) {
+                                                      final item = classes[index];
+                                                      final id = item['id'] as int;
+                                                      final isSelected = tempSelected.contains(id);
+                                                      return CheckboxListTile(
+                                                        activeColor: Colors.red,
+                                                        value: isSelected,
+                                                        title: Text(
+                                                          '${item["academic_class"]["title"]} '
+                                                              '(${item["section"]["title"]})',
+                                                          style: const TextStyle(fontSize: 14),
+                                                        ),
+                                                        onChanged: (value) {
+                                                          setDialogState(() {
+                                                            value == true
+                                                                ? tempSelected.add(id)
+                                                                : tempSelected.remove(id);
+                                                          });
+                                                        },
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+
+                                                // Footer buttons
+                                                const Divider(height: 0),
+                                                Padding(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      horizontal: 16, vertical: 12),
+                                                  child: Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: OutlinedButton(
+                                                          onPressed: () => Navigator.pop(context),
+                                                          style: OutlinedButton.styleFrom(
+                                                            side: const BorderSide(color: Colors.grey),
+                                                            shape: RoundedRectangleBorder(
+                                                                borderRadius: BorderRadius.circular(10)),
+                                                          ),
+                                                          child: const Text("Cancel",
+                                                              style: TextStyle(color: Colors.grey)),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Expanded(
+                                                        child: ElevatedButton(
+                                                          style: ElevatedButton.styleFrom(
+                                                            backgroundColor: Colors.red,
+                                                            foregroundColor: Colors.white,
+                                                            shape: RoundedRectangleBorder(
+                                                                borderRadius: BorderRadius.circular(10)),
+                                                          ),
+                                                          onPressed: () =>
+                                                              Navigator.pop(context, tempSelected),
+                                                          child: const Text("Apply"),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          actions: [
-                                            TextButton(
-                                              child: const Text("Cancel"),
-                                              onPressed: () =>
-                                                  Navigator.pop(context),
-                                            ),
-                                            ElevatedButton(
-                                              child: const Text("OK"),
-                                              onPressed: () =>
-                                                  Navigator.pop(context, tempSelected),
-                                            ),
-                                          ],
                                         );
                                       },
                                     );
@@ -833,44 +928,66 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                                     selectedStudents.clear();
                                     selectAllStudents = false;
                                   });
-
-                                  debugPrint(
-                                      "🏫 Selected Classes: $selectedClasses");
-
                                   fetchAssignmentsData(resetPage: true);
                                 }
                               },
                               child: Container(
                                 width: double.infinity,
-                                height: 40.sp,
+                                height: 44,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: selectedClasses.isEmpty
+                                        ? Colors.grey.shade300
+                                        : Colors.red.shade300,
+                                    width: selectedClasses.isEmpty ? 0.5 : 1.0,
+                                  ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.blue.withOpacity(0.2),
+                                      color: Colors.red.withOpacity(0.08),
                                       blurRadius: 8,
-                                      spreadRadius: 2,
-                                      offset: const Offset(0, 1),
+                                      spreadRadius: 1,
+                                      offset: const Offset(0, 2),
                                     ),
                                   ],
                                 ),
-                                padding:
-                                const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
                                 child: Row(
                                   children: [
+                                    const Icon(Icons.school_outlined, color: Colors.red, size: 18),
+                                    const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         selectedClasses.isEmpty
                                             ? "Select Class"
-                                            : "${selectedClasses.length} Classes Selected",
+                                            : "${selectedClasses.length} Class${selectedClasses.length > 1 ? 'es' : ''} Selected",
                                         style: TextStyle(
-                                            fontSize: 13.sp,
-                                            color: Colors.black),
+                                          fontSize: 14,
+                                          color: selectedClasses.isEmpty
+                                              ? Colors.grey.shade400
+                                              : Colors.black87,
+                                        ),
                                       ),
                                     ),
-                                    const Icon(Icons.arrow_drop_down,
-                                        color: Colors.black),
+                                    if (selectedClasses.isNotEmpty)
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 6),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(999),
+                                        ),
+                                        child: Text(
+                                          '${selectedClasses.length}',
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                    const Icon(Icons.keyboard_arrow_down_rounded,
+                                        color: Colors.red, size: 22),
                                   ],
                                 ),
                               ),
