@@ -218,7 +218,7 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                               bottom: 0,
                               child: Container(
                                 width: 1,
-                                color: Colors.blue[300],
+                                color: Colors.red.shade50,
                               ),
                             ),
                             Positioned.fill(
@@ -228,7 +228,7 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                                 itemBuilder: (context, index) {
                                   final schedule = timeTable[index];
                                   return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    padding: const EdgeInsets.symmetric(vertical: 5),
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
@@ -237,24 +237,21 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                                         Column(
                                           children: [
                                             Text(
-                                              '${index+1}',
-                                              // schedule['period'].toString(),
-                                              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800),
+                                              // '${index+1}',
+                                              schedule['period'].toString(),
+                                              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800,color: Colors.red.shade500),
                                             ),
                                             Container(
                                               height: 3.sp,
                                               width: 45.sp,
                                               decoration: BoxDecoration(
-                                                  color: Colors.grey,
+                                                  color: Colors.red.shade500,
 
                                                   borderRadius: BorderRadius.circular(10)
                                               ),
                                             ),
-                                            // SizedBox(height: 80.sp),
-                                            // Text(
-                                            //   schedule['end_time'].split(" - ")[0],
-                                            //   style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold),
-                                            // ),
+
+                                            Text('Period',style: TextStyle(fontSize: 9.sp,fontWeight: FontWeight.bold,color: AppColors.secondary),)
                                           ],
                                         ),
                                         SizedBox(width: 15),
@@ -283,7 +280,7 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                                                 child: ListTile(
                                                   contentPadding: EdgeInsets.zero,
                                                   leading: Container(
-                                                    padding: EdgeInsets.all(10),
+                                                    padding: EdgeInsets.all(5),
                                                     decoration: BoxDecoration(
                                                       color: Colors.blueAccent.withOpacity(0.1),
                                                       shape: BoxShape.circle,
@@ -305,22 +302,10 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                                                   subtitle: Column(
                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                     children: [
-                                                      SizedBox(height: 6),
-                                                      // Row(
-                                                      //   children: [
-                                                      //     Icon(Icons.watch_later_outlined, size: 18, color: Colors.grey.shade700),
-                                                      //     SizedBox(width: 6),
-                                                      //     Text(
-                                                      //       "${schedule['start_time']} - ${schedule['end_time']}",
-                                                      //       style: GoogleFonts.montserrat(
-                                                      //         fontSize: 14,
-                                                      //         fontWeight: FontWeight.w600,
-                                                      //         color: Colors.grey.shade800,
-                                                      //       ),
-                                                      //     ),
-                                                      //   ],
-                                                      // ),
-                                                      SizedBox(height: 5),
+                                                      SizedBox(
+                                                        height: 5,
+                                                      ),
+
                                                       Row(
                                                         children: [
                                                           SizedBox(
@@ -333,7 +318,7 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                                                             child: Text(
                                                               schedule['teacher_name'],
                                                               style: GoogleFonts.montserrat(
-                                                                fontSize: 14,
+                                                                fontSize: 10.sp,
                                                                 fontWeight: FontWeight.w600,
                                                                 color: Colors.grey.shade800,
                                                               ),
@@ -342,21 +327,7 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                                                           ),
                                                         ],
                                                       ),
-                                                      SizedBox(height: 5),
-                                                      // Row(
-                                                      //   children: [
-                                                      //     Icon(Icons.meeting_room, size: 18, color: Colors.grey.shade700),
-                                                      //     SizedBox(width: 6),
-                                                      //     // Text(
-                                                      //     //   "Room No. ${schedule['room_name']}",
-                                                      //     //   style: GoogleFonts.montserrat(
-                                                      //     //     fontSize: 14,
-                                                      //     //     fontWeight: FontWeight.w600,
-                                                      //     //     color: Colors.grey.shade800,
-                                                      //     //   ),
-                                                      //     // ),
-                                                      //   ],
-                                                      // ),
+
                                                     ],
                                                   ),
                                                 ),
