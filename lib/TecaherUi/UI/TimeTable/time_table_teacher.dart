@@ -107,6 +107,8 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
         final data = jsonResponse['data'];
         setState(() {
           timeTable = (data is List) ? data : <dynamic>[];
+
+          print('Teacher Time Table $timeTable');
           isLoading = false;
         });
       } else {
@@ -272,8 +274,8 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
                                 final subject =
                                 (schedule['subject_name'] ?? '').toString();
                                 final cls = (schedule['class'] ?? '').toString();
-                                final section =
-                                (schedule['section'] ?? '').toString();
+                                final section = (schedule['section'] ?? '').toString();
+                                final period = (schedule['period'] ?? '').toString();
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 10),
                                   child: Row(
@@ -289,22 +291,18 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
                                             alignment: Alignment.center,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              gradient: LinearGradient(
-                                                colors: [
-                                                  Colors.blue,
-                                                  Colors.blueAccent,
-                                                ],
-                                              ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.blue.withOpacity(0.4),
-                                                  blurRadius: 8,
-                                                  offset: Offset(0, 4),
-                                                )
-                                              ],
+                                              color:  AppColors.secondary,
+                                              // boxShadow: [
+                                              //   BoxShadow(
+                                              //     color: Colors.red.withOpacity(0.4),
+                                              //     blurRadius: 8,
+                                              //     offset: Offset(0, 4),
+                                              //   )
+                                              // ],
                                             ),
                                             child: Text(
-                                              '${index + 1}',
+                                              // '${index + 1}',
+                                              period,
                                               style: TextStyle(
                                                 fontSize: 18.sp,
                                                 fontWeight: FontWeight.bold,
@@ -312,6 +310,8 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
                                               ),
                                             ),
                                           ),
+                                          
+                                          Text('Period',style: TextStyle(fontSize: 9.sp,fontWeight: FontWeight.bold,color: AppColors.secondary),)
 
 
 

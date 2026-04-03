@@ -200,18 +200,25 @@ class _AllStudentsState extends State<AllStudents> {
   // ─── Sort ────────────────────────────────────────────────────
   List getSorted(List list) {
     final sorted = List.from(list);
+
     sorted.sort((a, b) {
       if (sortBy == "roll") {
-        return int.parse(a['student']["roll_no"].toString())
-            .compareTo(int.parse(b['student']["roll_no"].toString()));
+        int rollA = int.tryParse(a['student']?["roll_no"]?.toString() ?? "") ?? 0;
+        int rollB = int.tryParse(b['student']?["roll_no"]?.toString() ?? "") ?? 0;
+        return rollA.compareTo(rollB);
+
       } else if (sortBy == "adm_no") {
-        return int.parse(a['student']["adm_no"].toString())
-            .compareTo(int.parse(b['student']["adm_no"].toString()));
+        int admA = int.tryParse(a['student']?["adm_no"]?.toString() ?? "") ?? 0;
+        int admB = int.tryParse(b['student']?["adm_no"]?.toString() ?? "") ?? 0;
+        return admA.compareTo(admB);
+
       } else {
-        return a['student']["student_name"]
-            .compareTo(b['student']["student_name"]);
+        String nameA = a['student']?["student_name"]?.toString() ?? "";
+        String nameB = b['student']?["student_name"]?.toString() ?? "";
+        return nameA.compareTo(nameB);
       }
     });
+
     return sorted;
   }
 
@@ -519,9 +526,7 @@ class _AllStudentsState extends State<AllStudents> {
                                         const SizedBox(
                                             height: 10),
                                         Text(
-                                          stu['student'][
-                                          "student_name"]
-                                              .toString(),
+                                          stu['student']["student_name"].toString(),
                                           style: const TextStyle(
                                               fontWeight:
                                               FontWeight
@@ -538,9 +543,9 @@ class _AllStudentsState extends State<AllStudents> {
                                         const SizedBox(
                                             height: 6),
                                         Text(
-                                            "Adm: ${stu['student']['adm_no']}"),
+                                            "Adm: ${stu['student']['adm_no']??'N/A'}"),
                                         Text(
-                                            "Roll: ${stu['student']['roll_no']}"),
+                                            "Roll: ${stu['student']['roll_no']??'N/A'}"),
                                       ],
                                     ),
                                   ),

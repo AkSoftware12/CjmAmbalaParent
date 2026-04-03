@@ -346,13 +346,18 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
 
       request.fields['all_teachers'] = selectAllTeachers ? 'true' : 'false';
       // request.fields['all_students'] = (selectAllStudents && selectedClass == null) ? 'true' : 'false';
-      request.fields['all_students'] = (selectAllStudents) ? 'true' : 'false';
-
+      request.fields['all_students'] = 'false';
       List<String> receivers = [];
       if (!selectAllTeachers) receivers.addAll(selectedTeachers);
-      if (!(selectAllStudents && selectedClass == null)) {
-        receivers.addAll(selectedStudents);
-      }
+      // if (!(selectAllStudents && selectedClass == null)) {
+      //   receivers.addAll(selectedStudents);
+      // }
+
+      receivers.addAll(
+        selectedStudents
+            .where((e) => e != null)
+            .map((e) => e.toString()),
+      );
 
       request.fields['receivers'] = jsonEncode(receivers);
       request.fields['body'] = text;

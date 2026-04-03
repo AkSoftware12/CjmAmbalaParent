@@ -331,6 +331,9 @@ class _AssignmentListScreenState extends State<TeacherMesssageListScreen> {
                   assignment['last_message_at'].toString(),
                 );
 
+              // ✅ Convert to local (IST)
+              //   DateTime localTime = dateTime.toLocal();
+
                 String formatted = DateFormat(
                   'dd-MM-yyyy hh:mm a',
                 ).format(dateTime);

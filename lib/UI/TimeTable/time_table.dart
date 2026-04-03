@@ -236,7 +236,8 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
                                         // Time Indicator
                                         Column(
                                           children: [
-                                            Text('${index+1}',
+                                            Text(
+                                              '${index+1}',
                                               // schedule['period'].toString(),
                                               style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800),
                                             ),
