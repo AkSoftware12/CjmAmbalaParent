@@ -17,22 +17,23 @@ class TimeTableTeacherScreen extends StatefulWidget {
   const TimeTableTeacherScreen({super.key});
 
   @override
-  State<TimeTableTeacherScreen> createState() => _TimeTableTeacherScreenState();
+  State<TimeTableTeacherScreen> createState() =>
+      _TimeTableTeacherScreenState();
 }
 
-class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
+class _TimeTableTeacherScreenState
+    extends State<TimeTableTeacherScreen> {
   bool isLoading = false;
   List<dynamic> timeTable = [];
 
-  /// ✅ 1..5 only (Mon..Fri)
+  /// ✅ Mon=1..Sun=7
   int selectedIndex = 1;
 
-  /// (Optional) dot position future use; safe + bounded
   double dotPosition = 0.0;
 
   Timer? _minuteTimer;
 
-  /// ✅ Mon–Fri only
+  /// ✅ Mon–Fri tabs
   final List<String> days = const ["Mon", "Tue", "Wed", "Thu", "Fri"];
   final List<String> images = const [
     "assets/mon_icon.png",
@@ -46,21 +47,23 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
   void initState() {
     super.initState();
 
-    // ✅ Dot updater (safe dispose)
     updateDotPosition();
     _minuteTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (!mounted) return;
       updateDotPosition();
     });
 
-    // ✅ Today highlight (Mon–Fri). Sat/Sun => Fri
     final now = DateTime.now();
     int wd = now.weekday; // Mon=1..Sun=7
-    if (wd > 5) wd = 5; // Sat/Sun => Fri
+
     selectedIndex = wd;
 
-    // ✅ Fetch initial
-    fetchAssignmentsData(selectedIndex);
+    /// ✅ FIX: Weekend pe API call nahi hogi
+    if (wd > 5) {
+      timeTable = [];
+    } else {
+      fetchAssignmentsData(selectedIndex);
+    }
   }
 
   @override
@@ -70,9 +73,8 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
   }
 
   Future<void> fetchAssignmentsData(int dayIndex) async {
-    // ✅ Guard: only 1..5
-    if (dayIndex < 1) dayIndex = 1;
-    if (dayIndex > 5) dayIndex = 5;
+    /// ✅ Safety
+    if (dayIndex < 1 || dayIndex > 5) return;
 
     if (!mounted) return;
     setState(() => isLoading = true);
@@ -82,8 +84,6 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
       final token = prefs.getString('teachertoken');
 
       if (token == null || token.isEmpty) {
-        // ✅ Token missing
-        if (!mounted) return;
         setState(() {
           isLoading = false;
           timeTable = [];
@@ -91,7 +91,8 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
         return;
       }
 
-      final uri = Uri.parse('${ApiRoutes.getTeacherTimeTable}$dayIndex');
+      final uri =
+      Uri.parse('${ApiRoutes.getTeacherTimeTable}$dayIndex');
 
       final response = await http.get(
         uri,
@@ -101,14 +102,10 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
       if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse =
-        json.decode(response.body) as Map<String, dynamic>;
+        final jsonResponse = json.decode(response.body);
 
-        final data = jsonResponse['data'];
         setState(() {
-          timeTable = (data is List) ? data : <dynamic>[];
-
-          print('Teacher Time Table $timeTable');
+          timeTable = jsonResponse['data'] ?? [];
           isLoading = false;
         });
       } else {
@@ -131,9 +128,9 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
     const double totalMinutes = 24 * 60;
     final int currentMinutes = now.hour * 60 + now.minute;
 
-    // ✅ Keep bounded
     const double maxHeight = 300.0;
-    final double newPosition = (currentMinutes / totalMinutes) * maxHeight;
+    final double newPosition =
+        (currentMinutes / totalMinutes) * maxHeight;
 
     if (!mounted) return;
     setState(() {
@@ -141,307 +138,280 @@ class _TimeTableTeacherScreenState extends State<TimeTableTeacherScreen> {
     });
   }
 
-  String _getMonthName(int month) {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec"
-    ];
-    return months[(month - 1).clamp(0, 11)];
-  }
-
+  /// ✅ Weekend check
+  bool isWeekend() => selectedIndex > 5;
 
   @override
   Widget build(BuildContext context) {
-    return    Scaffold(
-      backgroundColor: AppColors.secondary,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+
       appBar: AppBar(
-          iconTheme: const IconThemeData(color: AppColors.textwhite),
-          backgroundColor: AppColors.secondary,
-          // backgroundColor: HexColor('#c0d4f2'),
-          title: Text(
-            'Time Table',
-            style: GoogleFonts.montserrat(
-              textStyle: Theme.of(context).textTheme.displayLarge,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.normal,
-              color: AppColors.textwhite,
-            ),
-          )),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height:  MediaQuery.of(context).size.height* 0.99,
-              decoration: BoxDecoration(
-                color: HexColor('#dfe6f1'),
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(30.sp),topRight: Radius.circular(30.sp)),
-              ),
-              child:Column(
-                children: [
-                  _buildRow("Selected Day", '', Icons.calendar_today, Colors.blueGrey),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 10.sp),
-                    child: SizedBox(
-                      height: 65.sp, // Adjust height for better appearance
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: days.length,
-                        itemBuilder: (context, index) {
-                          bool isSelected = selectedIndex == index + 1; // Ensure 1-based index
-
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedIndex = index + 1; // Store values as 1 to 7 instead of 0 to 6
-                              });
-                              fetchAssignmentsData(selectedIndex);
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 15.sp, vertical: 15.sp),
-                              margin: const EdgeInsets.symmetric(horizontal: 5),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.primary : Colors.grey[300],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(5),
-                                  child: Text(
-                                    days[index],
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSelected ? Colors.white : HexColor('#515992'),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child:  Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30.sp),
-                          topRight: Radius.circular(30.sp),
-                        ),
-                      ),
-                      child:  isLoading
-                          ? Center(
-                          child: Container(
-                              height: MediaQuery.of(context).size.height * 0.5,
-                              child: CupertinoActivityIndicator(radius: 25,color: AppColors.primary,)))
-                          : timeTable.isEmpty
-                          ? Center(child: DataNotFoundWidget(title: 'Time Table Not Available.'))
-                          : Stack(
-                        children: [
-                          Positioned(
-                            left: 70,
-                            top: 10,
-                            bottom: 0,
-                            child: Container(
-                              width: 1,
-                              color: Colors.blue[100],
-                            ),
-                          ),
-                          Positioned.fill(
-                            child: ListView.builder(
-                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                              itemCount: timeTable.length,
-                              itemBuilder: (context, index) {
-                                final schedule =
-                                    (timeTable[index] as Map?)?.cast<String, dynamic>() ??
-                                        <String, dynamic>{};
-
-                                final subject =
-                                (schedule['subject_name'] ?? '').toString();
-                                final cls = (schedule['class'] ?? '').toString();
-                                final section = (schedule['section'] ?? '').toString();
-                                final period = (schedule['period'] ?? '').toString();
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-
-                                      // Time Indicator
-                                      Column(
-                                        children: [
-                                          Container(
-                                            height: 35.sp,
-                                            width: 40.sp,
-                                            alignment: Alignment.center,
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color:  AppColors.secondary,
-                                              // boxShadow: [
-                                              //   BoxShadow(
-                                              //     color: Colors.red.withOpacity(0.4),
-                                              //     blurRadius: 8,
-                                              //     offset: Offset(0, 4),
-                                              //   )
-                                              // ],
-                                            ),
-                                            child: Text(
-                                              // '${index + 1}',
-                                              period,
-                                              style: TextStyle(
-                                                fontSize: 18.sp,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                          
-                                          Text('Period',style: TextStyle(fontSize: 9.sp,fontWeight: FontWeight.bold,color: AppColors.secondary),)
-
-
-
-                                        ],
-                                      ),
-                                      SizedBox(width: 15),
-                                      // Subject Card
-                                      Expanded(
-                                        child: GestureDetector(
-                                          onTap: (){
-                                          },
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              // color: Colors.orange.shade50,
-                                              color: Colors.grey.shade200,
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            margin: const EdgeInsets.symmetric(vertical: 0.0),
-                                            child: Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                                              child: ListTile(
-                                                contentPadding: EdgeInsets.zero,
-                                                leading: Container(
-                                                  padding: EdgeInsets.all(10),
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.blueAccent.withOpacity(0.1),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.book,
-                                                    size: 30,
-                                                    color: Colors.blueAccent,
-                                                  ),
-                                                ),
-                                                title: Text(
-                                                  subject,
-                                                  style: GoogleFonts.montserrat(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w800,
-                                                    color: Colors.black87,
-                                                  ),
-                                                ),
-                                                subtitle: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-
-                                                    SizedBox(height: 5),
-                                                    Row(
-                                                      children: [
-                                                        // SizedBox(
-                                                        //   height: 18,
-                                                        //   width: 18,
-                                                        //   child: Image.asset('assets/teacher.png', color: Colors.black),
-                                                        // ),
-                                                        // SizedBox(width: 6),
-                                                        Expanded(
-                                                          child: Text(
-                                                            "$cls ($section)",
-                                                            style: GoogleFonts.montserrat(
-                                                              fontSize: 14,
-                                                              fontWeight: FontWeight.w600,
-                                                              color: Colors.grey.shade800,
-                                                            ),
-                                                            overflow: TextOverflow.ellipsis,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    SizedBox(height: 5),
-
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-
-                        ],
-                      ),
-
-                    ),)
-                ],
-              ),
-
-
-
-
-            ),
-
-
-
-
-
-
-          ],
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+        backgroundColor: AppColors.primary,
+        centerTitle: false,
+        title: Text(
+          'Time Table',
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            fontSize: 15.sp
+          ),
         ),
       ),
 
-    );
+      body: Column(
+        children: [
 
-
-
-
-
-  }
-  Widget _buildRow(String title, String value, IconData icon, Color color) {
-    return Padding(
-      padding: EdgeInsets.only(top: 10.sp, bottom: 10.sp),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: TextSizes.textmedium,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
+          /// 🔴 Day Tabs
+          Container(
+            height: 55,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
               ),
             ),
-          ],
-        ),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: days.length,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              itemBuilder: (context, index) {
+                bool isSelected = selectedIndex == index + 1;
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => selectedIndex = index + 1);
+
+                    /// ✅ FIX: weekend pe API call mat karo
+                    if (selectedIndex > 5) {
+                      setState(() => timeTable = []);
+                    } else {
+                      fetchAssignmentsData(selectedIndex);
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 18),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white24,
+                      borderRadius: BorderRadius.circular(25),
+                      boxShadow: isSelected
+                          ? [
+                        const BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          offset: Offset(0, 3),
+                        )
+                      ]
+                          : [],
+                    ),
+                    child: Center(
+                      child: Text(
+                        days[index],
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          /// 🔵 Content
+          Expanded(
+            child: isWeekend()
+                ? Center(
+              child: Text(
+                "No Time Table Available",
+                style: GoogleFonts.montserrat(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+            )
+                : isLoading
+                ? const Center(
+              child: CircularProgressIndicator(
+                color: Colors.red,
+              ),
+            )
+                : timeTable.isEmpty
+                ? Center(
+              child: Text(
+                "No Time Table Available",
+                style: GoogleFonts.montserrat(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+            )
+                : ListView.builder(
+              itemCount: timeTable.length,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 5),
+              itemBuilder: (context, index) {
+                final schedule =
+                    (timeTable[index] as Map?)
+                        ?.cast<String, dynamic>() ??
+                        {};
+
+                final subject =
+                (schedule['subject_name'] ?? '')
+                    .toString();
+                final teacher =
+                (schedule['teacher_name'] ?? '')
+                    .toString();
+                final period =
+                (schedule['period'] ?? '')
+                    .toString();
+                final cls =
+                (schedule['class'] ?? '').toString();
+                final section =
+                (schedule['section'] ?? '')
+                    .toString();
+
+                return Container(
+                  margin:
+                  const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                    BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12
+                            .withOpacity(0.05),
+                        blurRadius: 10,
+                        offset:
+                        const Offset(0, 4),
+                      )
+                    ],
+                    border: Border.all(
+                      width: 1,
+                      color: Colors.red.shade100,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+
+                      /// 🔴 Period Circle
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color:
+                          Colors.red.shade50,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment:
+                        Alignment.center,
+                        child: Column(
+                          mainAxisAlignment:
+                          MainAxisAlignment
+                              .center,
+                          children: [
+                            Text(
+                              period,
+                              style: TextStyle(
+                                color: Colors
+                                    .red.shade500,
+                                fontWeight:
+                                FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            Container(
+                              width: 10,
+                              height: 2,
+                              color: Colors
+                                  .red.shade500,
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              'Period',
+                              style: TextStyle(
+                                color: Colors
+                                    .red.shade500,
+                                fontWeight:
+                                FontWeight.bold,
+                                fontSize: 8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      /// 📘 Details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment
+                              .start,
+                          children: [
+                            Text(
+                              subject,
+                              style: GoogleFonts
+                                  .montserrat(
+                                fontSize: 15,
+                                fontWeight:
+                                FontWeight
+                                    .w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(
+                                    Icons.class_,
+                                    size: 14,
+                                    color:
+                                    Colors.grey),
+                                const SizedBox(
+                                    width: 5),
+                                Expanded(
+                                  child: Text(
+                                    "$cls ($section)",
+                                    style:
+                                    GoogleFonts
+                                        .montserrat(
+                                      fontSize: 11,
+                                      color: Colors
+                                          .grey[700],
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

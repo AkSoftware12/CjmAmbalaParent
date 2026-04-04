@@ -186,4 +186,5 @@ class ApiRoutes {
   static const String getTeacherAppReport = "$baseUrl/app-report";
   static const String getFreeTeachers = "$baseUrl/free-teachers";
   static const String getStudentAppReport = "$baseUrl/app-report-student?page=";
+  static const String messageSendStatus = "$baseUrl/message-status/";
 }

@@ -785,7 +785,10 @@ class _FeesScreenState extends State<FeesScreen> {
                             amount: fees[index]['to_pay_amount'].toString(),
                             status: fees[index]['pay_status'].toString(),
                             dueDate: fees[index]['due_date'].toString(),
-                            payDate: fees[index]['pay_date'].toString(),
+                            payDate: (fees[index]['receipts'] != null &&
+                                fees[index]['receipts'].isNotEmpty)
+                                ? fees[index]['receipts'][0]['receipt_date'].toString()
+                                : '',
                             id: fees[index]['id'],
                             receipts: (fees[index]['receipts'] as List?) ?? [],
                             // ✅ ADD

@@ -61,10 +61,10 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     final token = prefs.getString('token');
     print("Token: $token");
 
-    if (token == null) {
-      _showLoginDialog();
-      return;
-    }
+    // if (token == null) {
+    //   _showLoginDialog();
+    //   return;
+    // }
 
     final response = await http.get(
       Uri.parse('${ApiRoutes.getTimeTable}$index'),
@@ -86,27 +86,6 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
     }
   }
 
-  void _showLoginDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Session Expired'),
-        content: const Text('Please log in again to continue.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   void updateDotPosition() {
     DateTime now = DateTime.now();
@@ -120,270 +99,235 @@ class _TimeTableScreenState extends State<TimeTableScreen> {
       dotPosition = newPosition;
     });
   }
+
+
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-     // backgroundColor: HexColor('#c0d4f2'),
-      backgroundColor: AppColors.secondary,
+      backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
-          iconTheme: IconThemeData(color: AppColors.textwhite),
-          backgroundColor: AppColors.secondary,
-          // backgroundColor: HexColor('#c0d4f2'),
-          title: Text(
-            'Time Table',
-            style: GoogleFonts.montserrat(
-              textStyle: Theme.of(context).textTheme.displayLarge,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.normal,
-              color: AppColors.textwhite,
-            ),
-          )),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height:  MediaQuery.of(context).size.height* 0.99,
-              decoration: BoxDecoration(
-                color: HexColor('#dfe6f1'),
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(30.sp),topRight: Radius.circular(30.sp)),
-              ),
-              child:Column(
-                children: [
-                  _buildRow("Selected Day", '', Icons.calendar_today, Colors.blueGrey),
-                  Padding(
-                    padding: EdgeInsets.only(bottom: 10.sp),
-                    child: SizedBox(
-                      height: 65.sp, // Adjust height for better appearance
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: days.length,
-                        itemBuilder: (context, index) {
-                          bool isSelected = selectedIndex == index + 1; // Ensure 1-based index
+        iconTheme: IconThemeData(color: Colors.white),
+        elevation: 0,
+        backgroundColor: AppColors.primary,
+        title: Text(
+          'Time Table',
+          style: GoogleFonts.montserrat(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            fontSize: 15.sp
+          ),
+        ),
+        centerTitle: false,
+      ),
 
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedIndex = index + 1; // Store values as 1 to 7 instead of 0 to 6
-                              });
-                              fetchAssignmentsData(selectedIndex);
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 15.sp, vertical: 15.sp),
-                              margin: const EdgeInsets.symmetric(horizontal: 5),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.primary : Colors.grey[300],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  days[index],
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected ? Colors.white : HexColor('#515992'),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+      body: Column(
+        children: [
+
+          /// 🔴 Day Tabs
+          Container(
+            height: 55,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: days.length,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              itemBuilder: (context, index) {
+                bool isSelected = selectedIndex == index + 1;
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => selectedIndex = index + 1);
+                    fetchAssignmentsData(selectedIndex);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : Colors.white24,
+                      borderRadius: BorderRadius.circular(25),
+                      boxShadow: isSelected
+                          ? [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 8,
+                          offset: Offset(0, 3),
+                        )
+                      ]
+                          : [],
+                    ),
+                    child: Center(
+                      child: Text(
+                        days[index],
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.white,
+                        ),
                       ),
                     ),
                   ),
-                  Expanded(
-                      child:  Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(30.sp),
-                            topRight: Radius.circular(30.sp),
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          /// 🔵 Content
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator(
+              color: Colors.red,
+            ))
+                : timeTable.isEmpty
+                ? Center(
+              child: Text(
+                "No Time Table Available",
+                style: GoogleFonts.montserrat(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+            )
+                : ListView.builder(
+              itemCount: timeTable.length,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10, vertical: 0),
+              itemBuilder: (context, index) {
+                final schedule = timeTable[index];
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      )
+                    ],
+                    border: Border.all(width: 1,color: Colors.red.shade200)
+                  ),
+                  child: Row(
+                    children: [
+
+                      /// 🔴 Period Circle
+                      Column(
+                        children: [
+                          Container(
+                            width: 50.sp,
+                            height: 50.sp,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              // gradient: LinearGradient(
+                              //   colors: [
+                              //     AppColors.primary,
+                              //     Colors.redAccent,
+                              //   ],
+                              // ),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  schedule['period'].toString(),
+                                  style:  TextStyle(
+                                    color: Colors.red.shade500,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20.sp,
+                                  ),
+                                ),
+                                Container(
+                                  width: 10,
+                                  height: 2,
+                                  color: Colors.red.shade500,
+                                ),
+                                SizedBox(
+                                  height: 1,
+                                ),
+
+                                Text(
+                                  'Period',
+                                  style:  TextStyle(
+                                    color: Colors.red.shade500,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 7.sp,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        child:  isLoading
-                            ? Center(
-                            child: Container(
-                                height: MediaQuery.of(context).size.height * 0.5,
-                                child: CupertinoActivityIndicator(radius: 25,color: AppColors.primary,)))
-                            : timeTable.isEmpty
-                            ? Center(child: DataNotFoundWidget(title: 'Time Table Not Available.'))
-                            : Stack(
+
+                        ],
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      /// 📘 Details
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
                           children: [
-                            Positioned(
-                              left: 80,
-                              top: 10,
-                              bottom: 0,
-                              child: Container(
-                                width: 1,
-                                color: Colors.red.shade50,
+                            Text(
+                              schedule['subject_name'],
+                              style: GoogleFonts.montserrat(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            Positioned.fill(
-                              child: ListView.builder(
-                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-                                itemCount: timeTable.length,
-                                itemBuilder: (context, index) {
-                                  final schedule = timeTable[index];
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 5),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
+                            const SizedBox(height: 4),
 
-                                        // Time Indicator
-                                        Column(
-                                          children: [
-                                            Text(
-                                              // '${index+1}',
-                                              schedule['period'].toString(),
-                                              style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w800,color: Colors.red.shade500),
-                                            ),
-                                            Container(
-                                              height: 3.sp,
-                                              width: 45.sp,
-                                              decoration: BoxDecoration(
-                                                  color: Colors.red.shade500,
-
-                                                  borderRadius: BorderRadius.circular(10)
-                                              ),
-                                            ),
-
-                                            Text('Period',style: TextStyle(fontSize: 9.sp,fontWeight: FontWeight.bold,color: AppColors.secondary),)
-                                          ],
-                                        ),
-                                        SizedBox(width: 15),
-                                        // Subject Card
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: (){
-                                              // Navigator.push(
-                                              //   context,
-                                              //   MaterialPageRoute(
-                                              //     builder: (context) {
-                                              //       return TimetableApp();
-                                              //     },
-                                              //   ),
-                                              // );
-                                            },
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                // color: Colors.orange.shade50,
-                                                color: Colors.grey.shade200,
-                                                borderRadius: BorderRadius.circular(10),
-                                              ),
-                                              margin: const EdgeInsets.symmetric(vertical: 0.0),
-                                              child: Padding(
-                                                padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                                                child: ListTile(
-                                                  contentPadding: EdgeInsets.zero,
-                                                  leading: Container(
-                                                    padding: EdgeInsets.all(5),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.blueAccent.withOpacity(0.1),
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.book,
-                                                      size: 30,
-                                                      color: Colors.blueAccent,
-                                                    ),
-                                                  ),
-                                                  title: Text(
-                                                    schedule['subject_name'],
-                                                    style: GoogleFonts.montserrat(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.w800,
-                                                      color: Colors.black87,
-                                                    ),
-                                                  ),
-                                                  subtitle: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      SizedBox(
-                                                        height: 5,
-                                                      ),
-
-                                                      Row(
-                                                        children: [
-                                                          SizedBox(
-                                                            height: 18,
-                                                            width: 18,
-                                                            child: Image.asset('assets/teacher.png', color: Colors.black),
-                                                          ),
-                                                          SizedBox(width: 6),
-                                                          Expanded(
-                                                            child: Text(
-                                                              schedule['teacher_name'],
-                                                              style: GoogleFonts.montserrat(
-                                                                fontSize: 10.sp,
-                                                                fontWeight: FontWeight.w600,
-                                                                color: Colors.grey.shade800,
-                                                              ),
-                                                              overflow: TextOverflow.ellipsis,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                            Row(
+                              children: [
+                                Icon(Icons.person,
+                                    size: 14,
+                                    color: Colors.grey),
+                                const SizedBox(width: 5),
+                                Expanded(
+                                  child: Text(
+                                    schedule['teacher_name'],
+                                    style:
+                                    GoogleFonts.montserrat(
+                                      fontSize: 11,
+                                      color: Colors.grey[700],
                                     ),
-                                  );
-                                },
-                              ),
+                                  ),
+                                )
+                              ],
                             ),
-
                           ],
                         ),
+                      ),
 
-                      ),)
-                ],
-              ),
-
-
-
-
-            ),
-
-
-
-
-
-
-          ],
-        ),
-      ),
-
-    );
-  }
-  Widget _buildRow(String title, String value, IconData icon, Color color) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.cabin(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w900,
-              color: HexColor('#515992'),
+                      // /// 👉 Arrow Icon
+                      // Icon(Icons.arrow_forward_ios,
+                      //     size: 14, color: Colors.grey),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
       ),
     );
   }
-
 
 }
 

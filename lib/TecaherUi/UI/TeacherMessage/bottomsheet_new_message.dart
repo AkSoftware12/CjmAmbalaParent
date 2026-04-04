@@ -44,6 +44,8 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
   bool selectAllStudents = false;
   PlatformFile? selectedFile;
   bool isSending = false;
+  bool isPolling = false;
+
 
   List<int> selectedClasses = [];
   List<Map<String, dynamic>> classes = [];
@@ -342,16 +344,15 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
     try {
       final uri = Uri.parse(ApiRoutes.sendTeacherMessage);
       final request = http.MultipartRequest('POST', uri);
+
       request.headers['Authorization'] = 'Bearer $token';
 
       request.fields['all_teachers'] = selectAllTeachers ? 'true' : 'false';
-      // request.fields['all_students'] = (selectAllStudents && selectedClass == null) ? 'true' : 'false';
       request.fields['all_students'] = 'false';
+
       List<String> receivers = [];
+
       if (!selectAllTeachers) receivers.addAll(selectedTeachers);
-      // if (!(selectAllStudents && selectedClass == null)) {
-      //   receivers.addAll(selectedStudents);
-      // }
 
       receivers.addAll(
         selectedStudents
@@ -362,17 +363,6 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       request.fields['receivers'] = jsonEncode(receivers);
       request.fields['body'] = text;
 
-      debugPrint('🚀 ═══════════════ SEND MESSAGE ═══════════════');
-      debugPrint('📨 [BODY WITH LINE BREAKS]');
-      debugPrint(text);
-      debugPrint('📎 [FILE] ${selectedFile?.name ?? "No file"}');
-      debugPrint('👩‍🏫 [ALL_TEACHERS] ${request.fields['all_teachers']}');
-      debugPrint('👨‍🎓 [ALL_STUDENTS] ${request.fields['all_students']}');
-      debugPrint('🎓 [SELECTED CLASS] $selectedClass');
-      debugPrint('👥 [RECEIVERS] $receivers');
-      debugPrint('🔢 [RECEIVERS COUNT] ${receivers.length}');
-      debugPrint('═══════════════════════════════════════════════');
-
       if (selectedFile != null && selectedFile!.path != null) {
         request.files.add(
           await http.MultipartFile.fromPath(
@@ -381,34 +371,138 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
             filename: selectedFile!.name,
           ),
         );
-      } else {
-        request.fields['attachment'] = '';
       }
 
       final response = await request.send();
+      final responseData = await http.Response.fromStream(response);
 
       if (!mounted) return;
 
+      // ✅ DIRECT SUCCESS
       if (response.statusCode == 200 || response.statusCode == 201) {
-        messageController.clear();
-        setState(() {
-          selectedFile = null;
-          selectedTeachers.clear();
-          selectedStudents.clear();
-          selectAllTeachers = false;
-          selectAllStudents = false;
-        });
+        _resetUI();
         _showSuccessPopup(context);
-      } else {
-        _showErrorSnackBar('Failed to send message: ${response.statusCode}');
       }
+
+      // ✅ BACKGROUND JOB
+      else if (response.statusCode == 202) {
+        final data = jsonDecode(responseData.body);
+
+        String jobKey = data['job_key']?.toString() ?? '';
+
+        if (jobKey.isEmpty) {
+          _showErrorSnackBar("Something went wrong");
+          setState(() => isSending = false);
+          return;
+        }
+
+        // 🔥 START POLLING
+        isPolling = true;
+        checkMessageStatus(jobKey);
+      }
+
+      else {
+        _showErrorSnackBar('Failed: ${response.statusCode}');
+        setState(() => isSending = false);
+      }
+
     } catch (e) {
-      if (mounted) _showErrorSnackBar('Error sending message: $e');
-    } finally {
-      if (mounted) setState(() => isSending = false);
+      _showErrorSnackBar('Error: $e');
+      setState(() => isSending = false);
+    }
+
+    finally {
+      // ❗ ONLY STOP if NOT polling
+      if (!isPolling && mounted) {
+        setState(() => isSending = false);
+      }
+    }
+  }
+  Future<void> checkMessageStatus(String jobKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('teachertoken');
+
+    if (token == null) return;
+
+    int maxAttempts = 4;
+    int attempt = 0;
+
+    while (attempt < maxAttempts) {
+      await Future.delayed(const Duration(seconds: 5));
+      attempt++;
+
+      try {
+        final url = Uri.parse("${ApiRoutes.messageSendStatus}$jobKey");
+
+        final response = await http.get(
+          url,
+          headers: {'Authorization': 'Bearer $token'},
+        );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          int statusCode = data['status_code'];
+
+          debugPrint("📡 Attempt $attempt → Status: $statusCode");
+
+          if (statusCode == 2) {
+            // ✅ DONE
+            _stopLoader();
+            _resetUI();
+            _showSuccessPopup(context);
+            return;
+          }
+
+          else if (statusCode == 3) {
+            // ❌ FAILED
+            _stopLoader();
+            _showErrorSnackBar("Message sending failed");
+            return;
+          }
+
+          else if (statusCode == 4) {
+            // ⚠️ NOT FOUND
+            _stopLoader();
+            _showErrorSnackBar("Job not found");
+            return;
+          }
+
+          // 🔁 status = 1 → continue
+        } else {
+          _stopLoader();
+          return;
+        }
+      } catch (e) {
+        _stopLoader();
+        return;
+      }
+    }
+
+    // ⏹️ TIMEOUT
+    _stopLoader();
+    _showErrorSnackBar("Timeout, try again");
+  }
+
+  void _stopLoader() {
+    if (mounted) {
+      setState(() {
+        isSending = false;
+        isPolling = false;
+      });
     }
   }
 
+  void _resetUI() {
+    messageController.clear();
+
+    setState(() {
+      selectedFile = null;
+      selectedTeachers.clear();
+      selectedStudents.clear();
+      selectAllTeachers = false;
+      selectAllStudents = false;
+    });
+  }
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
@@ -1285,15 +1379,14 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                     const SizedBox(width: 8),
                     CircleAvatar(
                       backgroundColor: AppColors2.primary,
-                      child: IconButton(
+                      child:IconButton(
                         icon: isSending
                             ? const SizedBox(
                           height: 22,
                           width: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                             : const Icon(Icons.send, color: Colors.white),
