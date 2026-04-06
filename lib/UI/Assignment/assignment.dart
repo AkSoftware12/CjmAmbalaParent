@@ -13,6 +13,7 @@ import '../../CommonCalling/progressbarWhite.dart';
 import '../../constants.dart';
 import 'package:html/parser.dart' as html_parser;
 import '../Auth/login_screen.dart';
+import 'full_assignment.dart';
 
 class AssignmentListScreen extends StatefulWidget {
   @override
@@ -75,7 +76,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
   String _formatDate(String? dateStr) {
     try {
       if (dateStr == null || dateStr.isEmpty) return "N/A";
-      return DateFormat('dd MMM yyyy').format(DateTime.parse(dateStr));
+      return DateFormat('dd - MM - yyyy').format(DateTime.parse(dateStr));
     } catch (_) {
       return "N/A";
     }
@@ -288,6 +289,9 @@ class _AssignmentCard extends StatelessWidget {
                             ),
                             if (description.isNotEmpty) ...[
                               SizedBox(height: 3.h),
+                              // ExpandableText(
+                              //   text: description,
+                              // )
                               Text(
                                 description,
                                 maxLines: 2,
@@ -354,16 +358,16 @@ class _AssignmentCard extends StatelessWidget {
                           icon: Icons.visibility_rounded,
                           color: const Color(0xFF1565C0),
                           onTap: () async {
-                            final url = assignment['attach'].toString();
-                            if (await canLaunchUrl(Uri.parse(url))) {
-                              await launchUrl(Uri.parse(url),
-                                  mode: LaunchMode.externalApplication);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('Could not open file')),
-                              );
-                            }
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AssignmentDetailScreen(
+                                  assignment: assignment, // aapka JSON map
+                                ),
+                              ),
+                            );
+
                           },
                         ),
                       ),
@@ -545,6 +549,60 @@ class _ActionButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+
+class ExpandableText extends StatefulWidget {
+  final String text;
+
+  const ExpandableText({super.key, required this.text});
+
+  @override
+  State<ExpandableText> createState() => _ExpandableTextState();
+}
+
+class _ExpandableTextState extends State<ExpandableText> {
+  bool isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.text,
+          maxLines: isExpanded ? null : 1, // 👈 yaha 2 lines
+          overflow:
+          isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+          style: GoogleFonts.poppins(
+            fontSize: 11.5.sp,
+            color: Colors.black,
+            height: 1.5,
+          ),
+        ),
+
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              isExpanded = !isExpanded;
+            });
+          },
+          child: Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: Text(
+              isExpanded ? "See Less" : "See More",
+              style: GoogleFonts.poppins(
+                fontSize: 11.sp,
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
