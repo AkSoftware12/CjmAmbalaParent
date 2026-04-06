@@ -1327,10 +1327,10 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
 
                     Expanded(
                       child: Container(
-                        padding:  EdgeInsets.symmetric(horizontal: 14),
-                        // constraints:  BoxConstraints(
-                        //   maxHeight: 200.sp, // ✅ limit height (important)
-                        // ),
+                        padding: EdgeInsets.symmetric(horizontal: 14),
+                        constraints: BoxConstraints(
+                          maxHeight: 200.sp, // ✅ max height limit
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(30),
@@ -1342,43 +1342,45 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                             ),
                           ],
                         ),
-                        child: SingleChildScrollView( // ✅ scroll instead of overflow
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: messageController,
-                                  minLines: 1,
-                                  maxLines: 20, // ✅ limit lines
-                                  keyboardType: TextInputType.multiline,
-                                  textCapitalization: TextCapitalization.sentences,
-                                  style: TextStyle(
-                                      fontSize: 14.sp, color: Colors.black87),
-                                  decoration: InputDecoration(
-                                    hintText: 'Type a message...',
-                                    hintStyle: TextStyle(
-                                      color: Colors.grey.shade400,
-                                      fontSize: 14.sp,
-                                    ),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding:
-                                    const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end, // ✅ important
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: messageController,
+                                minLines: 1, // ✅ start with 1 line
+                                maxLines: null, // ✅ auto expand (IMPORTANT)
+                                keyboardType: TextInputType.multiline,
+                                textCapitalization: TextCapitalization.sentences,
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: Colors.black87,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Type a message...',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                    fontSize: 14.sp,
+                                  ),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                ),
+                              ),
+                            ),
+
+                            if (selectedFile != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Text(
+                                  selectedFile!.name,
+                                  style: const TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ),
-
-                              if (selectedFile != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: Text(
-                                    selectedFile!.name,
-                                    style: const TextStyle(
-                                        color: Colors.black54, fontSize: 12),
-                                  ),
-                                ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
                     ),
