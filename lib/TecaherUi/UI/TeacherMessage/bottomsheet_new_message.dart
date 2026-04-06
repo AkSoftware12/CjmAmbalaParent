@@ -1311,24 +1311,26 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
               margin: EdgeInsets.zero,
               shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(0),
-                  topRight: Radius.circular(0),
+                  topLeft: Radius.circular(10),
+                  topRight: Radius.circular(10),
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 5.sp, vertical: 15.sp),
+                padding: EdgeInsets.symmetric(horizontal: 5.sp, vertical: 15.sp),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start, // ✅ important
                   children: [
                     IconButton(
-                      icon: Icon(Icons.attach_file,
-                          color: AppColors2.primary),
+                      icon: Icon(Icons.attach_file, color: AppColors2.primary),
                       onPressed: _pickFile,
                     ),
+
                     Expanded(
                       child: Container(
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 14),
+                        padding:  EdgeInsets.symmetric(horizontal: 14),
+                        // constraints:  BoxConstraints(
+                        //   maxHeight: 200.sp, // ✅ limit height (important)
+                        // ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(30),
@@ -1340,64 +1342,74 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
                             ),
                           ],
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: messageController,
-                                maxLines: null,
-                                keyboardType: TextInputType.multiline,
-                                textCapitalization:
-                                TextCapitalization.sentences,
-                                style: TextStyle(
-                                    fontSize: 14.sp, color: Colors.black87),
-                                decoration: InputDecoration(
-                                  hintText: 'Type a message...',
-                                  hintStyle: TextStyle(
+                        child: SingleChildScrollView( // ✅ scroll instead of overflow
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: messageController,
+                                  minLines: 1,
+                                  maxLines: 20, // ✅ limit lines
+                                  keyboardType: TextInputType.multiline,
+                                  textCapitalization: TextCapitalization.sentences,
+                                  style: TextStyle(
+                                      fontSize: 14.sp, color: Colors.black87),
+                                  decoration: InputDecoration(
+                                    hintText: 'Type a message...',
+                                    hintStyle: TextStyle(
                                       color: Colors.grey.shade400,
-                                      fontSize: 14.sp),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 6),
+                                      fontSize: 14.sp,
+                                    ),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                  ),
                                 ),
                               ),
-                            ),
-                            if (selectedFile != null)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8.0),
-                                child: Text(
-                                  selectedFile!.name,
-                                  style: const TextStyle(
-                                      color: Colors.black54, fontSize: 12),
+
+                              if (selectedFile != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Text(
+                                    selectedFile!.name,
+                                    style: const TextStyle(
+                                        color: Colors.black54, fontSize: 12),
+                                  ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    CircleAvatar(
-                      backgroundColor: AppColors2.primary,
-                      child:IconButton(
-                        icon: isSending
-                            ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                            : const Icon(Icons.send, color: Colors.white),
-                        onPressed: isSending ? null : _sendMessage,
+
+                    // ✅ Top Right Fixed Button
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4), // adjust if needed
+                      child: CircleAvatar(
+                        backgroundColor: AppColors2.primary,
+                        child: IconButton(
+                          icon: isSending
+                              ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                              : const Icon(Icons.send, color: Colors.white),
+                          onPressed: isSending ? null : _sendMessage,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
+          )
         ],
       ),
     );

@@ -439,12 +439,8 @@ class _AllStudentsState extends State<AllStudents> {
                                       MaterialPageRoute(
                                         builder: (context) =>
                                             StudentAttendanceScreen(
-                                              id: stu['student']
-                                              ["id"],
-                                              studentId: stu[
-                                              'student']
-                                              ["student_id"]
-                                                  .toString(),
+                                              id: stu['student']["id"],
+                                              studentId: stu['student']["student_id"].toString(),
                                             ),
                                       ),
                                     );
