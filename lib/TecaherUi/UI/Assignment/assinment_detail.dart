@@ -173,7 +173,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
           final endDate = _safeString(data['end_date']);
 
           return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
+            // physics: const BouncingScrollPhysics(),
             slivers: [
               // ── SliverAppBar ─────────────────────────────────────────────
 
@@ -209,12 +209,63 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
                         ],
                       ),
 
+
                       SizedBox(height: 14.h),
 
                       // ── Description Card ──────────────────────────────────
                       if (desc.isNotEmpty) _DescriptionCard(desc: desc),
 
                       if (desc.isNotEmpty) SizedBox(height: 14.h),
+                      (data['attach_url'] != null &&
+                          data['attach_url'].toString().trim().isNotEmpty &&
+                          data['attach_url'].toString() != "null")
+                          ? GestureDetector(
+                        onTap: () async {
+                          final url = data['attach_url']?.toString() ?? "";
+
+                          if (url.isEmpty) return; // extra safety
+
+                          final uri = Uri.tryParse(url);
+                          if (uri != null && await canLaunchUrl(uri)) {
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Could not open file'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 10.sp),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F5E9),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.open_in_new_rounded,
+                                  color: Color(0xFF2E7D32)),
+                              SizedBox(width: 6.sp),
+                              Text(
+                                'View Assignment',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2E7D32),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                          : const SizedBox(),
+                     SizedBox(height: 14.h),
 
                       // ── Students Header ───────────────────────────────────
                       Row(

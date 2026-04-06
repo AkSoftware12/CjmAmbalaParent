@@ -430,11 +430,11 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                                           mainAxisSize:
                                           MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.info_rounded,
+                                            Icon(Icons.open_in_new_rounded,
                                                 color: const Color(
                                                     0xFF1565C0),
                                                 size: 15.sp),
-                                            Text('Report',
+                                            Text('View',
                                                 style: GoogleFonts.poppins(
                                                     fontSize: 9.sp,
                                                     fontWeight:
@@ -446,66 +446,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: 7.sp),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () async {
-                                      final url =
-                                      a['attach_url'].toString();
-                                      if (await canLaunchUrl(
-                                          Uri.parse(url))) {
-                                        await launchUrl(
-                                            Uri.parse(url),
-                                            mode: LaunchMode
-                                                .externalApplication);
-                                      } else {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: const Text(
-                                                  'Could not open file'),
-                                              backgroundColor: _red,
-                                              behavior: SnackBarBehavior
-                                                  .floating,
-                                              shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                  BorderRadius
-                                                      .circular(
-                                                      10))),
-                                        );
-                                      }
-                                    },
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                          vertical: 5.sp),
-                                      decoration: BoxDecoration(
-                                          color: const Color(
-                                              0xFFE8F5E9),
-                                          borderRadius:
-                                          BorderRadius.circular(
-                                              12)),
-                                      child: Column(
-                                          mainAxisSize:
-                                          MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                                Icons
-                                                    .open_in_new_rounded,
-                                                color: const Color(
-                                                    0xFF2E7D32),
-                                                size: 15.sp),
-                                            Text('View',
-                                                style: GoogleFonts.poppins(
-                                                    fontSize: 9.sp,
-                                                    fontWeight:
-                                                    FontWeight
-                                                        .w700,
-                                                    color: const Color(
-                                                        0xFF2E7D32))),
-                                          ]),
-                                    ),
-                                  ),
-                                ),
+
                                 SizedBox(width: 7.sp),
                                 Expanded(
                                   child: GestureDetector(
