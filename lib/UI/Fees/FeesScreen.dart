@@ -822,8 +822,6 @@ class _FeesScreenState extends State<FeesScreen> {
                                 // Show dialog when timer is running
                                 _showCooldownDialog(context);
                               } else {
-                                // orderCreate(context);
-                                // startCooldown();
 
                                 onPayNow();
                               }
@@ -873,13 +871,18 @@ class _FeesScreenState extends State<FeesScreen> {
 
     try {
       final String txnDate = DateTime.now().toString().split('.')[0];
-      const String amount = "1";
-      const String userEmailId = "test.user@atomtech.in";
-      const String userContactNo = "8888888888";
+      final String userEmailId =
+      (studentData?['email'] != null &&
+          studentData!['email'].toString().isNotEmpty &&
+          studentData!['email'].toString() != "null")
+          ? studentData!['email'].toString()
+          : "jmambala@gmail.com";
+
+
 
       //Json data for sending to atom server
       String jsonData =
-          '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"${studentData!['email'].toString()}","custMobile":"${studentData!['contact_no'].toString()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"udf4","udf5":"udf5"}}}';
+          '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"$userEmailId","custMobile":"${studentData!['contact_no'].toString()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"udf4","udf5":"udf5"}}}';
       final String encDataR = await encrypt(jsonData);
       final response = await http.post(
         Uri.parse(authUrl),
@@ -926,7 +929,7 @@ class _FeesScreenState extends State<FeesScreen> {
                       merchId: atomData!['login'].toString(),
                       currentTxnId: createOrderId,
                       onReturn: (result) => _refresh(result),
-                      userEmail: studentData!['email'].toString(),
+                      userEmail: userEmailId.toString(),
                       userContact: studentData!['contact_no'].toString(),
                     ),
                   ),
