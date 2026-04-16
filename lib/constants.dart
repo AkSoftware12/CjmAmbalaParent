@@ -101,6 +101,7 @@ class ApiRoutes {
   static const String loginstudent = "$baseUrl/loginstudent";
   static const String clear = "$baseUrl/clear";
   static const String getProfile = "$baseUrl/student-get";
+  static const String updateProfile = "$baseUrl/update-student-profile";
   static const String getPhotos = "$baseUrlNewUser/getPhotos";
   static const String getVideos = "$baseUrlNewUser/getVideos";
   static const String getAchievement = "$baseUrlNewUser/getAchievements";

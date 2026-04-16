@@ -3,6 +3,7 @@ import 'package:avi/strings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cryptography/cryptography.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -191,6 +192,7 @@ Future<bool> validateSignature(
 
 class FeesScreen extends StatefulWidget {
   final String title;
+
   const FeesScreen({super.key, required this.title});
 
   @override
@@ -198,6 +200,12 @@ class FeesScreen extends StatefulWidget {
 }
 
 class _FeesScreenState extends State<FeesScreen> {
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController contactController = TextEditingController();
+
+
   String createOrderId = ""; //optional
   String productId = ""; //optional
 
@@ -209,6 +217,8 @@ class _FeesScreenState extends State<FeesScreen> {
   static const int cooldownMinutes = 1;
 
   bool isLoading = false;
+  bool isUpdating = false;
+
   List fees = [];
   Map<String, dynamic>? studentData;
   Map<String, dynamic>? atomData;
@@ -221,9 +231,12 @@ class _FeesScreenState extends State<FeesScreen> {
   @override
   void initState() {
     super.initState();
+    fetchStudentData();
     fetchAtomDataKey();
     fetchFeesData();
     checkCooldownStatus();
+
+
   }
 
   Future<void> fetchAtomDataKey() async {
@@ -244,7 +257,7 @@ class _FeesScreenState extends State<FeesScreen> {
 
         print('Atom data : $atomData');
         print('atomSession : $atomSession');
-        isLoading = false;
+        // isLoading = false;
       });
     } else {
       // _showLoginDialog();
@@ -269,14 +282,13 @@ class _FeesScreenState extends State<FeesScreen> {
       final data = json.decode(response.body);
       setState(() {
         fees = data['fees'];
-        fetchStudentData();
+        // fetchStudentData();
         isLoading = false;
         debugPrint('Fee Data 2');
 
         print('FEE List : $fees');
       });
       _autoSelectCurrentMonthFees(); // ✅ YEH ADD KARO
-
     } else {
       setState(() {
         isLoading = false;
@@ -286,7 +298,7 @@ class _FeesScreenState extends State<FeesScreen> {
 
   void _toggleSelection(int installmentId, double amount) {
     int index = fees.indexWhere(
-          (e) => e['installment_id'].toString() == installmentId.toString(),
+      (e) => e['installment_id'].toString() == installmentId.toString(),
     );
 
     if (index == -1) return;
@@ -297,8 +309,9 @@ class _FeesScreenState extends State<FeesScreen> {
     if (!selectedFees1.contains(id)) {
       /// previous installment check
       if (index > 0) {
-        String prevStatus =
-        fees[index - 1]['pay_status'].toString().toLowerCase();
+        String prevStatus = fees[index - 1]['pay_status']
+            .toString()
+            .toLowerCase();
 
         bool prevSelected = selectedFees1.contains(
           fees[index - 1]['installment_id'].toString(),
@@ -320,7 +333,6 @@ class _FeesScreenState extends State<FeesScreen> {
         totalAmount += amount;
       });
     }
-
     /// -------- UNSELECT LOGIC ----------
     else {
       /// check next installment selected hai kya
@@ -346,17 +358,8 @@ class _FeesScreenState extends State<FeesScreen> {
       });
     }
   }
-  // void _toggleSelection(int id, double amount) {
-  //   setState(() {
-  //     if (selectedFees1.contains(id.toString())) {
-  //       selectedFees1.remove(id.toString());
-  //       totalAmount -= amount;
-  //     } else {
-  //       selectedFees1.add(id.toString());
-  //       totalAmount += amount;
-  //     }
-  //   });
-  // }
+
+
 
   Future<void> fetchStudentData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -376,12 +379,91 @@ class _FeesScreenState extends State<FeesScreen> {
       final data = json.decode(response.body);
       setState(() {
         studentData = data['student'];
+
+        emailController.text = studentData?['email']?.toString() ?? '';
+        contactController.text = studentData?['contact_no']?.toString() ?? '';
         isLoading = false;
         print(studentData);
       });
     } else {}
   }
 
+  Future<void> updateStudentProfile() async {
+    if (!formKey.currentState!.validate()) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) return;
+
+    setState(() {
+      isUpdating = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(ApiRoutes.updateProfile),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+        body: {
+          'email': emailController.text.trim(),
+          'contact_no': contactController.text.trim(),
+        },
+      );
+
+      print('my Data ${emailController.text.trim()}');
+      print('my Data ${contactController.text.trim()}');
+
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200 && data['status'] == true) {
+        // ✅ local studentData ko turant update karo
+        setState(() {
+          studentData ??= {};
+          studentData!['email'] = emailController.text.trim();
+          studentData!['contact_no'] = contactController.text.trim();
+        });
+
+        // ✅ server se fresh profile bhi le aao
+        await fetchStudentData();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Center(
+              child: Text(
+                data['message'] ?? "Profile updated successfully",
+                textAlign: TextAlign.center,
+              ),
+            ),
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Profile update failed")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Update error: $e")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isUpdating = false;
+        });
+      }
+    }
+  }
   Future<void> orderCreate(BuildContext context) async {
     showLoadingDialog(context);
 
@@ -672,7 +754,6 @@ class _FeesScreenState extends State<FeesScreen> {
     }
   }
 
-
   void _autoSelectCurrentMonthFees() {
     final now = DateTime.now();
     int currentMonth = now.month;
@@ -707,7 +788,7 @@ class _FeesScreenState extends State<FeesScreen> {
         /// ✅ Month based selection (date ignore)
         bool shouldSelect =
             dueDate.year < currentYear ||
-                (dueDate.year == currentYear && dueDate.month <= currentMonth);
+            (dueDate.year == currentYear && dueDate.month <= currentMonth);
 
         if (shouldSelect) {
           final installmentId = fee['installment_id'].toString();
@@ -722,10 +803,13 @@ class _FeesScreenState extends State<FeesScreen> {
       }
     });
   }
+
   @override
   void dispose() {
     _timer?.cancel();
     _statusCheckTimer?.cancel(); // Cancel the status check timer
+    emailController.dispose();
+    contactController.dispose();
     super.dispose();
   }
 
@@ -740,21 +824,224 @@ class _FeesScreenState extends State<FeesScreen> {
     );
   }
 
+
+  bool get hasValidContact {
+    final contact = contactController.text.trim();
+    return contact.isNotEmpty && contact.length == 10;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.secondary,
-      appBar: widget.title.isNotEmpty? AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: AppColors.secondary,
-        title: Text('Fees',style: TextStyle(color: Colors.white),),
-      ):null,
+      appBar: widget.title.isNotEmpty
+          ? AppBar(
+              iconTheme: IconThemeData(color: Colors.white),
+              backgroundColor: AppColors.secondary,
+              title: Text('Fees', style: TextStyle(color: Colors.white)),
+            )
+          : null,
       body: isLoading
           ? _buildShimmerLoading()
           : Stack(
               children: [
                 Column(
                   children: [
+
+                    if (studentData != null && studentData!.isNotEmpty)
+                      Container(
+                      margin: EdgeInsets.all(3),
+                      padding: EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          /// 🔹 Column → Adm No + Name + Class (Vertical)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _topItem("Student Name : ", "${studentData?['student_name']}", Icons.person),
+                              _topItem(
+                                "Class & Section : ",
+                                "${studentData?['class_name'] ?? ''}-${studentData?['section'] ?? ''}",
+                                Icons.school,
+                              ),
+                              _topItem("Adm. No. : ", "${studentData?['adm_no']}", Icons.badge),
+
+                            ],
+                          ),
+
+                          SizedBox(height: 3.sp),
+
+                          Form(
+                            key: formKey,
+                            child: Column(
+                              children: [
+                                _editField(
+                                  "Email",
+                                  emailController,
+                                  Icons.email_outlined,
+                                  isEmail: true,
+                                ),
+
+                                SizedBox(width: 5), // spacing
+
+                                _editField(
+                                  "Contact Number",
+                                  contactController,
+                                  Icons.phone,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Row(
+                          //   children: [
+                          //     Expanded(
+                          //       child: Form(
+                          //         key: formKey,
+                          //         child: Row(
+                          //           children: [
+                          //             Expanded(
+                          //               child: _editField(
+                          //                 "Email",
+                          //                 TextEditingController(text: "${ studentData?['email']}"),
+                          //                 Icons.email_outlined,
+                          //                 isEmail: true,
+                          //               ),
+                          //             ),
+                          //
+                          //             SizedBox(width: 5), // spacing
+                          //
+                          //             Expanded(
+                          //               child: _editField(
+                          //                 "Contact Number",
+                          //                 TextEditingController(text: "${studentData?['contact_no']}"),
+                          //                 Icons.phone,
+                          //               ),
+                          //             ),
+                          //           ],
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
+                          SizedBox(height: 5),
+
+                          GestureDetector(
+                            onTap: isUpdating ? null : updateStudentProfile,
+                            child: Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(vertical: 8.h),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14.r),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF1E3A8A),
+                                    Color(0xFF2563EB),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(0.25),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  isUpdating
+                                      ? SizedBox(
+                                    height: 16.h,
+                                    width: 16.w,
+                                    child: const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                      : Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                    size: 13.sp,
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Text(
+                                    isUpdating ? 'Updating...' : 'Update Profile',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // GestureDetector(
+                          //   onTap: () {
+                          //     if (formKey.currentState!.validate()) {
+                          //       // valid
+                          //       print("Form Submitted");
+                          //     } else {
+                          //       // error show hoga
+                          //       print("Invalid Contact Number");
+                          //     }
+                          //   },
+                          //   child: Container(
+                          //     width: double.infinity,
+                          //     padding: EdgeInsets.symmetric(vertical: 7.h),
+                          //     decoration: BoxDecoration(
+                          //       borderRadius: BorderRadius.circular(14.r),
+                          //       gradient: LinearGradient(
+                          //         colors: [
+                          //           Color(0xFF1E3A8A), // dark blue
+                          //           Color(0xFF2563EB), // light blue
+                          //         ],
+                          //       ),
+                          //       boxShadow: [
+                          //         BoxShadow(
+                          //           color: Colors.blue.withOpacity(0.25),
+                          //           blurRadius: 10,
+                          //           offset: Offset(0, 5),
+                          //         ),
+                          //       ],
+                          //     ),
+                          //     child: Row(
+                          //       mainAxisAlignment: MainAxisAlignment.center,
+                          //       children: [
+                          //         Icon(
+                          //           Icons.edit,
+                          //           color: Colors.white,
+                          //           size: 13.sp,
+                          //         ),
+                          //         SizedBox(width: 8.w),
+                          //         Text(
+                          //           'Update Profile',
+                          //           style: TextStyle(
+                          //             color: Colors.white,
+                          //             fontSize: 12.sp,
+                          //             fontWeight: FontWeight.w600,
+                          //             letterSpacing: 0.5,
+                          //           ),
+                          //         ),
+                          //       ],
+                          //     ),
+                          //   ),
+                          // ),
+                          SizedBox(height: 5),
+                        ],
+                      ),
+                    ),
+                    /// Common Widget
                     Expanded(
                       child: ListView.builder(
                         itemCount: fees.length,
@@ -770,8 +1057,11 @@ class _FeesScreenState extends State<FeesScreen> {
                             try {
                               DateTime parsedDate;
 
-                              if (dueDate.contains('-') && dueDate.split('-')[0].length == 2) {
-                                parsedDate = DateFormat('dd-MM-yyyy').parse(dueDate);
+                              if (dueDate.contains('-') &&
+                                  dueDate.split('-')[0].length == 2) {
+                                parsedDate = DateFormat(
+                                  'dd-MM-yyyy',
+                                ).parse(dueDate);
                               } else {
                                 parsedDate = DateTime.parse(dueDate);
                               }
@@ -785,9 +1075,11 @@ class _FeesScreenState extends State<FeesScreen> {
                             amount: fees[index]['to_pay_amount'].toString(),
                             status: fees[index]['pay_status'].toString(),
                             dueDate: fees[index]['due_date'].toString(),
-                            payDate: (fees[index]['receipts'] != null &&
-                                fees[index]['receipts'].isNotEmpty)
-                                ? fees[index]['receipts'][0]['receipt_date'].toString()
+                            payDate:
+                                (fees[index]['receipts'] != null &&
+                                    fees[index]['receipts'].isNotEmpty)
+                                ? fees[index]['receipts'][0]['receipt_date']
+                                      .toString()
                                 : '',
                             id: fees[index]['id'],
                             receipts: (fees[index]['receipts'] as List?) ?? [],
@@ -811,7 +1103,8 @@ class _FeesScreenState extends State<FeesScreen> {
                         },
                       ),
                     ),
-                    if (selectedFees1.isNotEmpty && atomSession?['payment'].toString() == '1')
+                    if (selectedFees1.isNotEmpty &&
+                        atomSession?['payment'].toString() == '1')
                       SizedBox(
                         width: double.infinity,
                         child: Padding(
@@ -822,8 +1115,105 @@ class _FeesScreenState extends State<FeesScreen> {
                                 // Show dialog when timer is running
                                 _showCooldownDialog(context);
                               } else {
+                                if (!hasValidContact) {
 
-                                onPayNow();
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (context) {
+                                      return Dialog(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(20),
+                                            color: Colors.white,
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+
+                                              /// 🔴 Top Icon
+                                              Container(
+                                                padding: EdgeInsets.all(14),
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: Colors.red.withOpacity(0.1),
+                                                ),
+                                                child: Icon(
+                                                  Icons.warning_amber_rounded,
+                                                  color: Colors.red,
+                                                  size: 32,
+                                                ),
+                                              ),
+
+                                              SizedBox(height: 15),
+
+                                              /// 🔥 Title
+                                              Text(
+                                                "Update Required",
+                                                style: TextStyle(
+                                                  fontSize: 17,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+
+                                              SizedBox(height: 8),
+
+                                              /// 📝 Message
+                                              Text(
+                                                "Please update your contact number to continue.",
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                              ),
+
+                                              SizedBox(height: 20),
+
+                                              /// 🔘 Button
+                                              SizedBox(
+                                                width: double.infinity,
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.red,
+                                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(10),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    "Cancel",
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+
+                                              SizedBox(height: 8),
+
+
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+
+                                } else {
+                                  onPayNow();
+                                }
+
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -847,9 +1237,8 @@ class _FeesScreenState extends State<FeesScreen> {
                         ),
                       ),
 
-                    SizedBox(
-                      height: 50,
-                    )
+
+                    SizedBox(height: 50),
                   ],
                 ),
               ],
@@ -872,25 +1261,20 @@ class _FeesScreenState extends State<FeesScreen> {
     try {
       final String txnDate = DateTime.now().toString().split('.')[0];
       final String userEmailId =
-      (studentData?['email'] != null &&
-          studentData!['email'].toString().isNotEmpty &&
-          studentData!['email'].toString() != "null")
+          (studentData?['email'] != null &&
+              studentData!['email'].toString().isNotEmpty &&
+              studentData!['email'].toString() != "null")
           ? studentData!['email'].toString()
           : "jmambala@gmail.com";
 
-
-
       //Json data for sending to atom server
       String jsonData =
-          '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"$userEmailId","custMobile":"${studentData!['contact_no'].toString()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"udf4","udf5":"udf5"}}}';
+          '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"$userEmailId","custMobile":"${contactController.text.trim()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"udf4","udf5":"udf5"}}}';
       final String encDataR = await encrypt(jsonData);
       final response = await http.post(
         Uri.parse(authUrl),
         headers: {'content-type': 'application/x-www-form-urlencoded'},
-        body: {
-          'encData': encDataR,
-          'merchId': atomData!['login'].toString(),
-        },
+        body: {'encData': encDataR, 'merchId': atomData!['login'].toString()},
       );
 
       if (response.statusCode == 200) {
@@ -930,7 +1314,7 @@ class _FeesScreenState extends State<FeesScreen> {
                       currentTxnId: createOrderId,
                       onReturn: (result) => _refresh(result),
                       userEmail: userEmailId.toString(),
-                      userContact: studentData!['contact_no'].toString(),
+                      userContact: contactController.text.trim(),
                     ),
                   ),
                 );
@@ -973,6 +1357,106 @@ class _FeesScreenState extends State<FeesScreen> {
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
+
+  Widget _topItem(String title, String value, IconData icon) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 0.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16.sp, color: Colors.blue),
+          SizedBox(width: 6.w),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(fontSize: 11.sp, color: Colors.black87),
+                children: [
+                  TextSpan(
+                    text: title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  TextSpan(
+                    text: value,
+                    style: const TextStyle(fontWeight: FontWeight.w400),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _editField(
+      String title,
+      TextEditingController controller,
+      IconData icon, {
+        bool isEmail = false,
+      }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 5.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 0.h),
+          TextFormField(
+            controller: controller,
+            keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.phone,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return "$title is required";
+              }
+
+              if (isEmail) {
+                final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                if (!emailRegex.hasMatch(value.trim())) {
+                  return "Enter valid email";
+                }
+              } else {
+                if (value.trim().length != 10) {
+                  return "Enter valid 10 digit number";
+                }
+              }
+
+              return null;
+            },
+            decoration: InputDecoration(
+              /// 🔥 Yaha magic hai
+              hintText: isEmail
+                  ? "Enter your email"
+                  : "Enter your contact number",
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 13,
+              ),
+              prefixIcon: Icon(icon, color: Colors.blue),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              contentPadding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 12.w),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.r),
+                borderSide: const BorderSide(color: Colors.blue),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+
+
 
   void showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
