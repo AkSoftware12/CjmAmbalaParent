@@ -900,37 +900,6 @@ class _FeesScreenState extends State<FeesScreen> {
                             ),
                           ),
 
-                          // Row(
-                          //   children: [
-                          //     Expanded(
-                          //       child: Form(
-                          //         key: formKey,
-                          //         child: Row(
-                          //           children: [
-                          //             Expanded(
-                          //               child: _editField(
-                          //                 "Email",
-                          //                 TextEditingController(text: "${ studentData?['email']}"),
-                          //                 Icons.email_outlined,
-                          //                 isEmail: true,
-                          //               ),
-                          //             ),
-                          //
-                          //             SizedBox(width: 5), // spacing
-                          //
-                          //             Expanded(
-                          //               child: _editField(
-                          //                 "Contact Number",
-                          //                 TextEditingController(text: "${studentData?['contact_no']}"),
-                          //                 Icons.phone,
-                          //               ),
-                          //             ),
-                          //           ],
-                          //         ),
-                          //       ),
-                          //     ),
-                          //   ],
-                          // ),
                           SizedBox(height: 5),
 
                           GestureDetector(
@@ -986,57 +955,6 @@ class _FeesScreenState extends State<FeesScreen> {
                             ),
                           ),
 
-                          // GestureDetector(
-                          //   onTap: () {
-                          //     if (formKey.currentState!.validate()) {
-                          //       // valid
-                          //       print("Form Submitted");
-                          //     } else {
-                          //       // error show hoga
-                          //       print("Invalid Contact Number");
-                          //     }
-                          //   },
-                          //   child: Container(
-                          //     width: double.infinity,
-                          //     padding: EdgeInsets.symmetric(vertical: 7.h),
-                          //     decoration: BoxDecoration(
-                          //       borderRadius: BorderRadius.circular(14.r),
-                          //       gradient: LinearGradient(
-                          //         colors: [
-                          //           Color(0xFF1E3A8A), // dark blue
-                          //           Color(0xFF2563EB), // light blue
-                          //         ],
-                          //       ),
-                          //       boxShadow: [
-                          //         BoxShadow(
-                          //           color: Colors.blue.withOpacity(0.25),
-                          //           blurRadius: 10,
-                          //           offset: Offset(0, 5),
-                          //         ),
-                          //       ],
-                          //     ),
-                          //     child: Row(
-                          //       mainAxisAlignment: MainAxisAlignment.center,
-                          //       children: [
-                          //         Icon(
-                          //           Icons.edit,
-                          //           color: Colors.white,
-                          //           size: 13.sp,
-                          //         ),
-                          //         SizedBox(width: 8.w),
-                          //         Text(
-                          //           'Update Profile',
-                          //           style: TextStyle(
-                          //             color: Colors.white,
-                          //             fontSize: 12.sp,
-                          //             fontWeight: FontWeight.w600,
-                          //             letterSpacing: 0.5,
-                          //           ),
-                          //         ),
-                          //       ],
-                          //     ),
-                          //   ),
-                          // ),
                           SizedBox(height: 5),
                         ],
                       ),
@@ -1269,7 +1187,7 @@ class _FeesScreenState extends State<FeesScreen> {
 
       //Json data for sending to atom server
       String jsonData =
-          '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"$userEmailId","custMobile":"${contactController.text.trim()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"udf4","udf5":"udf5"}}}';
+          '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"$userEmailId","custMobile":"${contactController.text.trim()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"${studentData?['student_name'] ?? ''}","udf5":"${studentData?['adm_no'] ?? ''}"}}}';
       final String encDataR = await encrypt(jsonData);
       final response = await http.post(
         Uri.parse(authUrl),
