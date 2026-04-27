@@ -1187,7 +1187,7 @@ class _FeesScreenState extends State<FeesScreen> {
 
       //Json data for sending to atom server
       String jsonData =
-          '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"$userEmailId","custMobile":"${contactController.text.trim()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"${studentData?['student_name'] ?? ''}","udf5":"${studentData?['adm_no'] ?? ''}"}}}';
+          '{"payInstrument":{"headDetails":{"version":"OTSv1.1","api":"AUTH","platform":"FLASH"},"merchDetails":{"merchId":"${atomData!['login'].toString()}","userId":"712303","password":"${atomData!['password'].toString()}","merchTxnId":"$createOrderId","merchTxnDate":"$txnDate"},"payDetails":{"amount":"${totalAmount.toString()}","product":"$productId","custAccNo":"639827","txnCurrency":"INR"},"custDetails":{"custEmail":"$userEmailId","custMobile":"${contactController.text.trim()}"},  "extras": {"udf1":"${studentData?['student_id'].toString()}","udf2":"$createOrderId","udf3":"$selectedFees1","udf4":"${studentData?['student_name'] ?? ''}","udf5":"${studentData?['adm_no'] ?? ''}","udf6":"${studentData?['class_name']??''}${studentData?['section']??''}"}}}';
       final String encDataR = await encrypt(jsonData);
       final response = await http.post(
         Uri.parse(authUrl),
@@ -1205,6 +1205,7 @@ class _FeesScreenState extends State<FeesScreen> {
           // Extract the encrypted data
           final encDataPart = responseData.firstWhere(
             (element) => element.startsWith('encData'),
+
           );
           final encryptedData = encDataPart.split('=')[1];
           final extractedData = ['encData', encryptedData];

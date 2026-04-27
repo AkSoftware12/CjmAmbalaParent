@@ -1792,6 +1792,11 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
       request.fields['receivers'] = jsonEncode(receivers);
       request.fields['body'] = text;
 
+
+      print('receivers api ${jsonEncode(receivers)}');
+      print('selectedTeachers api ${selectAllTeachers}');
+      print('body api ${text}');
+
       if (selectedFile != null && selectedFile!.path != null) {
         request.files.add(
           await http.MultipartFile.fromPath(
@@ -1818,6 +1823,8 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
 
         String jobKey = data['job_key']?.toString() ?? '';
 
+        print('Job key ${jobKey}');
+
         if (jobKey.isEmpty) {
           _showErrorSnackBar("Something went wrong");
           setState(() => isSending = false);
@@ -1840,69 +1847,167 @@ class _NewTeacherMessageScreenState extends State<NewTeacherMessageScreen>
         setState(() => isSending = false);
       }
     }
+
   }
 
   Future<void> checkMessageStatus(String jobKey) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('teachertoken');
 
-    if (token == null) return;
+    if (token == null || token.isEmpty) {
+      _stopLoader();
+      _showErrorSnackBar("Authentication token missing");
+      return;
+    }
 
-    int maxAttempts = 4;
-    int attempt = 0;
+    const int maxAttempts = 30;
 
-    while (attempt < maxAttempts) {
-      await Future.delayed(const Duration(seconds: 5));
-      attempt++;
+    debugPrint("════════════════════════════════════════════");
+    debugPrint("🚀 START POLLING");
+    debugPrint("🆔 Job Key: $jobKey");
+    debugPrint("🔁 Max Attempts: $maxAttempts");
+    debugPrint("════════════════════════════════════════════");
+
+    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      debugPrint("");
+      debugPrint("════════════════════════════════════════════");
+      debugPrint("🔄 ATTEMPT $attempt / $maxAttempts");
+      debugPrint("⏳ Waiting 15 seconds before next status check...");
+      debugPrint("════════════════════════════════════════════");
+
+      await Future.delayed(const Duration(seconds: 2));
 
       try {
         final url = Uri.parse("${ApiRoutes.messageSendStatus}$jobKey");
 
+        debugPrint("🌐 API HIT [$attempt/$maxAttempts] => $url");
+
         final response = await http.get(
           url,
-          headers: {'Authorization': 'Bearer $token'},
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
         );
 
+        debugPrint("📡 HTTP STATUS [$attempt/$maxAttempts] => ${response.statusCode}");
+        debugPrint("📦 RAW RESPONSE [$attempt/$maxAttempts] => ${response.body}");
+
+        Map<String, dynamic> data = {};
+        try {
+          data = jsonDecode(response.body) as Map<String, dynamic>;
+        } catch (e) {
+          debugPrint("⚠ JSON PARSE ERROR [$attempt/$maxAttempts] => $e");
+        }
+
+        final dynamic rawStatus = data['status'];
+        final String message = data['message']?.toString() ?? '';
+        final String statusText = data['status_text']?.toString() ?? '';
+
+        debugPrint("📊 BASIC RESPONSE DATA [$attempt/$maxAttempts]:");
+        debugPrint("   ➤ status      : $rawStatus");
+        debugPrint("   ➤ statusText  : $statusText");
+        debugPrint("   ➤ message     : $message");
+
+        /// ✅ Progress block from backend
+        final Map<String, dynamic> progress =
+        (data['progress'] is Map<String, dynamic>)
+            ? data['progress'] as Map<String, dynamic>
+            : {};
+
+        final int total = progress['total'] is int
+            ? progress['total']
+            : int.tryParse(progress['total']?.toString() ?? '0') ?? 0;
+
+        final int messagesInserted = progress['messages_inserted'] is int
+            ? progress['messages_inserted']
+            : int.tryParse(progress['messages_inserted']?.toString() ?? '0') ?? 0;
+
+        final int fcmDelivered = progress['fcm_delivered'] is int
+            ? progress['fcm_delivered']
+            : int.tryParse(progress['fcm_delivered']?.toString() ?? '0') ?? 0;
+
+        final int fcmFailedCount = progress['fcm_failed_count'] is int
+            ? progress['fcm_failed_count']
+            : int.tryParse(progress['fcm_failed_count']?.toString() ?? '0') ?? 0;
+
+        final int noTokenCount = progress['no_token_count'] is int
+            ? progress['no_token_count']
+            : int.tryParse(progress['no_token_count']?.toString() ?? '0') ?? 0;
+
+        final List<dynamic> noTokenIds =
+        progress['no_token_ids'] is List ? progress['no_token_ids'] as List<dynamic> : [];
+
+        final List<dynamic> fcmFailedIds =
+        progress['fcm_failed_ids'] is List ? progress['fcm_failed_ids'] as List<dynamic> : [];
+
+        debugPrint("📈 PROGRESS DETAILS [$attempt/$maxAttempts]:");
+        debugPrint("   👥 Total Users         : $total");
+        debugPrint("   📝 Messages Inserted   : $messagesInserted");
+        debugPrint("   📲 FCM Delivered       : $fcmDelivered");
+        debugPrint("   ❌ FCM Failed Count    : $fcmFailedCount");
+        debugPrint("   ⚠ No Token Count      : $noTokenCount");
+
+        if (noTokenIds.isNotEmpty) {
+          debugPrint("   ⚠ No Token IDs        : $noTokenIds");
+        }
+
+        if (fcmFailedIds.isNotEmpty) {
+          debugPrint("   ❌ FCM Failed IDs      : $fcmFailedIds");
+        }
+
+        /// ⏳ 202 = still processing
+        if (response.statusCode == 202) {
+          debugPrint("⏳ RESULT [$attempt/$maxAttempts] => STILL PROCESSING");
+          continue;
+        }
+
+        /// ✅ 200 = success
         if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          int statusCode = data['status_code'];
+          debugPrint("✅ RESULT [$attempt/$maxAttempts] => SUCCESS");
+          debugPrint("🏁 FINAL SUMMARY:");
+          debugPrint("   👥 Total Users         : $total");
+          debugPrint("   📝 Messages Inserted   : $messagesInserted");
+          debugPrint("   📲 FCM Delivered       : $fcmDelivered");
+          debugPrint("   ❌ FCM Failed Count    : $fcmFailedCount");
+          debugPrint("   ⚠ No Token Count      : $noTokenCount");
 
-          debugPrint("📡 Attempt $attempt → Status: $statusCode");
-
-          if (statusCode == 2) {
-            // ✅ DONE
-            _stopLoader();
-            _resetUI();
-            _showSuccessPopup(context);
-            return;
-          } else if (statusCode == 3) {
-            // ❌ FAILED
-            _stopLoader();
-            _showErrorSnackBar("Message sending failed");
-            return;
-          } else if (statusCode == 4) {
-            // ⚠️ NOT FOUND
-            _stopLoader();
-            _showErrorSnackBar("Job not found");
-            return;
-          }
-
-          // 🔁 status = 1 → continue
-        } else {
+          messageController.clear();
           _stopLoader();
+          _resetUI();
+          _showSuccessPopup(context);
           return;
         }
-      } catch (e) {
+
+        /// ❌ Any other status code = error
+        final String errorMessage = message.isNotEmpty
+            ? message
+            : "MessageSendStatus Server error: ${response.statusCode}";
+
+        debugPrint("❌ RESULT [$attempt/$maxAttempts] => FAILED");
+        debugPrint("❌ ERROR MESSAGE => $errorMessage");
+
+        messageController.clear();
         _stopLoader();
+        _showErrorSnackBar(errorMessage);
+        return;
+      } catch (e) {
+        debugPrint("💥 EXCEPTION [$attempt/$maxAttempts] => $e");
+        _stopLoader();
+        _showErrorSnackBar("Something went wrong while checking status");
         return;
       }
     }
 
-    // ⏹️ TIMEOUT
+    debugPrint("");
+    debugPrint("════════════════════════════════════════════");
+    debugPrint("⌛ POLLING TIMEOUT");
+    debugPrint("🔁 Total Attempts Reached: $maxAttempts");
+    debugPrint("════════════════════════════════════════════");
+
     _stopLoader();
     _showErrorSnackBar("Timeout, try again");
   }
-
   void _stopLoader() {
     if (mounted) {
       setState(() {

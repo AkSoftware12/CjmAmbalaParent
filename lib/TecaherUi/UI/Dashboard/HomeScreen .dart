@@ -23,6 +23,7 @@ import '../../../UI/Dashboard/HomeScreen .dart';
 import '../../../UI/Gallery/Album/album.dart';
 import '../../../UI/Library/LibraryScreen.dart';
 import '../../../constants.dart';
+import '../AdminMsg/AdminTabScreen/admin_tab_screen.dart';
 import '../AdminTimeTable/admin_time_table.dart';
 import '../Assignment/assignment.dart';
 import '../HomeWork/home_work.dart';
@@ -519,21 +520,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               } else if (items[index]['name'] == 'Messages') {
                 await Navigator.push(
                   context,
-                  PageRouteBuilder(
-                    transitionDuration: Duration(milliseconds: 500), // Animation Speed
-                    pageBuilder: (context, animation, secondaryAnimation) =>  TeacherMesssageListScreen(messageSendPermissionsApp: messageSendPermissionsApp,),
-                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                      var begin = Offset(1.0, 0.0); // Right to Left
-                      var end = Offset.zero;
-                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: Curves.easeInOut));
-
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return AdminMsgTabScreen(messageSendPermissionsApp: messageSendPermissionsApp);
                     },
                   ),
                 );
+
+                // await Navigator.push(
+                //   context,
+                //   PageRouteBuilder(
+                //     transitionDuration: Duration(milliseconds: 500), // Animation Speed
+                //     pageBuilder: (context, animation, secondaryAnimation) =>  TeacherMesssageListScreen(messageSendPermissionsApp: messageSendPermissionsApp,),
+                //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                //       var begin = Offset(1.0, 0.0); // Right to Left
+                //       var end = Offset.zero;
+                //       var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: Curves.easeInOut));
+                //
+                //       return SlideTransition(
+                //         position: animation.drive(tween),
+                //         child: child,
+                //       );
+                //     },
+                //   ),
+                // );
                 await _refreshDashboardCounts();
 
 

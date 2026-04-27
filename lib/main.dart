@@ -89,15 +89,117 @@ class MyApp extends StatelessWidget {
 
 
 
+// class NotificationService {
+//   static final FirebaseMessaging _firebaseMessaging =
+//       FirebaseMessaging.instance;
+//   static final FlutterLocalNotificationsPlugin
+//   _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+//
+//   /// **🔹 Initialize Notifications**
+//   static Future<void> initNotifications() async {
+//     // **Request Permission for Push Notifications**
+//     NotificationSettings settings = await _firebaseMessaging.requestPermission(
+//       alert: true,
+//       badge: true,
+//       sound: true,
+//     );
+//
+//     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+//       if (kDebugMode) {
+//         print("✅ Push Notifications Enabled");
+//       }
+//
+//       // **Get FCM Token**
+//       String? token = await _firebaseMessaging.getToken();
+//       if (kDebugMode) {
+//         print("FCM Token: $token");
+//       } // Send this to your server
+//
+//       // **Handle Incoming Notifications**
+//       FirebaseMessaging.onMessage.listen(_onMessage);
+//       FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
+//       FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
+//
+//       // **Initialize Local Notifications**
+//       _initLocalNotifications();
+//     } else {}
+//   }
+//
+//   /// **🔹 Handle Foreground Notifications**
+//   static void _onMessage(RemoteMessage message) {
+//     _showLocalNotification(message);
+//   }
+//
+//   /// **🔹 Handle Notification Click**
+//   static void _onMessageOpenedApp(RemoteMessage message) {
+//     // **Navigate to a Specific Screen**
+//     // Navigator.push(
+//     //   context,
+//     //   MaterialPageRoute(builder: (context) => NotificationScreen()),
+//     // );
+//     // Navigate to the relevant screen based on message.data
+//   }
+//
+//   /// **🔹 Handle Background Notifications**
+//   static Future<void> _onBackgroundMessage(RemoteMessage message) async {}
+//
+//   /// **🔹 Initialize Local Notifications**
+//   static void _initLocalNotifications() {
+//     const AndroidInitializationSettings androidSettings =
+//         AndroidInitializationSettings('@mipmap/ic_launcher');
+//
+//     const InitializationSettings settings = InitializationSettings(
+//       android: androidSettings,
+//     );
+//
+//     _flutterLocalNotificationsPlugin.initialize(settings);
+//   }
+//
+//   /// **🔹 Show Local Notification**
+//   static Future<void> _showLocalNotification(RemoteMessage message) async {
+//     const AndroidNotificationDetails androidDetails =
+//         AndroidNotificationDetails(
+//           'channelId',
+//           'channelName',
+//           importance: Importance.max,
+//           priority: Priority.high,
+//         );
+//
+//     const NotificationDetails generalNotificationDetails = NotificationDetails(
+//       android: androidDetails,
+//     );
+//
+//     await _flutterLocalNotificationsPlugin.show(
+//       0,
+//       message.notification?.title,
+//       message.notification?.body,
+//       generalNotificationDetails,
+//     );
+//   }
+// }
+
+
 class NotificationService {
   static final FirebaseMessaging _firebaseMessaging =
       FirebaseMessaging.instance;
+
   static final FlutterLocalNotificationsPlugin
   _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-  /// **🔹 Initialize Notifications**
+  static const AndroidNotificationChannel _channel =
+  AndroidNotificationChannel(
+    'high_importance_channel',
+    'High Importance Notifications',
+    description: 'This channel is used for important notifications.',
+    importance: Importance.max,
+    playSound: true,
+  );
+
+  /// Initialize notifications
   static Future<void> initNotifications() async {
-    // **Request Permission for Push Notifications**
+    await Firebase.initializeApp();
+
+    // Request permission
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
@@ -109,130 +211,127 @@ class NotificationService {
         print("✅ Push Notifications Enabled");
       }
 
-      // **Get FCM Token**
+      await _initLocalNotifications();
+
+      // iOS foreground notification settings
+      await _firebaseMessaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
       String? token = await _firebaseMessaging.getToken();
       if (kDebugMode) {
         print("FCM Token: $token");
-      } // Send this to your server
+      }
 
-      // **Handle Incoming Notifications**
+      // Foreground
       FirebaseMessaging.onMessage.listen(_onMessage);
-      FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
-      FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
 
-      // **Initialize Local Notifications**
-      _initLocalNotifications();
-    } else {}
+      // App opened from notification
+      FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
+
+      // Background/terminated
+      FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
+    }
   }
 
-  /// **🔹 Handle Foreground Notifications**
+  /// Foreground notification
   static void _onMessage(RemoteMessage message) {
+    // Foreground me local notification dikha do
     _showLocalNotification(message);
   }
 
-  /// **🔹 Handle Notification Click**
+  /// Notification click
   static void _onMessageOpenedApp(RemoteMessage message) {
-    // **Navigate to a Specific Screen**
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => NotificationScreen()),
-    // );
-    // Navigate to the relevant screen based on message.data
+    if (kDebugMode) {
+      print("Notification clicked: ${message.data}");
+    }
+
+    // Yaha screen navigation kar sakte ho
+    // example:
+    // final type = message.data['type'];
+    // if (type == 'chat') { ... }
   }
 
-  /// **🔹 Handle Background Notifications**
-  static Future<void> _onBackgroundMessage(RemoteMessage message) async {}
+  /// Background message handler
+  @pragma('vm:entry-point')
+  static Future<void> _onBackgroundMessage(RemoteMessage message) async {
+    await Firebase.initializeApp();
+  }
 
-  /// **🔹 Initialize Local Notifications**
-  static void _initLocalNotifications() {
+  /// Init local notifications
+  static Future<void> _initLocalNotifications() async {
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const InitializationSettings settings = InitializationSettings(
       android: androidSettings,
     );
 
-    _flutterLocalNotificationsPlugin.initialize(settings);
+    await _flutterLocalNotificationsPlugin.initialize(
+      settings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        if (kDebugMode) {
+          print('Notification payload: ${response.payload}');
+        }
+      },
+    );
+
+    await _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_channel);
   }
 
-  /// **🔹 Show Local Notification**
+  /// Show local notification with full text
   static Future<void> _showLocalNotification(RemoteMessage message) async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'channelId',
-          'channelName',
-          importance: Importance.max,
-          priority: Priority.high,
-        );
+    final String title =
+        message.notification?.title ??
+            message.data['title']?.toString() ??
+            'Notification';
 
-    const NotificationDetails generalNotificationDetails = NotificationDetails(
+    final String body =
+        message.notification?.body ??
+            message.data['body']?.toString() ??
+            '';
+
+    final BigTextStyleInformation bigTextStyleInformation =
+    BigTextStyleInformation(
+      body,
+      htmlFormatBigText: false,
+      contentTitle: title,
+      htmlFormatContentTitle: false,
+      summaryText: 'Tap to open',
+      htmlFormatSummaryText: false,
+    );
+
+    final AndroidNotificationDetails androidDetails =
+    AndroidNotificationDetails(
+      _channel.id,
+      _channel.name,
+      channelDescription: _channel.description,
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      ticker: 'ticker',
+      styleInformation: bigTextStyleInformation,
+      visibility: NotificationVisibility.public,
+      category: AndroidNotificationCategory.message,
+    );
+
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidDetails,
     );
 
     await _flutterLocalNotificationsPlugin.show(
-      0,
-      message.notification?.title,
-      message.notification?.body,
-      generalNotificationDetails,
+      message.hashCode,
+      title,
+      body,
+      notificationDetails,
+      payload: jsonEncode(message.data),
     );
   }
 }
 
-// class _UpdateButton extends StatefulWidget {
-//   final String apkUrl;
-//
-//   const _UpdateButton({required this.apkUrl});
-//
-//   @override
-//   __UpdateButtonState createState() => __UpdateButtonState();
-// }
-//
-// class __UpdateButtonState extends State<_UpdateButton> {
-//   bool _isLoading = false;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return ElevatedButton.icon(
-//       style: ElevatedButton.styleFrom(
-//         backgroundColor: HexColor('535ac4'),
-//         foregroundColor: Colors.white,
-//         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-//         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-//         elevation: 2,
-//       ),
-//       onPressed: _isLoading
-//           ? null
-//           : () async {
-//               setState(() => _isLoading = true);
-//               try {
-//                 if (await canLaunchUrl(Uri.parse(widget.apkUrl))) {
-//                   await launchUrl(
-//                     Uri.parse(widget.apkUrl),
-//                     mode: LaunchMode.externalApplication,
-//                   );
-//                   Navigator.pop(context);
-//                 } else {
-//                   ScaffoldMessenger.of(context).showSnackBar(
-//                     SnackBar(content: Text("Could not open update link")),
-//                   );
-//                 }
-//               } catch (e) {
-//                 ScaffoldMessenger.of(
-//                   context,
-//                 ).showSnackBar(SnackBar(content: Text("Error: $e")));
-//               } finally {
-//                 setState(() => _isLoading = false);
-//               }
-//             },
-//
-//       label: Text(
-//         "Update  App",
-//         style: GoogleFonts.poppins(
-//           fontWeight: FontWeight.bold,
-//           fontSize: 15.sp,
-//           color: Colors.white,
-//         ),
-//       ),
-//     );
-//   }
-// }
+

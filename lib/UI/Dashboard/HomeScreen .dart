@@ -29,6 +29,7 @@ import '../Gallery/Album/album.dart' show GalleryScreen;
 import '../Leaves/leaves_tab.dart';
 import '../Library/LibraryScreen.dart';
 import '../Message/message.dart';
+import '../StudentMsg/StudentTabScreen/student_tab_screen.dart';
 import '../TimeTable/time_table.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../bottom_navigation.dart';
@@ -560,7 +561,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) {
-                      return MesssageListScreen(
+                      return StudentMsgTabScreen(
                         messageSendPermissionsApp: messageSendPermissionsApp,
                       );
                     },

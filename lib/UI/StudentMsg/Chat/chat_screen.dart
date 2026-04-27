@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -8,16 +7,16 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../constants.dart';
+import '../../../constants.dart';
 
-class ChatScreen extends StatefulWidget {
+class StudentChatScreen extends StatefulWidget {
   final int id;
   final String msgSendId;
   final int? messageSendPermissionsApp;
   final String name;
   final String designation;
 
-  const ChatScreen({
+  const StudentChatScreen({
     super.key,
     required this.id,
     required this.messageSendPermissionsApp,
@@ -30,7 +29,7 @@ class ChatScreen extends StatefulWidget {
   _ChatScreenState createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
+class _ChatScreenState extends State<StudentChatScreen> with WidgetsBindingObserver {
   final TextEditingController messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -598,25 +597,25 @@ class _ChatScreenState extends State<ChatScreen> with WidgetsBindingObserver {
                           child: Row(
                             children: [
                               Expanded(
-                                child:TextField(
-    controller: messageController,
-    // focusNode: _focusNode,
-    // enabled: !_isSending,
-    maxLines: null,
-    keyboardType: TextInputType.multiline,
-    textCapitalization: TextCapitalization.sentences,
-    style:
-    TextStyle(fontSize: 14.sp, color: Colors.black87),
-    decoration: InputDecoration(
-    hintText: 'Type a message...',
-    hintStyle: TextStyle(
-    color: Colors.grey.shade400, fontSize: 14.sp),
-    border: InputBorder.none,
-    isDense: true,
-    contentPadding:
-    const EdgeInsets.symmetric(vertical: 6),
-    ),
-    )
+                                  child:TextField(
+                                    controller: messageController,
+                                    // focusNode: _focusNode,
+                                    // enabled: !_isSending,
+                                    maxLines: null,
+                                    keyboardType: TextInputType.multiline,
+                                    textCapitalization: TextCapitalization.sentences,
+                                    style:
+                                    TextStyle(fontSize: 14.sp, color: Colors.black87),
+                                    decoration: InputDecoration(
+                                      hintText: 'Type a message...',
+                                      hintStyle: TextStyle(
+                                          color: Colors.grey.shade400, fontSize: 14.sp),
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding:
+                                      const EdgeInsets.symmetric(vertical: 6),
+                                    ),
+                                  )
 
                                 // TextField(
                                 //   controller: messageController,

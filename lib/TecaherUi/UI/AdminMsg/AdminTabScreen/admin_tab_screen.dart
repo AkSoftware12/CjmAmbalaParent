@@ -2,19 +2,22 @@ import 'package:avi/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../HexColorCode/HexColor.dart';
-import 'AttendanceSummary/attendance_summary.dart';
-import 'attendance_report.dart';
-import 'mark_attendance.dart';
 
-class AttendanceTabScreen extends StatefulWidget {
-  const AttendanceTabScreen({super.key});
+import '../../../../HexColorCode/HexColor.dart';
+import '../Compose/compose_msg.dart';
+import '../Inbox/inbox.dart';
+import '../SendMsg/send_msg.dart';
+
+class AdminMsgTabScreen extends StatefulWidget {
+  final int? messageSendPermissionsApp;
+
+  const AdminMsgTabScreen({super.key, this.messageSendPermissionsApp});
 
   @override
-  State<AttendanceTabScreen> createState() => _AttendanceTabScreenState();
+  State<AdminMsgTabScreen> createState() => _AttendanceTabScreenState();
 }
 
-class _AttendanceTabScreenState extends State<AttendanceTabScreen> with SingleTickerProviderStateMixin {
+class _AttendanceTabScreenState extends State<AdminMsgTabScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
 
@@ -34,32 +37,47 @@ class _AttendanceTabScreenState extends State<AttendanceTabScreen> with SingleTi
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: Colors.transparent,
-       body: SafeArea(
-      child: Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-      ),
-      child: Column(
-        children: [
-          // _topHeader(),
-          SizedBox(height: 2.h),
-          _tabBar(),
-          SizedBox(height: 2.h),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
+        backgroundColor: AppColors.secondary,
+        appBar: AppBar(
+          iconTheme: IconThemeData(color: AppColors.textwhite),
+          backgroundColor: AppColors.secondary,
+          title: Text(
+            'Messages',
+            style: GoogleFonts.montserrat(
+              textStyle: Theme.of(context).textTheme.displayLarge,
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w600,
+              fontStyle: FontStyle.normal,
+              color: AppColors.textwhite,
+            ),
+          ),
+        ),
+        body: SafeArea(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+            ),
+            child: Column(
               children: [
-                AttendanceScreen(), // First Tab (Offline)
-                ReportAttendanceScreen(),
-                AttendanceSummaryScreen(),
+                // _topHeader(),
+                SizedBox(height: 2.h),
+                _tabBar(),
+                SizedBox(height: 2.h),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      InboxScreen(messageSendPermissionsApp: widget.messageSendPermissionsApp,),
+                      ComposeMessageScreen(messageSendPermissionsApp: widget.messageSendPermissionsApp,),
+                      SendMsgScreen(messageSendPermissionsApp: widget.messageSendPermissionsApp,),
+
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-        ],
-      ),
-    ),
-    ),
+        ),
       ),
     );
   }
@@ -102,9 +120,9 @@ class _AttendanceTabScreenState extends State<AttendanceTabScreen> with SingleTi
             fontWeight: FontWeight.w600,
           ),
           tabs: const [
-            Tab(text: "Mark Attendance"),
-            Tab(text: "Report Attendance"),
-            Tab(text: "Attendance Summary"),
+            Tab(text: "Inbox"),
+            Tab(text: "Compose"),
+            Tab(text: "Send"),
           ],
         ),
       ),

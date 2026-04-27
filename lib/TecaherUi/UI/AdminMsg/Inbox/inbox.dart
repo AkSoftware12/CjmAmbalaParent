@@ -8,27 +8,28 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../CommonCalling/data_not_found.dart';
-import '../../../CommonCalling/progressbarWhite.dart';
-import '../../../constants.dart';
-import 'bottomsheet_new_message.dart';
-import 'chat.dart';
+import '../../../../CommonCalling/data_not_found.dart';
+import '../../../../CommonCalling/progressbarWhite.dart';
+import '../../../../constants.dart';
+import '../../TeacherMessage/chat.dart';
 
-class TeacherMesssageListScreen extends StatefulWidget {
+
+
+class InboxScreen extends StatefulWidget {
   final int? messageSendPermissionsApp;
 
-  const TeacherMesssageListScreen({
+  const InboxScreen({
     super.key,
     required this.messageSendPermissionsApp,
   });
 
   @override
-  State<TeacherMesssageListScreen> createState() =>
+  State<InboxScreen> createState() =>
       _TeacherMesssageListScreenState();
 }
 
 class _TeacherMesssageListScreenState
-    extends State<TeacherMesssageListScreen> {
+    extends State<InboxScreen> {
   bool isLoading = false;
 
   List messsage = [];
@@ -68,11 +69,11 @@ class _TeacherMesssageListScreenState
 
       if (selectedFilter == "all") {
         url = Uri.parse(
-          '${ApiRoutes.getAllTeacherConversations}?page=$currentPage',
+          '${ApiRoutes.getInboxList}?page=$currentPage',
         );
       } else {
         url = Uri.parse(
-          '${ApiRoutes.getAllTeacherConversations}?page=$currentPage&filter=$selectedFilter',
+          '${ApiRoutes.getInboxList}?page=$currentPage&filter=$selectedFilter',
         );
       }
 
@@ -160,7 +161,7 @@ class _TeacherMesssageListScreenState
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
           margin: EdgeInsets.symmetric(horizontal: 2.w),
-          padding: EdgeInsets.symmetric(vertical: 5.h),
+          padding: EdgeInsets.symmetric(vertical: 3.h),
           decoration: BoxDecoration(
             gradient: isSelected
                 ? const LinearGradient(
@@ -192,7 +193,7 @@ class _TeacherMesssageListScreenState
             child: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 220),
               style: GoogleFonts.montserrat(
-                fontSize: 12.sp,
+                fontSize: 10.sp,
                 fontWeight: FontWeight.w700,
                 color: isSelected ? Colors.white : Colors.black87,
               ),
@@ -205,7 +206,7 @@ class _TeacherMesssageListScreenState
   }
   Widget _buildPagination() {
     return Container(
-      height: 34.sp,
+      height: 25.sp,
       padding: EdgeInsets.symmetric(horizontal: 4.sp, vertical: 2.sp),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.10),
@@ -232,7 +233,7 @@ class _TeacherMesssageListScreenState
               child: Icon(
                 Icons.chevron_left,
                 color: Colors.white,
-                size: 24.sp,
+                size: 15.sp,
               ),
             ),
           ),
@@ -267,7 +268,7 @@ class _TeacherMesssageListScreenState
                     child: Text(
                       "$pageNumber",
                       style: GoogleFonts.montserrat(
-                        fontSize: 14.sp,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
@@ -296,7 +297,7 @@ class _TeacherMesssageListScreenState
               child: Icon(
                 Icons.chevron_right,
                 color: Colors.white,
-                size: 24.sp,
+                size: 15.sp,
               ),
             ),
           ),
@@ -340,122 +341,204 @@ class _TeacherMesssageListScreenState
         });
       },
       child: Card(
-        margin: EdgeInsets.symmetric(vertical: 3.sp, horizontal: 8.sp),
-        elevation: 6,
-        color: Colors.white,
-        shadowColor: Colors.black26,
+        margin: EdgeInsets.symmetric(vertical: 3.sp, horizontal: 5.sp),
+        elevation: 4,
+        shadowColor: Colors.black12,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(11.sp),
+          borderRadius: BorderRadius.circular(8.sp),
         ),
-        child: Padding(
-          padding: EdgeInsets.all(10.sp),
-          child: Stack(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    height: 40.sp,
-                    width: 40.sp,
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.chat,
-                        size: 20.sp,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10.sp),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          (assignment['partner_name'] ?? '')
-                              .toString()
-                              .toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        SizedBox(height: 2.sp),
-                        Text(
-                          '${assignment['partnerclass'] ?? 'N/A'}'
-                              '${assignment['partnersection'] != null && assignment['partnersection'].toString().isNotEmpty ? ' (${assignment['partnersection']})' : ''}',
-                          style: GoogleFonts.montserrat(
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        if (formatted.isNotEmpty) ...[
-                          SizedBox(height: 2.sp),
-                          Text(
-                            formatted,
-                            style: GoogleFonts.montserrat(
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8.sp),
+            gradient: LinearGradient(
+              colors: [
+                Colors.white,
+                Colors.blue.shade50.withOpacity(.35),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 5.sp,
+              vertical: 5.sp,
+            ),
+            child: Stack(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+
+                    /// Profile Icon
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.sp),
+                      child: assignment['sender_image'] != null &&
+                          assignment['sender_image'].toString().isNotEmpty
+                          ? Image.network(
+                        assignment['sender_image'].toString(),
+                        height: 40.sp,
+                        width: 40.sp,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 40.sp,
+                          width: 40.sp,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary,
+                                AppColors.secondary,
+                              ],
                             ),
                           ),
-                        ],
-                        SizedBox(height: 3.sp),
-                        Text(
-                          assignment['last_message'] != null
-                              ? assignment['last_message'].toString()
-                              : 'Attachment',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 11.sp,
-                            color: Colors.grey[600],
+                          child: Icon(
+                            Icons.person,
+                            color: Colors.white,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (unreadCount > 0)
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 6.sp,
-                      vertical: 2.sp,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.3),
-                          blurRadius: 4,
+                      )
+                          :Container(
+                        height: 40.sp,
+                        width: 40.sp,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primary,
+                              AppColors.secondary,
+                            ],
+                          ),
                         ),
-                      ],
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      '$unreadCount New',
-                      style: GoogleFonts.montserrat(
-                        fontSize: 8.sp,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                    SizedBox(width: 10.sp),
+
+                    /// Text Area
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+
+                          /// Name + Date Row
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  (assignment['partner_name'] ?? '')
+                                      .toString()
+                                      .toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              if (formatted.isNotEmpty)
+                                Padding(
+                                  padding: EdgeInsets.only(left: 0.sp),
+                                  child: Text(
+                                    formatted,
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 8.8.sp,
+                                      color: Colors.grey.shade600,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+
+
+                            ],
+                          ),
+                          if (assignment['partnerclass'].isNotEmpty)
+                            Padding(
+                              padding: EdgeInsets.only(left: 0.sp),
+                              child: Text(
+                                '${assignment['partnerclass']} (${assignment['partnersection']})',
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 8.8.sp,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+
+
+                          /// Last Message
+                          Row(
+                            children: [
+                              // Icon(
+                              //   Icons.done_all,
+                              //   color: Colors.red,
+                              //   size: 14.sp,
+                              // ),
+                              // SizedBox(width: 4.sp),
+                              Expanded(
+                                child: Text(
+                                  assignment['last_message'] != null
+                                      ? assignment['last_message'].toString()
+                                      : 'Attachment',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                        ],
+                      ),
+                    ),
+                    Center(child: Icon(Icons.arrow_forward_ios,size: 15,))
+
+
+                  ],
+                ),
+
+                /// Unread Badge
+                if (unreadCount > 0)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 5.sp,
+                        vertical: 2.sp,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(.35),
+                            blurRadius: 6,
+                          )
+                        ],
+                      ),
+                      child: Text(
+                        '$unreadCount',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 8.sp,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
+      )
     );
   }
 
@@ -469,53 +552,58 @@ class _TeacherMesssageListScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.secondary,
-      appBar: AppBar(
-        iconTheme: IconThemeData(color: AppColors.textwhite),
-        backgroundColor: AppColors.secondary,
-        title: Text(
-          'Messages',
-          style: GoogleFonts.montserrat(
-            textStyle: Theme.of(context).textTheme.displayLarge,
-            fontSize: 15.sp,
-            fontWeight: FontWeight.w600,
-            fontStyle: FontStyle.normal,
-            color: AppColors.textwhite,
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.red,
-        icon: const Icon(Icons.chat, color: Colors.white),
-        label: const Text(
-          'Compose Message',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => NewTeacherMessageScreen(
-                messageSendPermissionsApp: widget.messageSendPermissionsApp,
-              ),
-            ),
-          ).then((value) {
-            fetchAssignmentsData();
-          });
-        },
-      ),
       body: Column(
         children: [
+          SizedBox(height: 4.sp),
+
+
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.sp, vertical: 0.sp),
+            padding: EdgeInsets.symmetric(horizontal: 8.sp, vertical: 5.sp),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Inbox ($totalChat)',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textwhite,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10.sp),
+                _buildPagination(),
+              ],
+            ),
+          ),
+          SizedBox(height: 4.sp),
+          //
+          // Container(
+          //   margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 0.h),
+          //   padding: EdgeInsets.all(2.w),
+          //   decoration: BoxDecoration(
+          //     color: Colors.white,
+          //     borderRadius: BorderRadius.circular(5.r),
+          //   ),
+          //   child: Row(
+          //     children: [
+          //       _filterChip("All", "all"),
+          //       _filterChip("Read", "read"),
+          //       _filterChip("Unread", "unread"),
+          //     ],
+          //   ),
+          // ),
+          // SizedBox(height: 8.sp),
+
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5.sp, vertical: 0.sp),
             child: TextField(
               controller: searchController,
               decoration: InputDecoration(
                 hintText: 'Search by name, class, section or message...',
                 hintStyle: GoogleFonts.montserrat(
-                  fontSize: 12.sp,
+                  fontSize: 11.sp,
                   color: Colors.grey[600],
                 ),
                 prefixIcon: Icon(
@@ -541,7 +629,7 @@ class _TeacherMesssageListScreenState
                 contentPadding: EdgeInsets.symmetric(vertical: 10.sp),
               ),
               style: GoogleFonts.montserrat(
-                fontSize: 12.sp,
+                fontSize: 11.sp,
                 color: Colors.black,
                 fontWeight: FontWeight.w600,
               ),
@@ -552,51 +640,7 @@ class _TeacherMesssageListScreenState
             ),
           ),
 
-          Container(
-            margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 5.h),
-            padding: EdgeInsets.all(2.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                _filterChip("All", "all"),
-                _filterChip("Read", "read"),
-                _filterChip("Unread", "unread"),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.sp, vertical: 0.sp),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Conversations ($totalChat)',
-                    style: GoogleFonts.montserrat(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textwhite,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 10.sp),
-                _buildPagination(),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 8.sp),
+          SizedBox(height: 4.sp),
 
           Expanded(
             child: isLoading

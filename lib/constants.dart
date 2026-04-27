@@ -67,7 +67,8 @@ class ApiRoutes {
 // Local  App Url
 
   // static const String baseUrlNewUser = "http://192.168.1.5/cjmweb/api";
-  // static const String baseUrl = "http://192.168.1.18/cjm_ambala12/api";
+  // static const String baseUrl = "http://192.168.1.9/cjm_ambala12/api";
+  // static const String baseUrl = "http://192.168.1.13:8080/cjm_ambala_admin/api";
   // // Download local url
   // static const String downloadUrl = "http://192.168.1.10/cjm_ambala12/";
   // static const String newUserdownloadUrl = "http://192.168.1.9/cjm_ambala12/api/fees/";
@@ -168,6 +169,7 @@ class ApiRoutes {
   static const String getAdminTeacherTimeTable = "$baseUrl/admin-teacher-timetable";
   static const String studentTeacherDashboard = "$baseUrl/dashboard";
   static const String Teacherattendance = "$baseUrl/get-attendance-monthly";
+  static const String getAttendanceSummary = "$baseUrl/attendance-summary?date=";
   static const String Teacherevents = "$baseUrl/events";
   static const String TeachergetTeacherBanners = "$baseUrl/get-banners";
   static const String Teachernotifications = "$baseUrl/teacher-notifications";
@@ -188,4 +190,21 @@ class ApiRoutes {
   static const String getFreeTeachers = "$baseUrl/free-teachers";
   static const String getStudentAppReport = "$baseUrl/app-report-student?page=";
   static const String messageSendStatus = "$baseUrl/message-status/";
+  static const String messageDelete = "$baseUrl/message-delete/";
+
+
+
+
+  //  admin msg
+  static const String getMessageSendList = "$baseUrl/teacher-send";
+  static const String getTeacherSendPartner = "$baseUrl/teacher-send-partner/";
+  static const String getInboxList = "$baseUrl/teacher-inbox";
+
+  // Student msg
+
+  static const String getStudentMessageSendList = "$baseUrl/student-send";
+  static const String getStudentSendPartner = "$baseUrl/student-send-partner/";
+  static const String getStudentInboxList = "$baseUrl/student-inbox";
+
+
 }
