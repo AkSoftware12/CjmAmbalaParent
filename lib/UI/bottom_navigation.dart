@@ -30,6 +30,7 @@ import 'Message/message.dart';
 import 'ActivityCalendar/activity_calendar.dart';
 import 'Notice/notice.dart';
 import 'Profile/ProfileScreen.dart';
+import 'StudentMsg/StudentTabScreen/student_tab_screen.dart';
 import 'TimeTable/time_table.dart';
 import 'TransactionLibrary/transaction_library.dart';
 import 'Videos/video_screen.dart';
@@ -887,7 +888,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                 await Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => MesssageListScreen(
+                                    builder: (context) => StudentMsgTabScreen(
                                       messageSendPermissionsApp:
                                           messageSendPermissionsApp,
                                     ),

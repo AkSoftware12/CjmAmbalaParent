@@ -23,6 +23,7 @@ import '../../constants.dart';
 import '../../splash_sreen.dart';
 import '../../strings.dart';
 import '../UI/Dashboard/HomeScreen%20.dart';
+import 'AdminMsg/AdminTabScreen/admin_tab_screen.dart';
 import 'AdminTimeTable/admin_time_table.dart';
 import 'AllStudents/all_students.dart';
 import 'AppReport/app_report.dart';
@@ -1168,7 +1169,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
-                                    return TeacherMesssageListScreen(
+                                    return AdminMsgTabScreen(
                                       messageSendPermissionsApp:
                                           messageSendPermissionsApp,
                                     );
