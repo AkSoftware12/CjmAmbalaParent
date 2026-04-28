@@ -699,7 +699,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
             radius: 19,
             backgroundColor: Colors.white24,
             child: Text(
-              widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?',
+              widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '',
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -723,7 +723,9 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
                   ),
                 ),
                 Text(
-                  widget.designation,
+                  widget.designation.isNotEmpty == true
+                      ? widget.designation
+                      : '',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 11.sp,
@@ -831,30 +833,30 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
     );
   }
 
-  Widget _buildRow(MessageModel msg, bool isMe, bool showAvatar) {
-    final avatarWidget =
-    showAvatar ? _buildAvatar(msg, isMe) : SizedBox(width: 36.w);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      child: Row(
-        mainAxisAlignment:
-        isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: isMe
-            ? [
-          _buildBubble(msg, isMe),
-          const SizedBox(width: 6),
-          avatarWidget,
-        ]
-            : [
-          avatarWidget,
-          const SizedBox(width: 6),
-          _buildBubble(msg, isMe),
-        ],
-      ),
-    );
-  }
+  // Widget _buildRow(MessageModel msg, bool isMe, bool showAvatar) {
+  //   final avatarWidget =
+  //   showAvatar ? _buildAvatar(msg, isMe) : SizedBox(width: 36.w);
+  //
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+  //     child: Row(
+  //       mainAxisAlignment:
+  //       isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+  //       crossAxisAlignment: CrossAxisAlignment.end,
+  //       children: isMe
+  //           ? [
+  //         _buildBubble(msg, isMe),
+  //         const SizedBox(width: 6),
+  //         avatarWidget,
+  //       ]
+  //           : [
+  //         avatarWidget,
+  //         const SizedBox(width: 6),
+  //         _buildBubble(msg, isMe),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildAvatar(MessageModel msg, bool isMe) {
     final initial =
@@ -875,191 +877,232 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
     );
   }
 
-  Widget _buildBubble(MessageModel msg, bool isMe) {
-    final isUploading = msg.status == MessageStatus.sending;
-    final hasAttachment = !isUploading &&
-        msg.attachmentUrl != null &&
-        msg.attachmentUrl!.isNotEmpty;
+  Widget _buildRow(MessageModel msg, bool isMe, bool showAvatar) {
+    final avatarWidget =
+    showAvatar ? _buildAvatar(msg, isMe) : SizedBox(width: 36.w);
 
-    final bubbleColor = isMe ? Colors.grey.shade200 : Colors.white;
-    final textColor = isMe ? Colors.black : const Color(0xFF1C1C1E);
-    final timeColor = Colors.grey.shade500;
-    final isSeen =
-        msg.seenByReceiver != null && msg.seenByReceiver!.isNotEmpty;
+    final bubbleWidget = Flexible(
+      child: GestureDetector(
+        onLongPress: isMe ? () => _showDeleteSheet(msg) : null,
+        child: _buildBubble(msg, isMe),
+      ),
+    );
 
-    return GestureDetector(
-      onLongPress: isMe ? () => _showDeleteSheet(msg) : null,
-      child: Flexible(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.78,
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: bubbleColor,
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(18),
-                topRight: const Radius.circular(18),
-                bottomLeft: Radius.circular(isMe ? 18 : 4),
-                bottomRight: Radius.circular(isMe ? 4 : 18),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.07),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment:
-              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!isMe)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 3),
-                    child: Text(
-                      msg.senderName,
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-
-                if (msg.body.isNotEmpty)
-                  Text(
-                    msg.body,
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 14.sp,
-                      height: 1.45,
-                    ),
-                  ),
-
-                if (isUploading)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(
-                          height: 11,
-                          width: 11,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          'Sending...',
-                          style: TextStyle(
-                            color: timeColor,
-                            fontSize: 11.sp,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                if (msg.status == MessageStatus.failed)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      'Failed to send',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-
-                if (hasAttachment) ...[
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () async {
-                      final url = Uri.parse(msg.attachmentUrl!);
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(
-                          url,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      } else {
-                        _showSnackBar(
-                          'Could not open attachment',
-                          isError: true,
-                        );
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.primary.withOpacity(0.3),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.insert_drive_file_rounded,
-                            size: 15,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            'Open Attachment',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _formatTime(msg.createdAt),
-                      style: TextStyle(
-                        color: timeColor,
-                        fontSize: 10.sp,
-                      ),
-                    ),
-                    if (isMe && msg.status == MessageStatus.sent) ...[
-                      const SizedBox(width: 3),
-                      Icon(
-                        isSeen
-                            ? Icons.done_all_rounded
-                            : Icons.done_rounded,
-                        size: 13,
-                        color: isSeen ? Colors.lightBlueAccent : Colors.grey,
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      child: Row(
+        mainAxisAlignment:
+        isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: isMe
+            ? [
+          bubbleWidget,
+          const SizedBox(width: 6),
+          avatarWidget,
+        ]
+            : [
+          avatarWidget,
+          const SizedBox(width: 6),
+          bubbleWidget,
+        ],
       ),
     );
   }
 
+  Widget _buildBubble(MessageModel msg, bool isMe) {
+    final isUploading = msg.status == MessageStatus.sending;
+
+    final attachment = msg.attachmentUrl ?? '';
+    final hasAttachment = !isUploading && attachment.trim().isNotEmpty;
+
+    final body = msg.body.trim();
+    final senderName = msg.senderName.trim().isNotEmpty
+        ? msg.senderName.trim()
+        : 'Unknown';
+
+    final bubbleColor = isMe ? Colors.grey.shade200 : Colors.white;
+    final textColor = isMe ? Colors.black : const Color(0xFF1C1C1E);
+    final timeColor = Colors.grey.shade500;
+
+    final isSeen =
+        msg.seenByReceiver != null && msg.seenByReceiver!.trim().isNotEmpty;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.78,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: bubbleColor,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(isMe ? 18 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 18),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment:
+          isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isMe)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Text(
+                  senderName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+
+            if (body.isNotEmpty)
+              Text(
+                body,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 14.sp,
+                  height: 1.45,
+                ),
+              ),
+
+            if (isUploading)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      height: 11,
+                      width: 11,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Sending...',
+                      style: TextStyle(
+                        color: timeColor,
+                        fontSize: 11.sp,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            if (msg.status == MessageStatus.failed)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'Failed to send',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+            if (hasAttachment) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () async {
+                  try {
+                    final url = Uri.parse(attachment);
+
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(
+                        url,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    } else {
+                      _showSnackBar(
+                        'Could not open attachment',
+                        isError: true,
+                      );
+                    }
+                  } catch (_) {
+                    _showSnackBar(
+                      'Invalid attachment url',
+                      isError: true,
+                    );
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.3),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.insert_drive_file_rounded,
+                        size: 15,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Open Attachment',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 4),
+
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _formatTime(msg.createdAt),
+                  style: TextStyle(
+                    color: timeColor,
+                    fontSize: 10.sp,
+                  ),
+                ),
+                if (isMe && msg.status == MessageStatus.sent) ...[
+                  const SizedBox(width: 3),
+                  Icon(
+                    isSeen ? Icons.done_all_rounded : Icons.done_rounded,
+                    size: 13,
+                    color: isSeen ? Colors.lightBlueAccent : Colors.grey,
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   // ─────────────────────────────────────────────
   // FILE PREVIEW
   // ─────────────────────────────────────────────

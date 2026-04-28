@@ -423,11 +423,22 @@ class _NewTeacherMessageScreenState extends State<ComposeMessageScreen>
   }
 
   Future<void> checkMessageStatus(String jobKey) async {
-
     final Stopwatch pollingWatch = Stopwatch()..start();
 
     final prefs = await SharedPreferences.getInstance();
+
     final token = prefs.getString('teachertoken');
+
+    // ✅ role_manual save hua hai user_role me
+    final role = prefs.getString('user_role');
+
+    // ✅ role 2 = Admin => 10 sec, otherwise Teacher => 5 sec
+    final Duration pollingDelay = role == "2"
+        ? const Duration(seconds: 10)
+        : const Duration(seconds: 5);
+
+    print("User Role: $role");
+    print("Polling Delay: ${pollingDelay.inSeconds} sec");
 
     if (token == null || token.isEmpty) {
       _stopLoader();
@@ -435,19 +446,20 @@ class _NewTeacherMessageScreenState extends State<ComposeMessageScreen>
       return;
     }
 
-    const int maxAttempts = 30;
+    const int maxAttempts = 20;
 
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+      print("Polling Attempt: $attempt / $maxAttempts");
 
-      await Future.delayed(const Duration(seconds: 10));
+      // ✅ yaha dynamic delay use ho raha hai
+      await Future.delayed(pollingDelay);
 
       try {
-
         final Stopwatch apiWatch = Stopwatch()..start();
 
         final url = Uri.parse("${ApiRoutes.messageSendStatus}$jobKey");
 
-        print(' Api url $url');
+        print('Api url $url');
 
         final response = await http.get(
           url,
@@ -459,36 +471,39 @@ class _NewTeacherMessageScreenState extends State<ComposeMessageScreen>
 
         apiWatch.stop();
 
-        print("⏱ Poll API Call Time: "
-            "${(apiWatch.elapsedMilliseconds/1000).toStringAsFixed(2)} sec");
+        print(
+          "⏱ Poll API Call Time: "
+              "${(apiWatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} sec",
+        );
 
+        Map<String, dynamic> data = {};
 
-        Map<String,dynamic> data={};
+        try {
+          data = jsonDecode(response.body);
+        } catch (e) {
+          print("JSON Decode Error: $e");
+        }
 
-        try{
-          data=jsonDecode(response.body);
-        }catch(e){}
-
-        final progress =
-        (data['progress'] is Map<String,dynamic>)
+        final progress = (data['progress'] is Map<String, dynamic>)
             ? data['progress']
             : {};
 
-        final total=progress['total'] ?? 0;
-        final inserted=progress['messages_inserted'] ?? 0;
-        final delivered=progress['fcm_delivered'] ?? 0;
+        final total = progress['total'] ?? 0;
+        final inserted = progress['messages_inserted'] ?? 0;
+        final delivered = progress['fcm_delivered'] ?? 0;
 
-        if(response.statusCode==202){
+        if (response.statusCode == 202) {
           print("Still Processing...");
           continue;
         }
 
-
         if (response.statusCode == 200) {
           pollingWatch.stop();
 
-          print("✅ TOTAL SEND PROCESS TIME : "
-              "${(pollingWatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} sec");
+          print(
+            "✅ TOTAL SEND PROCESS TIME : "
+                "${(pollingWatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} sec",
+          );
 
           print("Users : $total");
           print("Inserted : $inserted");
@@ -498,8 +513,8 @@ class _NewTeacherMessageScreenState extends State<ComposeMessageScreen>
           _resetUI();
 
           if (!mounted) return;
-          _showSuccessPopup(context);
 
+          _showSuccessPopup(context);
           return;
         }
 
@@ -507,29 +522,38 @@ class _NewTeacherMessageScreenState extends State<ComposeMessageScreen>
         _resetUI();
 
         if (!mounted) return;
-        _showSuccessPopup(context);
-        // _showErrorSnackBar("Api Check Timer Server error${response.statusCode}");
-        // print('Server error${response.statusCode}');
-        return;
 
-      } catch(e){
+        _showErrorSnackBar(
+          "Api Check Timer Server error ${response.statusCode}",
+        );
+
+        print('Server error ${response.statusCode}');
+        return;
+      } catch (e) {
+        print("Polling Error: $e");
+
         _stopLoader();
+
         if (!mounted) return;
-        _showSuccessPopup(context);
-        // _showErrorSnackBar(" Api Check Timer Something went wrong");
+
+        _showErrorSnackBar("Api Check Timer Something went wrong");
         return;
       }
     }
 
     pollingWatch.stop();
 
-    print("Timeout after "
-        "${(pollingWatch.elapsedMilliseconds/1000).toStringAsFixed(2)} sec");
+    print(
+      "Timeout after "
+          "${(pollingWatch.elapsedMilliseconds / 1000).toStringAsFixed(2)} sec",
+    );
 
     _stopLoader();
+
+    if (!mounted) return;
+
     _showErrorSnackBar("Timeout try again");
   }
-
   void _stopLoader() {
     if (mounted) {
       setState(() {

@@ -113,17 +113,17 @@ class _AttendanceTabScreenState extends State<StudentMsgTabScreen> with SingleTi
           labelPadding: EdgeInsets.zero,
 
           labelStyle: GoogleFonts.poppins(
-            fontSize: 9.sp, // 🔥 thoda chhota karo warna overflow aayega
+            fontSize: 13.sp, // 🔥 thoda chhota karo warna overflow aayega
             fontWeight: FontWeight.w700,
           ),
           unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 9.sp,
+            fontSize: 13.sp,
             fontWeight: FontWeight.w600,
           ),
           tabs: const [
-            Tab(text: "Inbox"),
-            Tab(text: "Compose"),
-            Tab(text: "Send"),
+            Tab(text: "INBOX"),
+            Tab(text: "COMPOSE"),
+            Tab(text: "SMS REPORT"),
           ],
         ),
       ),

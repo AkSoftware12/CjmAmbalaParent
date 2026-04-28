@@ -51,6 +51,7 @@ class ApiRoutes {
 
   // Main App Url
   static const String baseUrl = "https://softcjm.cjmambala.co.in/api";
+  // static const String baseUrl = "https://softcjm.aksoftsol.com/api";
   static const String baseUrlNewUser = "https://cjmambala.co.in/api";
 
   // exam url
@@ -67,13 +68,11 @@ class ApiRoutes {
 // Local  App Url
 
   // static const String baseUrlNewUser = "http://192.168.1.5/cjmweb/api";
-  // static const String baseUrl = "http://192.168.1.9/cjm_ambala12/api";
+  // static const String baseUrl = "http://192.168.1.7/cjm_ambala12/api";
   // static const String baseUrl = "http://192.168.1.13:8080/cjm_ambala_admin/api";
   // // Download local url
   // static const String downloadUrl = "http://192.168.1.10/cjm_ambala12/";
   // static const String newUserdownloadUrl = "http://192.168.1.9/cjm_ambala12/api/fees/";
-
-
 
   // New Admission Api
 

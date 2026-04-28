@@ -1077,10 +1077,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
-                          if (int.tryParse(
-                                teacherData?['role_manual'].toString() ?? '',
-                              ) ==
-                              2)
+                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '') == 2)
                             ListTile(
                               title: Text(
                                 'Free Teachers ',

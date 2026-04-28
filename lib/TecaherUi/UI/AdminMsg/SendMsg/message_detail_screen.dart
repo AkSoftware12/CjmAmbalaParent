@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MessageDetailScreen extends StatefulWidget {
   final String userName;
@@ -339,33 +340,49 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
                 ),
                 if (attachment.isNotEmpty && attachment != "null") ...[
                   SizedBox(height: 10.h),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 8.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.attach_file,
-                          color: Colors.red.shade700,
-                          size: 17.sp,
-                        ),
-                        SizedBox(width: 5.w),
-                        Text(
-                          "Attachment",
-                          style: TextStyle(
-                            fontSize: 11.sp,
+                  GestureDetector(
+                    onTap: () async {
+                      final url = Uri.parse(attachment);
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      } else {
+                        // _showSnackBar(
+                        //   'Could not open attachment',
+                        //   isError: true,
+                        // );
+                      }
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 8.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.attach_file,
                             color: Colors.red.shade700,
-                            fontWeight: FontWeight.w600,
+                            size: 17.sp,
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 5.w),
+                          Text(
+                            "Attachment",
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: Colors.red.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

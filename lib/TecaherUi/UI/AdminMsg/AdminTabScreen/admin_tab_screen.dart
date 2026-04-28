@@ -86,7 +86,7 @@ class _AttendanceTabScreenState extends State<AdminMsgTabScreen> with SingleTick
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 3.w),
       child: Container(
-        height:35.sp, // ✅ FIXED HEIGHT
+        height:45.sp, // ✅ FIXED HEIGHT
         padding: EdgeInsets.all(2.w),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -112,17 +112,17 @@ class _AttendanceTabScreenState extends State<AdminMsgTabScreen> with SingleTick
           labelPadding: EdgeInsets.zero,
 
           labelStyle: GoogleFonts.poppins(
-            fontSize: 9.sp, // 🔥 thoda chhota karo warna overflow aayega
-            fontWeight: FontWeight.w700,
+            fontSize: 13.sp, // 🔥 thoda chhota karo warna overflow aayega
+            fontWeight: FontWeight.bold,
           ),
           unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 9.sp,
-            fontWeight: FontWeight.w600,
+            fontSize: 13.sp,
+            fontWeight: FontWeight.bold,
           ),
           tabs: const [
-            Tab(text: "Inbox"),
-            Tab(text: "Compose"),
-            Tab(text: "Send"),
+            Tab(text: "INBOX"),
+            Tab(text: "COMPOSE"),
+            Tab(text: "SMS REPORT"),
           ],
         ),
       ),

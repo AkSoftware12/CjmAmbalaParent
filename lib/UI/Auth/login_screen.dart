@@ -303,6 +303,10 @@ class _LoginPageState extends State<LoginPage> {
             'teachertoken',
             jsonResponse['students'][0]['token'],
           );
+          await prefs.setString(
+            'user_role',
+            jsonResponse['students'][0]['role'].toString(),
+          );
           // Save the student_id of the logged-in user
           await prefs.setString(
             'selected_student_id',

@@ -16,7 +16,9 @@ import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import '../../../../constants.dart';
 
 class DateRangeAttendanceScreen extends StatefulWidget {
-  const DateRangeAttendanceScreen({super.key});
+  final List classes;
+
+  const DateRangeAttendanceScreen({super.key, required this.classes});
 
   @override
   State<DateRangeAttendanceScreen> createState() =>
@@ -39,7 +41,7 @@ class _MonthlyAttendanceScreenState extends State<DateRangeAttendanceScreen> {
   @override
   void initState() {
     super.initState();
-    fetchClassesAndSections();
+    // fetchClassesAndSections();
   }
 
   String _fmtApi(DateTime? d) =>
@@ -357,11 +359,11 @@ class _MonthlyAttendanceScreenState extends State<DateRangeAttendanceScreen> {
         child: Column(
           children: [
             SizedBox(
-              height: 30.h,
+              height: 40.h,
               child: DropdownButtonFormField<String>(
                 value: selectedClass,
                 isExpanded: true,
-                items: classes.map((item) {
+                items: widget.classes.map((item) {
                   final classTitle = _safeTitle(item["academic_class"]);
                   final secTitle = _safeTitle(item["section"]);
 
@@ -398,7 +400,7 @@ class _MonthlyAttendanceScreenState extends State<DateRangeAttendanceScreen> {
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.9),
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
+                    horizontal: 8.w,
                     vertical: 10.h,
                   ),
                   enabledBorder: OutlineInputBorder(
@@ -416,16 +418,9 @@ class _MonthlyAttendanceScreenState extends State<DateRangeAttendanceScreen> {
                   color: Colors.black87,
                   fontWeight: FontWeight.w500,
                 ),
-                icon: Container(
-                  padding: const EdgeInsets.all(0),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Colors.red,
-                  ),
+                icon:  Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Colors.red,
                 ),
                 dropdownColor: Colors.white,
                 borderRadius: BorderRadius.circular(14.r),
@@ -970,9 +965,9 @@ class DateRangeSelector extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
-        height: 30.h,
+        height: 40.h,
         width: double.infinity,
-        padding: EdgeInsets.symmetric(horizontal: 5.w),
+        padding: EdgeInsets.symmetric(horizontal: 8.w),
         decoration: BoxDecoration(
           color: hasDate ? const Color(0xffFFF5F5) : Colors.white,
           borderRadius: BorderRadius.circular(10.r),

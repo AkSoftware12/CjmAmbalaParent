@@ -16,7 +16,10 @@ import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import '../../../../constants.dart';
 
 class DateWiseAttendanceScreen extends StatefulWidget {
-  const DateWiseAttendanceScreen({super.key});
+  final List classes;
+
+  const DateWiseAttendanceScreen({
+    super.key, required this.classes});
 
   @override
   State<DateWiseAttendanceScreen> createState() =>
@@ -41,7 +44,7 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
   @override
   void initState() {
     super.initState();
-    fetchClassesAndSections();
+    // fetchClassesAndSections();
   }
 
   String _fmtApi(DateTime? d) =>
@@ -497,7 +500,7 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           alignment: Alignment.center,
-          padding: EdgeInsets.symmetric(vertical: 5.sp),
+          padding: EdgeInsets.symmetric(vertical: 8.sp),
           decoration: BoxDecoration(
             color: isSelected ? Colors.red : Colors.white,
             borderRadius: BorderRadius.circular(30),
@@ -517,7 +520,7 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
           child: Text(
             title,
             style: TextStyle(
-              fontSize: 11.sp,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w700,
               color: isSelected ? Colors.white : Colors.black87,
             ),
@@ -548,11 +551,11 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
               children: [
                 Expanded(
                   child: SizedBox(
-                    height: 30.h,
+                    height: 40.h,
                     child: DropdownButtonFormField<String>(
                       value: selectedClass,
                       isExpanded: true,
-                      items: classes.map((item) {
+                      items: widget.classes.map((item) {
                         final classTitle = _safeTitle(item["academic_class"]);
                         final secTitle = _safeTitle(item["section"]);
 
@@ -637,7 +640,7 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
             ),
             const SizedBox(height: 8),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 3.sp, vertical: 3.sp),
+              padding: EdgeInsets.symmetric(horizontal: 3.sp, vertical: 5.sp),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
@@ -825,7 +828,7 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
                         ),
                         DataColumn(
                           label: SizedBox(
-                            width: 50.w,
+                            width: 60.w,
                             child: Center(
                               child: Text(
                                 'Adm. No.',
@@ -893,7 +896,7 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
                             columns: [
                               DataColumn(label: SizedBox(width: 35.w)),
                               DataColumn(label: SizedBox(width: 40.w)),
-                              DataColumn(label: SizedBox(width: 50.w)),
+                              DataColumn(label: SizedBox(width: 60.w)),
                               DataColumn(label: SizedBox(width: 115.w)),
                               ...dates.map(
                                     (_) => DataColumn(
@@ -949,7 +952,7 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
                                   ),
                                   DataCell(
                                     SizedBox(
-                                      width: 50.w,
+                                      width: 60.w,
                                       child: Center(
                                         child: Text(
                                           (student['adm_no'] ?? "")
@@ -1150,7 +1153,7 @@ class DateRangeSelector extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
-        height: 30.h,
+        height: 40.h,
         width: double.infinity,
         padding: EdgeInsets.symmetric(horizontal: 5.w),
         decoration: BoxDecoration(

@@ -66,41 +66,55 @@ class _AttendanceTabScreenState extends State<AttendanceTabScreen> with SingleTi
 
   Widget _tabBar() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 3.w),
+      padding: EdgeInsets.symmetric(horizontal: 8.w),
       child: Container(
-        height:35.sp, // ✅ FIXED HEIGHT
-        padding: EdgeInsets.all(2.w),
+        height: 50.h,
+        padding: EdgeInsets.all(4.w),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: HexColor('#010071')),
+          borderRadius: BorderRadius.circular(18.r),
+          border: Border.all(
+            color: HexColor('#010071'),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade300,
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            )
+          ],
         ),
         child: TabBar(
           controller: _tabController,
+
+          // ✅ Horizontal Scroll
+          isScrollable: true,
+
           indicator: BoxDecoration(
             borderRadius: BorderRadius.circular(14.r),
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: AppColors.primary,
           ),
+
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
+
           labelColor: Colors.white,
           unselectedLabelColor: HexColor('#010071'),
 
-          // 👇 IMPORTANT (text compress)
-          labelPadding: EdgeInsets.zero,
+          // spacing between tabs
+          tabAlignment: TabAlignment.start,
+          labelPadding: EdgeInsets.symmetric(horizontal: 20.w),
 
           labelStyle: GoogleFonts.poppins(
-            fontSize: 9.sp, // 🔥 thoda chhota karo warna overflow aayega
+            fontSize: 12.sp,
             fontWeight: FontWeight.w700,
           ),
           unselectedLabelStyle: GoogleFonts.poppins(
-            fontSize: 9.sp,
+            fontSize: 12.sp,
             fontWeight: FontWeight.w600,
           ),
+
           tabs: const [
             Tab(text: "Mark Attendance"),
             Tab(text: "Report Attendance"),
