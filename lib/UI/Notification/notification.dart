@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:avi/HexColorCode/HexColor.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import '../../CommonCalling/data_not_found.dart';
 import '../../CommonCalling/progressbarWhite.dart';
 import '../../utils/date_time_utils.dart';
@@ -360,7 +361,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen>
                       SizedBox(height: screenWidth * 0.06),
 
                       // Attachment Section
-                      if (widget.notification['attachment'] != null)
+                      if (widget.notification['attach'] != null)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -536,94 +537,98 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen>
       }
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFB71C1C).withOpacity(0.1),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.04,
-          vertical: screenWidth * 0.03,
-        ),
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
+    return GestureDetector(
+      onTap: () async {
+        final rawUrl = attachment;
+
+        if (rawUrl == null || rawUrl.trim().isEmpty) {
+          return;
+        }
+
+        final uri = Uri.tryParse(rawUrl.trim());
+
+        if (uri == null || !uri.hasScheme) {
+          return;
+        }
+
+        try {
+          final launched = await launchUrl(
+            uri,
+            mode: LaunchMode.externalApplication,
+          );
+
+          if (!launched) {
+            // Fallback: in-app browser
+            final fallback = await launchUrl(
+              uri,
+              mode: LaunchMode.platformDefault,
+            );
+
+            if (!fallback) {
+            }
+          }
+        } catch (e) {
+          try {
+            await launchUrl(
+              uri,
+              mode: LaunchMode.platformDefault,
+            );
+          } catch (_) {
+          }
+        }
+      },
+
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
             color: const Color(0xFFB71C1C).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
+            width: 1,
           ),
-          child: Icon(
-            fileIcon,
-            color: const Color(0xFFB71C1C),
-            size: isTablet ? 26 : 24,
-          ),
-        ),
-        title: Text(
-          fileName,
-          style: GoogleFonts.poppins(
-            fontSize: isTablet ? 16 : 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          fileType,
-          style: GoogleFonts.poppins(
-            fontSize: isTablet ? 13 : 12,
-            color: Colors.grey.shade600,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        trailing: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFB71C1C).withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: Icon(
-              Icons.download_rounded,
-              color: const Color(0xFFB71C1C),
-              size: isTablet ? 22 : 20,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.download, color: Colors.white),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Downloading...',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  backgroundColor: const Color(0xFFB71C1C),
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.only(
-                      bottom: 20, left: 16, right: 16),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
+          ],
+        ),
+        child: ListTile(
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: screenWidth * 0.04,
+            vertical: screenWidth * 0.03,
+          ),
+          leading: Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xFFB71C1C).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              fileIcon,
+              color: const Color(0xFFB71C1C),
+              size: isTablet ? 26 : 24,
+            ),
+          ),
+          title: Text(
+            fileName,
+            style: GoogleFonts.poppins(
+              fontSize: isTablet ? 16 : 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            fileType,
+            style: GoogleFonts.poppins(
+              fontSize: isTablet ? 13 : 12,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ),

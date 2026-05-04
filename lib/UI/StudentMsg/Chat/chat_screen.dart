@@ -139,6 +139,8 @@ class _ChatScreenState extends State<StudentChatScreen> with WidgetsBindingObser
         final data = json.decode(response.body);
         final List messagesJson = (data['messages'] ?? []) as List;
 
+        print(' Chat $id');
+
         final parsed = messagesJson
             .map((e) => MessageModel.fromJson((e as Map).cast<String, dynamic>()))
             .toList();
@@ -218,87 +220,7 @@ class _ChatScreenState extends State<StudentChatScreen> with WidgetsBindingObser
     }
   }
 
-  // Future<void> _sendMessage() async {
-  //   final text = messageController.text.trim();
-  //
-  //   if (text.isEmpty && selectedFile == null) {
-  //     _showErrorSnackBar('Please enter a message or select a file');
-  //     return;
-  //   }
-  //
-  //   if (currentUserType != "App\\Models\\Student") {
-  //     _showErrorSnackBar('Only students can send messages');
-  //     return;
-  //   }
-  //
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final token = prefs.getString('token');
-  //
-  //   if (token == null) {
-  //     _showErrorSnackBar('No authentication token found');
-  //     return;
-  //   }
-  //
-  //   final fileToSend = selectedFile;
-  //
-  //   // ✅ Optimistic UI (instant show)
-  //   final optimistic = MessageModel(
-  //     senderId: currentUserId,
-  //     senderType: currentUserType,
-  //     senderName: "Me",
-  //     body: text,
-  //     attachmentUrl: fileToSend != null ? "uploading" : null, // marker
-  //     createdAt: DateTime.now().toIso8601String(),
-  //     seenByReceiver: "0",
-  //   );
-  //
-  //   if (mounted) {
-  //     setState(() {
-  //       // ✅ reverse:true => newest at index 0
-  //       _messages.insert(0, optimistic);
-  //       messageController.clear();
-  //       selectedFile = null;
-  //     });
-  //     _scrollToBottom();
-  //   }
-  //
-  //   try {
-  //     final uri = Uri.parse(ApiRoutes.sendMessage);
-  //     final request = http.MultipartRequest('POST', uri);
-  //
-  //     request.headers['Authorization'] = 'Bearer $token';
-  //
-  //     request.fields['receivers[]'] = 'user_${widget.msgSendId}';
-  //     request.fields['body'] = text;
-  //
-  //     if (fileToSend != null && fileToSend.path != null) {
-  //       request.files.add(
-  //         await http.MultipartFile.fromPath(
-  //           'attachment',
-  //           fileToSend.path!,
-  //           filename: fileToSend.name,
-  //         ),
-  //       );
-  //     } else {
-  //       request.fields['attachment'] = '';
-  //     }
-  //
-  //     final response = await request.send();
-  //
-  //     if (!mounted) return;
-  //
-  //     if (response.statusCode == 200 || response.statusCode == 201) {
-  //       // ✅ after success, fetch latest from server (replace optimistic)
-  //       await _fetchMessages(widget.id);
-  //     } else {
-  //       _showErrorSnackBar('Failed to send message: ${response.statusCode}');
-  //       await _fetchMessages(widget.id);
-  //     }
-  //   } catch (e) {
-  //     _showErrorSnackBar('Error sending message: $e');
-  //     await _fetchMessages(widget.id);
-  //   }
-  // }
+
   Future<void> _sendMessage() async {
     // ✅ Line breaks preserve
     final text = messageController.text
@@ -450,12 +372,42 @@ class _ChatScreenState extends State<StudentChatScreen> with WidgetsBindingObser
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: () async {
-                    final url = Uri.parse(message.attachmentUrl!);
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(url,
-                          mode: LaunchMode.externalApplication);
-                    } else {
-                      _showErrorSnackBar('Could not open the attachment');
+                    final rawUrl = message.attachmentUrl;
+
+                    if (rawUrl == null || rawUrl.trim().isEmpty) {
+                      return;
+                    }
+
+                    final uri = Uri.tryParse(rawUrl.trim());
+
+                    if (uri == null || !uri.hasScheme) {
+                      return;
+                    }
+
+                    try {
+                      final launched = await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+
+                      if (!launched) {
+                        // Fallback: in-app browser
+                        final fallback = await launchUrl(
+                          uri,
+                          mode: LaunchMode.platformDefault,
+                        );
+
+                        if (!fallback) {
+                        }
+                      }
+                    } catch (e) {
+                      try {
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.platformDefault,
+                        );
+                      } catch (_) {
+                      }
                     }
                   },
                   child: Container(
@@ -504,7 +456,16 @@ class _ChatScreenState extends State<StudentChatScreen> with WidgetsBindingObser
       ),
     );
   }
+  String safeUrl(String url) {
+    final uri = Uri.parse(url.trim());
 
+    return Uri(
+      scheme: uri.scheme,
+      host: uri.host,
+      pathSegments: uri.pathSegments,
+      query: uri.query,
+    ).toString();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
