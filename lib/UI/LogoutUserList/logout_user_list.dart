@@ -251,14 +251,27 @@
                               title: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    (selected['name'] ?? '').toString(),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 14,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        (selected['name'] ?? '').toString(),
+                                        style:  TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 12.sp,
+                                        ),
+                                      ),
+                                      if(selected['class']!= null)
+                                        Text(
+                                          ' (${selected['class'].toString()})',
+                                          style:  TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 12.sp,
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                   const SizedBox(height: 2),
+
                                   Text(
                                     (selected['student_id'] ?? '').toString(),
                                     style: const TextStyle(

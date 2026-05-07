@@ -249,11 +249,17 @@ class _LoginPageState extends State<LoginStudentPage> {
                             title: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(student['name'].toString(), style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.sp)),
-                                Text("${student['student_id'].toString()}", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.sp)),
+                                Text("${student['name'].toString()}${' (${student['class'].toString()})'}", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14.sp)),
                               ],
                             ),
-                            subtitle: Text("${student['adm_no'].toString()}", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.sp)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+                                Text("${student['student_id'].toString()}", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.sp)),
+                                Text("${student['adm_no'].toString()}", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.sp)),
+                              ],
+                            ),
 
                             value: student['student_id'].toString(),
                             groupValue: selectedOption,

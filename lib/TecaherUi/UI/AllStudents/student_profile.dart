@@ -438,6 +438,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        infoItem(Icons.person, "Father Name ", studentData?['father_name'] ?? ''),
                         infoItem(Icons.person, "Gender", studentData?['gender'] ?? ''),
                         // infoItem(Icons.cake, "Date of Birth", studentData?['dob'] ?? ''),
                         infoItem(Icons.cake, "Date of Birth", AppDateTimeUtils.date(studentData?['dob'] ?? '')),
@@ -460,6 +461,7 @@ class _StudentAttendanceScreenState extends State<StudentAttendanceScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        infoItem(Icons.person, "Mother Name", studentData?['mother_name'] ?? 'N/A'),
                         infoItem(Icons.credit_card, "Aadhaar Number", studentData?['adharcard_no'] ?? 'N/A'),
                         infoItem(Icons.mosque, "Religion", studentData?['studentreligion']?['title'] ?? 'N/A'),
                         infoItem(Icons.flag, "Nationality", studentData?['nationality'] ?? 'N/A'),

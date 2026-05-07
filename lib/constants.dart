@@ -104,6 +104,7 @@ class ApiRoutes {
   static const String updateProfile = "$baseUrl/update-student-profile";
   static const String getPhotos = "$baseUrlNewUser/getPhotos";
   static const String getVideos = "$baseUrlNewUser/getVideos";
+  static const String getVideosId = "$baseUrlNewUser/getVideos/";
   static const String getAchievement = "$baseUrlNewUser/getAchievements";
   static const String getDashboard = "$baseUrl/dashboard";
   static const String getFees = "$baseUrl/get-fees";
@@ -133,6 +134,8 @@ class ApiRoutes {
   static const String getUserMessagesConversation = "$baseUrl/messages/conversation/";
   static const String sendMessage = "$baseUrl/messages";
   static const String getEbooks = "$baseUrl/ebooks";
+  static const String getMagzine = "$baseUrlNewUser/get-magzine";
+  static const String getNepActivityVideos = "$baseUrlNewUser/nep-activity-videos";
 
 
   static const String getKnowYourTeacher = "$baseUrl/know-your-teacher";

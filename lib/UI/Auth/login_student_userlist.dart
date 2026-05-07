@@ -442,13 +442,28 @@ class _LoginPageState extends State<LoginUserLIst> {
                                 title: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      student['name'].toString(),
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 14,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          student['name'].toString(),
+                                          style:  TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 12.sp,
+                                          ),
+                                        ),
+                                        if(student['class'] != null)
+                                          Text(
+                                            ' (${student['class'].toString()})',
+                                            style:  TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 12.sp,
+                                            ),
+                                          ),
+                                      ],
                                     ),
+
+
+
                                     Text(
                                       student['student_id'].toString(),
                                       style: const TextStyle(

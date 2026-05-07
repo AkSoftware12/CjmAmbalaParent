@@ -1,22 +1,27 @@
 import 'dart:convert';
 
+import 'package:avi/TecaherUi/UI/Dashboard/HomeScreen%20.dart';
 import 'package:avi/constants.dart';
+import 'package:avi/utils/date_time_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class VideoGallery extends StatefulWidget {
   const VideoGallery({super.key});
 
   @override
-  State<VideoGallery> createState() => _VideoGalleryState();
+  State<VideoGallery> createState() => _VideoGalleryScreenState();
 }
 
-class _VideoGalleryState extends State<VideoGallery> {
+class _VideoGalleryScreenState extends State<VideoGallery> {
   bool isLoading = true;
   String? errorMsg;
+
   List<dynamic> videoGallery = [];
 
   @override
@@ -31,25 +36,11 @@ class _VideoGalleryState extends State<VideoGallery> {
       errorMsg = null;
     });
 
-    final prefs = await SharedPreferences.getInstance();
-
-    final teacherToken = prefs.getString('teachertoken');
-    final userToken = prefs.getString('token');
-
-    // ✅ jo token mile use karo
-    final token = (teacherToken != null && teacherToken.isNotEmpty)
-        ? teacherToken
-        : userToken;
-
-    final url = Uri.parse(ApiRoutes.getVideos);
-
     try {
       final response = await http.get(
-        url,
+        Uri.parse(ApiRoutes.getVideos),
         headers: {
           "Accept": "application/json",
-          if (token != null && token.isNotEmpty)
-            "Authorization": "Bearer $token",
         },
       );
 
@@ -57,481 +48,576 @@ class _VideoGalleryState extends State<VideoGallery> {
         final data = jsonDecode(response.body);
 
         setState(() {
-          videoGallery = data['data'] ?? [];
+          videoGallery = data['album'] ?? [];
           isLoading = false;
         });
       } else {
         setState(() {
           isLoading = false;
-          errorMsg = "Server error: ${response.statusCode}";
+          errorMsg = "Server Error : ${response.statusCode}";
         });
       }
     } catch (e) {
       setState(() {
         isLoading = false;
-        errorMsg = "Network error. Please try again.";
+        errorMsg = e.toString();
       });
-      debugPrint('Error fetching Data: $e');
     }
   }
+
+  Future<void> openYoutube(String url) async {
+    final uri = Uri.parse(url);
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: const Color(0xfff5f5f5),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        backgroundColor: Colors.red,
+        centerTitle: false,
+        iconTheme: IconThemeData(color: Colors.white),
         title: Text(
-          'Video Gallery',
-          style: GoogleFonts.openSans(
-            fontSize: 14.sp,
-            color: AppColors.textwhite,
+          "Video Gallery",
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
             fontWeight: FontWeight.w700,
+            fontSize: 15.sp,
           ),
         ),
       ),
-      body: RefreshIndicator(
-        color: AppColors.primary,
-        onRefresh: galleryVideoApi,
-        child: Builder(
-          builder: (_) {
-            if (isLoading) {
-              return _loadingView();
-            }
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 50.0),
+        child: RefreshIndicator(
+          onRefresh: galleryVideoApi,
+          color: Colors.red,
+          child: Builder(
+            builder: (_) {
+              if (isLoading) {
+                return _loadingWidget();
+              }
 
-            if (errorMsg != null) {
-              return _errorView();
-            }
+              if (errorMsg != null) {
+                return _errorWidget();
+              }
 
-            if (videoGallery.isEmpty) {
-              return _emptyView();
-            }
+              if (videoGallery.isEmpty) {
+                return _emptyWidget();
+              }
 
-            return ListView.separated(
-              padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 18.h),
-              itemCount: videoGallery.length,
-              separatorBuilder: (_, __) => SizedBox(height: 12.h),
-              itemBuilder: (context, index) {
-                final item = videoGallery[index] as Map<String, dynamic>? ?? {};
-
-                // ✅ adjust according to your API keys
-                final title = (item['title'] ?? item['name'] ?? 'Untitled').toString();
-                final subtitle = (item['subtitle'] ?? item['description'] ?? '').toString();
-                final thumb = (item['thumbnail'] ?? item['thumb'] ?? item['image'] ?? '').toString();
-                final duration = (item['duration'] ?? item['time'] ?? '').toString(); // e.g. "12:30"
-                final category = (item['category'] ?? item['tag'] ?? 'Video').toString();
-
-                return _videoCard(
-                  title: title,
-                  subtitle: subtitle,
-                  thumbUrl: thumb,
-                  duration: duration,
-                  category: category,
-                  onTap: () {
-                    // ✅ TODO: open player / detail screen
-                    // Navigator.push(...)
-                  },
-                );
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _loadingView() {
-    return ListView(
-      padding: EdgeInsets.all(12.w),
-      children: List.generate(6, (i) => _shimmerCard()),
-    );
-  }
-
-  Widget _errorView() {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        SizedBox(height: 80.h),
-        Center(
-          child: Container(
-            padding: EdgeInsets.all(16.w),
-            margin: EdgeInsets.symmetric(horizontal: 18.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.wifi_off_rounded, size: 42.sp, color: AppColors.primary),
-                SizedBox(height: 10.h),
-                Text(
-                  errorMsg ?? "Something went wrong",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.openSans(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E1E1E),
-                  ),
+              return GridView.builder(
+                padding: EdgeInsets.all(8.w),
+                itemCount: videoGallery.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10.w,
+                  mainAxisSpacing: 12.h,
+                  childAspectRatio: 0.68,
                 ),
-                SizedBox(height: 10.h),
-                Text(
-                  "Pull down to refresh or try again.",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.openSans(
-                    fontSize: 12.sp,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 14.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44.h,
-                  child: ElevatedButton.icon(
-                    onPressed: galleryVideoApi,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                    ),
-                    icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-                    label: Text(
-                      "Retry",
-                      style: GoogleFonts.openSans(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+                itemBuilder: (context, index) {
+                  final item = videoGallery[index];
 
-  Widget _emptyView() {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        SizedBox(height: 70.h),
-        Center(
-          child: Container(
-            width: double.infinity,
-            margin: EdgeInsets.symmetric(horizontal: 16.w),
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: 160.h,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14.r),
-                    color: const Color(0xFFF3F4F8),
-                  ),
-                  child:Center(
-                    child: Icon(
-                      Icons.play_circle_fill_rounded,
-                      size: 90.sp, // size adjust kar sakte ho
-                      color: Colors.red, // video jaisa look
-                    ),
-                  ),
+                  final title = item['title'] ?? "";
+                  final image = item['image_url'] ?? "";
+                  final description = item['description'] ?? "";
+                  final date = item['event_date'] ?? "";
 
-                ),
-                SizedBox(height: 12.h),
-                Text(
-                  'No Videos Found',
-                  style: GoogleFonts.openSans(
-                    fontSize: 14.sp,
-                    color: const Color(0xFF1E1E1E),
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                SizedBox(height: 6.h),
-                Text(
-                  "New videos will appear here once available.",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.openSans(
-                    fontSize: 12.sp,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _videoCard({
-    required String title,
-    required String subtitle,
-    required String thumbUrl,
-    required String duration,
-    required String category,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16.r),
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            )
-          ],
-        ),
-        child: Row(
-          children: [
-            // Thumbnail
-            Padding(
-              padding: EdgeInsets.all(10.w),
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14.r),
-                    child: Container(
-                      height: 86.h,
-                      width: 120.w,
-                      color: const Color(0xFFF0F2F6),
-                      child: thumbUrl.isEmpty
-                          ? Icon(Icons.video_library_rounded, size: 32.sp, color: Colors.grey.shade500)
-                          : Image.network(
-                        thumbUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.broken_image_rounded,
-                          size: 28.sp,
-                          color: Colors.grey.shade500,
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VideoPlayerListScreen(
+                            albumId: item['id'], title: title,
+                          ),
                         ),
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: SizedBox(
-                              height: 18.sp,
-                              width: 18.sp,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.4,
-                                color: AppColors.primary,
+                      );
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(.07),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(10.r),
+                                ),
+                                child: Image.network(
+                                  image,
+                                  height: 125.h,
+                                  width: double.infinity,
+                                  fit: BoxFit.fill,
+                                  errorBuilder: (_, __, ___) {
+                                    return Container(
+                                      height: 125.h,
+                                      color: Colors.red.shade100,
+                                      child: Icon(
+                                        Icons.image,
+                                        size: 40.sp,
+                                        color: Colors.red,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+
+
+                              Positioned(
+                                top: 4.h,
+                                left: 4.w,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 5.w,
+                                    vertical: 2.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade700,
+                                    borderRadius: BorderRadius.circular(20.r),
+                                  ),
+                                  child: Text(
+                                    "VIDEO",
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white,
+                                      fontSize: 8.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.all(4.w),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+
+                                  Text(
+                                    title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 11.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 2.h),
+
+                                  Expanded(
+                                    child:Text(
+                                      parseHtmlString(description ?? ''),
+                                      maxLines: 2,
+                                      style: GoogleFonts.poppins(fontSize: 10.sp),
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.calendar_month_rounded,
+                                        color: Colors.red.shade700,
+                                        size: 13.sp,
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Expanded(
+                                        child: Text(
+                                          AppDateTimeUtils.date(date),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 9.sp,
+                                            color: Colors.grey.shade700,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+
+                                ],
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-
-                  // Play overlay
-                  Positioned.fill(
-                    child: Align(
-                      alignment: Alignment.center,
-                      child: Container(
-                        height: 34.sp,
-                        width: 34.sp,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.35),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Icons.play_arrow_rounded, size: 22.sp, color: Colors.white),
-                      ),
-                    ),
-                  ),
-
-                  // Duration badge
-                  if (duration.trim().isNotEmpty)
-                    Positioned(
-                      bottom: 7.h,
-                      right: 7.w,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.55),
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                        child: Text(
-                          duration,
-                          style: GoogleFonts.openSans(
-                            fontSize: 10.sp,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                ],
-              ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+  String parseHtmlString(String htmlText) {
+    final document = htmlText
+        .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), '\n')
+        .replaceAll(RegExp(r'</p>', caseSensitive: false), '\n')
+        .replaceAll(RegExp(r'<[^>]*>'), '')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'");
+
+    return document.trim();
+  }
+  Widget _loadingWidget() {
+    return ListView.builder(
+      padding: EdgeInsets.all(14.w),
+      itemCount: 6,
+      itemBuilder: (_, __) {
+        return Container(
+          margin: EdgeInsets.only(bottom: 18.h),
+          height: 320.h,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24.r),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _errorWidget() {
+    return Center(
+      child: Text(
+        errorMsg ?? "",
+        style: GoogleFonts.montserrat(),
+      ),
+    );
+  }
+
+  Widget _emptyWidget() {
+    return Center(
+      child: Text(
+        "No Videos Found",
+        style: GoogleFonts.montserrat(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  String formatDate(String date) {
+    try {
+      return DateFormat("dd MMM yyyy").format(DateTime.parse(date));
+    } catch (e) {
+      return date;
+    }
+  }
+}
+
+class VideoPlayerListScreen extends StatefulWidget {
+  final int albumId;
+  final String title;
+
+  const VideoPlayerListScreen({
+    super.key,
+    required this.albumId, required this.title,
+  });
+
+  @override
+  State<VideoPlayerListScreen> createState() =>
+      _VideoPlayerListScreenState();
+}
+
+class _VideoPlayerListScreenState
+    extends State<VideoPlayerListScreen> {
+
+  bool isLoading = true;
+  String? errorMsg;
+
+  List<dynamic> videos = [];
+
+  @override
+  void initState() {
+    super.initState();
+    getVideos();
+  }
+
+  Future<void> getVideos() async {
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+
+      final response = await http.get(
+        Uri.parse(
+          "${ApiRoutes.getVideosId}${widget.albumId}",
+        ),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+
+        setState(() {
+          videos = data['album'] ?? [];
+          isLoading = false;
+        });
+
+      } else {
+
+        setState(() {
+          errorMsg = "Something went wrong";
+          isLoading = false;
+        });
+      }
+
+    } catch (e) {
+
+      setState(() {
+        errorMsg = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> openYoutube(String url) async {
+
+    String finalUrl = url;
+
+    if (url.contains("embed/")) {
+      final id = url.split("embed/").last;
+      finalUrl = "https://www.youtube.com/watch?v=$id";
+    }
+
+    final uri = Uri.parse(finalUrl);
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+
+      backgroundColor: const Color(0xfff5f5f5),
+
+      appBar: AppBar(
+        backgroundColor: Colors.red.shade800,
+        elevation: 0,
+        centerTitle: false,
+        iconTheme: IconThemeData(color: Colors.white),
+        title: Text(
+          widget.title,
+          style: GoogleFonts.montserrat(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 13.sp
+          ),
+        ),
+      ),
+
+      body: Builder(
+        builder: (_) {
+
+          if (isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.red,),
+            );
+          }
+
+          if (errorMsg != null) {
+            return Center(
+              child: Text(errorMsg!),
+            );
+          }
+
+          if (videos.isEmpty) {
+            return const Center(
+              child: Text("No Videos Found"),
+            );
+          }
+
+          return GridView.builder(
+
+            padding: EdgeInsets.all(5.w),
+
+
+            itemCount: videos.length,
+
+            gridDelegate:
+            SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8.w,
+              mainAxisSpacing: 8.h,
+              childAspectRatio: .78,
             ),
 
-            // Text area
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(0, 12.h, 12.w, 12.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.openSans(
-                              fontSize: 13.sp,
-                              color: const Color(0xFF1E1E1E),
-                              fontWeight: FontWeight.w800,
+            itemBuilder: (context, index) {
+
+              final item = videos[index];
+
+              final image =
+                  item['album_image_url'] ?? "";
+
+              final videoUrl =
+                  item['video_url'] ?? "";
+
+              return GestureDetector(
+
+                onTap: () {
+                  openYoutube(videoUrl);
+                },
+
+                child: Container(
+
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                    BorderRadius.circular(5.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                        Colors.black.withOpacity(.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+
+                  child: Column(
+                    children: [
+
+                      Expanded(
+                        child: Stack(
+                          children: [
+
+                            ClipRRect(
+                              borderRadius:
+                              BorderRadius.vertical(
+                                top:
+                                Radius.circular(5.r),
+                              ),
+                              child: Image.network(
+                                image,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+
+                                errorBuilder:
+                                    (_, __, ___) {
+                                  return Container(
+                                    color: Colors.red
+                                        .shade100,
+                                    child: Icon(
+                                      Icons.image,
+                                      size: 45.sp,
+                                      color: Colors.red,
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
-                          ),
+
+                            Positioned.fill(
+                              child: Center(
+                                child: Container(
+                                  height: 55.h,
+                                  width: 55.w,
+                                  decoration:
+                                  BoxDecoration(
+                                    color: Colors.red
+                                        .withOpacity(.9),
+                                    shape:
+                                    BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons
+                                        .play_arrow_rounded,
+                                    color:
+                                    Colors.white,
+                                    size: 38.sp,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                          ],
                         ),
-                        SizedBox(width: 6.w),
-                        Icon(Icons.chevron_right_rounded, size: 22.sp, color: Colors.grey.shade500),
-                      ],
-                    ),
-                    if (subtitle.trim().isNotEmpty) ...[
-                      SizedBox(height: 4.h),
-                      Text(
-                        subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.openSans(
-                          fontSize: 11.sp,
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w600,
+                      ),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10.w,
+                          vertical: 12.h,
+                        ),
+                        child: Row(
+                          children: [
+
+                            Icon(
+                              Icons
+                                  .video_collection_rounded,
+                              color:
+                              Colors.red.shade700,
+                              size: 16.sp,
+                            ),
+
+                            SizedBox(width: 6.w),
+
+                            Expanded(
+                              child: Text(
+                                "Watch Video",
+                                maxLines: 1,
+                                overflow:
+                                TextOverflow
+                                    .ellipsis,
+                                style:
+                                GoogleFonts
+                                    .montserrat(
+                                  fontWeight:
+                                  FontWeight.w700,
+                                  fontSize: 12.sp,
+                                  color:
+                                  Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                    SizedBox(height: 8.h),
-                    Row(
-                      children: [
-                        _chip(
-                          icon: Icons.local_offer_rounded,
-                          text: category,
-                        ),
-                        SizedBox(width: 8.w),
-                        _chip(
-                          icon: Icons.hd_rounded,
-                          text: "HD",
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _chip({required IconData icon, required String text}) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primary.withOpacity(0.95),
-            AppColors.primary.withOpacity(0.70),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14.sp, color: Colors.white),
-          SizedBox(width: 6.w),
-          Text(
-            text,
-            style: GoogleFonts.openSans(
-              fontSize: 10.5.sp,
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // simple skeleton card (no package)
-  Widget _shimmerCard() {
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(10.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 86.h,
-            width: 120.w,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F2F6),
-              borderRadius: BorderRadius.circular(14.r),
-            ),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(height: 12.h, width: double.infinity, color: const Color(0xFFF0F2F6)),
-                SizedBox(height: 8.h),
-                Container(height: 12.h, width: 180.w, color: const Color(0xFFF0F2F6)),
-                SizedBox(height: 10.h),
-                Row(
-                  children: [
-                    Container(height: 26.h, width: 70.w, color: const Color(0xFFF0F2F6)),
-                    SizedBox(width: 8.w),
-                    Container(height: 26.h, width: 54.w, color: const Color(0xFFF0F2F6)),
-                  ],
-                ),
-              ],
-            ),
-          )
-        ],
+              );
+            },
+          );
+        },
       ),
     );
   }

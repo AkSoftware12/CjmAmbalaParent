@@ -295,6 +295,8 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
 
+        print('login $jsonResponse');
+
         SharedPreferences prefs = await SharedPreferences.getInstance();
         if (jsonResponse['students'] != null &&
             jsonResponse['students'].isNotEmpty &&

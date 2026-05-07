@@ -26,8 +26,10 @@ import 'Help/help.dart';
 import 'KnowYourTeacher/know_your_teacher.dart';
 import 'Library/LibraryScreen.dart';
 import 'LogoutUserList/logout_user_list.dart';
+import 'MagazineScreen/Magzine/magzine.dart';
 import 'Message/message.dart';
 import 'ActivityCalendar/activity_calendar.dart';
+import 'NepActivities/nep_activities.dart';
 import 'Notice/notice.dart';
 import 'Profile/ProfileScreen.dart';
 import 'StudentMsg/StudentTabScreen/student_tab_screen.dart';
@@ -972,6 +974,56 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         AchievementsWaveScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _divider(),
+
+                            _drawerTile(
+                              title: 'Nep Activities',
+                              badgeValue: achivementCount ?? 0,
+                              iconBox: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child:  Icon(
+                                  CupertinoIcons.graph_circle,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        NepScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _divider(),
+                            _drawerTile(
+                              title: 'Magazines',
+                              badgeValue: achivementCount ?? 0,
+                              iconBox: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child:  Icon(
+                                  CupertinoIcons.news,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const MagazineScreen(),
                                   ),
                                 );
                               },
