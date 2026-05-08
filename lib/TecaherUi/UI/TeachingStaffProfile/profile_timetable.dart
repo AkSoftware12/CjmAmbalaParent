@@ -115,9 +115,9 @@ class StaffModel {
   factory StaffModel.fromJson(Map<String, dynamic> j) {
     const genderMap = {1: 'Male', 2: 'Female', 3: 'Other'};
     const maritalMap = {1: 'Single', 2: 'Married', 3: 'Divorced'};
-    const religionMap = {
-      1: 'Hindu', 2: 'Muslim', 3: 'Christian', 4: 'Sikh', 5: 'Other'
-    };
+    // const religionMap = {
+    //   1: 'Hindu', 2: 'Muslim', 3: 'Christian', 4: 'Sikh', 5: 'Other'
+    // };
     return StaffModel(
       id: j['id'] ?? 0,
       staffId: j['staff_id'] ?? '',
@@ -130,21 +130,21 @@ class StaffModel {
       gender: genderMap[j['gender']] ?? 'N/A',
       dob: j['dob'] ?? '',
       joiningDate: j['joining_date'] ?? '',
-      qualification: j['qualification'],
-      maritalStatus: maritalMap[j['marital_status']],
-      nationality: j['nationality'],
-      religion: religionMap[j['religion']],
-      permanentAddress: j['permanent_address'],
-      pan: j['PAN'],
-      nationalId: j['national_id'],
-      photo: j['photo'],
-      uan: j['UAN'],
-      bankAccountNo: j['bank_account_no'],
-      bankName: j['bankName'],
+      qualification: j['qualification']??'',
+      maritalStatus: maritalMap[j['marital_status']??''],
+      nationality: j['nationality']??'',
+      religion: j['religion']??'',
+      permanentAddress: j['permanent_address']??'',
+      pan: j['PAN']??'',
+      nationalId: j['national_id']??'',
+      photo: j['photo']??'',
+      uan: j['UAN']??'',
+      bankAccountNo: j['bank_account_no']??'',
+      bankName: j['bankName']??'',
       basicSalary: (j['basic_salary'] as num?)?.toDouble(),
-      fsName: j['fs_name'],
-      fsRelation: j['fs_relation'],
-      fsPhone: j['fs_phone'],
+      fsName: j['fs_name']??'',
+      fsRelation: j['fs_relation']??'',
+      fsPhone: j['fs_phone']??'',
     );
   }
 }
