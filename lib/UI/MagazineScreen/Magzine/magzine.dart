@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:avi/utils/date_time_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../constants.dart';
 
@@ -83,6 +85,8 @@ class MagazineItem {
   final String pdfUrl;
   final String thumbUrl;
   final String entryDate;
+  final String? page;
+  final String? size;
 
   MagazineItem({
     required this.id,
@@ -90,6 +94,8 @@ class MagazineItem {
     required this.pdfUrl,
     required this.thumbUrl,
     required this.entryDate,
+    this.page,
+    this.size,
   });
 
   factory MagazineItem.fromJson(Map<String, dynamic> json) {
@@ -99,6 +105,8 @@ class MagazineItem {
       pdfUrl: json['pdf'] ?? '',
       thumbUrl: json['thumbnail'] ?? '',
       entryDate: json['entry_date'] ?? '',
+      page: json['no_of_pages'] ?? 'N/A',
+      size: json['pdf_size'] ?? 'N/A',
     );
   }
 }
@@ -216,7 +224,7 @@ class _MagazineScreenState extends ConsumerState<MagazineScreen> {
     final pageOptions = List.generate(lastPage, (i) => i + 1);
 
     return Scaffold(
-      backgroundColor: AppColors.secondary,
+      // backgroundColor: AppColors.secondary,
       appBar: AppBar(
         backgroundColor: AppColors.secondary,
         elevation: 0,
@@ -246,7 +254,7 @@ class _MagazineScreenState extends ConsumerState<MagazineScreen> {
               loading: () => const Center(
                 child: CupertinoActivityIndicator(
                   radius: 30,
-                  color: Colors.white,
+                  color: Colors.red,
                 ),
               ),
               error: (e, st) => Center(
@@ -272,41 +280,57 @@ class _MagazineScreenState extends ConsumerState<MagazineScreen> {
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     crossAxisSpacing: 2,
-                    mainAxisSpacing: 4,
-                    childAspectRatio: 0.64,
+                    mainAxisSpacing: 2,
+                    childAspectRatio: 0.58,
                   ),
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final magazine = items[index];
 
                     return GestureDetector(
-                      onTap: () {
+                      // onTap: () {
+                      //   if (magazine.pdfUrl.isEmpty) return;
+                      //
+                      //   Navigator.push(
+                      //     context,
+                      //     MaterialPageRoute(
+                      //       builder: (_) => NetworkPdfView(
+                      //         pdfUrl: magazine.pdfUrl,
+                      //         title: magazine.title,
+                      //       ),
+                      //     ),
+                      //   );
+                      // },
+
+                      onTap: () async
+                      {
                         if (magazine.pdfUrl.isEmpty) return;
 
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => NetworkPdfView(
-                              pdfUrl: magazine.pdfUrl,
-                              title: magazine.title,
-                            ),
-                          ),
-                        );
+                        final Uri url = Uri.parse(magazine.pdfUrl);
+
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication, // device browser me open hoga
+                          );
+                        } else {
+                          debugPrint("Could not launch ${magazine.pdfUrl}");
+                        }
                       },
                       child: Card(
                         elevation: 4,
                         color: Colors.white,
                         margin: EdgeInsets.all(3.sp),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6.r),
+                          borderRadius: BorderRadius.circular(5.r),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(6.r),
-                                topRight: Radius.circular(6.r),
+                                topLeft: Radius.circular(5.r),
+                                topRight: Radius.circular(5.r),
                               ),
                               child: SizedBox(
                                 height: 130.sp,
@@ -327,11 +351,38 @@ class _MagazineScreenState extends ConsumerState<MagazineScreen> {
                                 ),
                               ),
                             ),
+                            Padding(
+                              padding: EdgeInsets.only(left:2.sp),
+                              child: Text(
+                                'No. Of Pages: ${magazine.page.toString()}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 9.sp,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(left:2.sp),
+                              child: Text(
+                                'PDF Size : ${magazine.size.toString()}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 9.sp,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
                             if (magazine.entryDate.isNotEmpty)
                               Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 5.sp),
+                                padding: EdgeInsets.symmetric(horizontal: 2.sp),
                                 child: Text(
-                                  magazine.entryDate,
+                                  AppDateTimeUtils.date(magazine.entryDate)
+                                 ,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
