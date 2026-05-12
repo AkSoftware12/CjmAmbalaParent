@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -314,6 +315,15 @@ class _SendMsgScreenState extends State<SendMsgScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    Text(
+                      formatted,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.grey,
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+
                     if (title.isNotEmpty) ...[
                       SizedBox(height: 2.h),
                       Text(
@@ -346,15 +356,190 @@ class _SendMsgScreenState extends State<SendMsgScreen> {
                 ),
               ),
               SizedBox(width: 6.w),
-              Text(
-                formatted,
-                style: GoogleFonts.montserrat(
-                  color: Colors.grey,
-                  fontSize: 9.sp,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (context) {
+                      return Dialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22.r),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(20.sp),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                height: 65.sp,
+                                width: 65.sp,
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Colors.red,
+                                  size: 35.sp,
+                                ),
+                              ),
 
+                              SizedBox(height: 18.h),
+
+                              Text(
+                                "Delete Message?",
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                ),
+                              ),
+
+                              SizedBox(height: 10.h),
+
+                              Text(
+                                "Are you sure you want to delete this message?",
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 13.sp,
+                                  color: Colors.grey.shade700,
+                                  height: 1.5,
+                                ),
+                              ),
+
+                              SizedBox(height: 22.h),
+
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.pop(context);
+                                      },
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(vertical: 13.h),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12.r),
+                                          color: Colors.grey.shade200,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            "Cancel",
+                                            style: GoogleFonts.montserrat(
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  SizedBox(width: 12.w),
+
+                                  Expanded(
+                                    child: InkWell(
+                                      onTap: () async {
+                                        Navigator.pop(context);
+
+                                        try {
+                                          SharedPreferences prefs =
+                                          await SharedPreferences.getInstance();
+
+                                          String token =
+                                              prefs.getString('teachertoken') ?? '';
+
+                                          if (token.isEmpty) {
+                                            Fluttertoast.showToast(
+                                              msg: "Token not found",
+                                              backgroundColor: Colors.red,
+                                              textColor: Colors.white,
+                                            );
+                                            return;
+                                          }
+
+                                          final response = await http.post(
+                                            Uri.parse(
+                                              '${ApiRoutes.adminMsgDelete}${message['id']}',
+                                            ),
+                                            headers: {
+                                              'Accept': 'application/json',
+                                              'Authorization': 'Bearer $token',
+                                            },
+                                          );
+
+                                          print(
+                                              "DELETE RESPONSE: ${response.body}");
+
+                                          if (response.statusCode == 200) {
+                                            Fluttertoast.showToast(
+                                              msg:
+                                              "Message Deleted Successfully",
+                                              backgroundColor: Colors.green,
+                                              textColor: Colors.white,
+                                            );
+
+                                            await fetchMessages();
+                                          } else {
+                                            Fluttertoast.showToast(
+                                              msg: "Delete Failed",
+                                              backgroundColor: Colors.red,
+                                              textColor: Colors.white,
+                                            );
+                                          }
+                                        } catch (e) {
+                                          print("DELETE ERROR: $e");
+
+                                          Fluttertoast.showToast(
+                                            msg: "Something went wrong",
+                                            backgroundColor: Colors.red,
+                                            textColor: Colors.white,
+                                          );
+                                        }
+                                      },
+                                      borderRadius: BorderRadius.circular(12.r),
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(vertical: 13.h),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12.r),
+                                          color: Colors.red,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            "Yes, Delete",
+                                            style: GoogleFonts.montserrat(
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.all(5.sp),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.red,
+                    size: 16.sp,
+                  ),
+                ),
+              )
             ],
           ),
         ),
