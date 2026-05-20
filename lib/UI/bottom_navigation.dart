@@ -21,6 +21,7 @@ import 'Auth/login_screen.dart';
 import 'Auth/login_student_userlist.dart';
 import 'EbooksScreen/Ebooks/ebooks.dart' hide ApiRoutes;
 import 'Fees/FeesScreen.dart';
+import 'Fees/TuitionFeeCertificate/tuition_fee_certificate.dart';
 import 'Gallery/Album/album.dart' show GalleryScreen;
 import 'Help/help.dart';
 import 'KnowYourTeacher/know_your_teacher.dart';
@@ -846,6 +847,36 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         FeesScreen(title: 'aa'),
+                                  ),
+                                );
+                                if (!mounted) return;
+                                await _refreshCounts();
+                              },
+                            ),
+                            _divider(),
+
+
+                            // ✅ Fees (DUE badge)
+                            _drawerTile(
+                              title: 'Tuition Fee Certificate',
+                              badgeValue: 0,
+                              iconBox: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child: const Icon(
+                                  Icons.receipt_long_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        TuitionFeeCertificateScreen(),
                                   ),
                                 );
                                 if (!mounted) return;

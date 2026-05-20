@@ -281,7 +281,7 @@ class _MagazineScreenState extends ConsumerState<MagazineScreen> {
                     crossAxisCount: 3,
                     crossAxisSpacing: 2,
                     mainAxisSpacing: 2,
-                    childAspectRatio: 0.58,
+                    childAspectRatio: 0.60,
                   ),
                   itemCount: items.length,
                   itemBuilder: (context, index) {
@@ -377,21 +377,7 @@ class _MagazineScreenState extends ConsumerState<MagazineScreen> {
                                 ),
                               ),
                             ),
-                            if (magazine.entryDate.isNotEmpty)
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 2.sp),
-                                child: Text(
-                                  AppDateTimeUtils.date(magazine.entryDate)
-                                 ,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 9.sp,
-                                    color: Colors.black54,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
+
                           ],
                         ),
                       ),

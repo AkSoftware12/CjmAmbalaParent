@@ -12,6 +12,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../constants.dart';
 
@@ -38,6 +39,7 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
   DateTime? startDate;
   DateTime? endDate;
   bool isUserPicked = false;
+  String? printUrl;
 
   String selectedStatus = "all";
 
@@ -177,6 +179,7 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
         setState(() {
           students = (data["data"]?["students"] as List?) ?? [];
           dates = List<String>.from((data["data"]?["dates"] as List?) ?? []);
+          printUrl=(data["print_url"].toString()) ?? '';
           isLoading = false;
         });
       } else {
@@ -189,137 +192,6 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
     }
   }
 
-  Future<void> generateAttendancePdf() async {
-    if (selectedClass == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a class first")),
-      );
-      return;
-    }
-
-    if (!isUserPicked || startDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select date first")),
-      );
-      return;
-    }
-
-    if (students.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No data available for PDF")),
-      );
-      return;
-    }
-
-    final pdf = pw.Document();
-
-    String className = "";
-
-    try {
-      final selected = classes.firstWhere(
-            (e) => e["id"].toString() == selectedClass.toString(),
-      );
-
-      final classTitle = _safeTitle(selected["academic_class"]);
-      final secTitle = _safeTitle(selected["section"]);
-
-      className = secTitle.isNotEmpty
-          ? "$classTitle ($secTitle)"
-          : classTitle;
-    } catch (e) {
-      className = "Selected Class";
-    }
-
-    final String reportDate = DateFormat('dd-MM-yyyy').format(startDate!);
-
-    final visibleStudents = students.where((student) {
-      final attendance = student['attendance'];
-      if (attendance is Map) return attendance.isNotEmpty;
-      if (attendance is List) return attendance.isNotEmpty;
-      return false;
-    }).toList();
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(20),
-        build: (context) => [
-          pw.Center(
-            child: pw.Text(
-              "Attendance Report",
-              style: pw.TextStyle(
-                fontSize: 18,
-                fontWeight: pw.FontWeight.bold,
-              ),
-            ),
-          ),
-          pw.SizedBox(height: 15),
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text(
-                "Class : $className",
-                style: pw.TextStyle(
-                  fontSize: 11,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Text(
-                "Date : $reportDate",
-                style: pw.TextStyle(
-                  fontSize: 11,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 15),
-          pw.Table.fromTextArray(
-            border: pw.TableBorder.all(color: PdfColors.black, width: 0.7),
-            headerDecoration: const pw.BoxDecoration(
-              color: PdfColors.grey300,
-            ),
-            headerStyle: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-              fontSize: 8,
-            ),
-            cellStyle: const pw.TextStyle(fontSize: 7),
-            cellAlignment: pw.Alignment.center,
-            headers: [
-              "Sr. No.",
-              "Roll No",
-              "Adm. No.",
-              "Student Name",
-              ...dates.map((d) => AppDateTimeUtils.date(d)),
-            ],
-            data: visibleStudents.asMap().entries.map((entry) {
-              final index = entry.key + 1;
-              final student = entry.value;
-
-              return [
-                index.toString(),
-                (student['roll_no'] ?? "").toString(),
-                (student['adm_no'] ?? "").toString(),
-                (student['name'] ?? "Unknown").toString(),
-                ...dates.map((d) {
-                  final status = _getAttendanceStatus(student, d);
-                  return _mapAttendanceStatus(status);
-                }).toList(),
-              ];
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-
-    final dir = await getTemporaryDirectory();
-    final file = File(
-      "${dir.path}/attendance_report_${DateTime.now().millisecondsSinceEpoch}.pdf",
-    );
-
-    await file.writeAsBytes(await pdf.save());
-    await OpenFilex.open(file.path);
-  }
 
   Future<void> _selectDateRange(BuildContext context) async {
     await showModalBottomSheet(
@@ -540,6 +412,21 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
 
       return false;
     }).toList();
+    Future<void> downloadAttendanceReport() async {
+      final url = printUrl; // API se jo print_url aa raha hai
+
+      if (url == null || url.toString().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Download URL not found")),
+        );
+        return;
+      }
+
+      await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors2.primary,
@@ -1039,6 +926,20 @@ class _MonthlyAttendanceScreenState extends State<DateWiseAttendanceScreen> {
           ],
         ),
       ),
+        floatingActionButton: students.isEmpty
+            ? const SizedBox.shrink()
+            :FloatingActionButton(
+          shape: const CircleBorder(),
+
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+          onPressed: () {
+            downloadAttendanceReport();
+          },
+          child: const Center(
+            child: Icon(Icons.download),
+          ),
+        )
     );
   }
 }

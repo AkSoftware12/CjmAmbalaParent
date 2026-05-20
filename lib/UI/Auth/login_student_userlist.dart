@@ -240,6 +240,11 @@ class _LoginPageState extends State<LoginUserLIst> {
               'teachertoken',
               jsonResponse['students'][0]['token'],
             );
+
+            await prefs.setString(
+              'user_role',
+              jsonResponse['students'][0]['role'].toString(),
+            );
             await prefs.setString(
               'selected_student_id',
               selectedOption!,
@@ -493,8 +498,7 @@ class _LoginPageState extends State<LoginUserLIst> {
                                 onChanged: (value) {
                                   setState(() {
                                     selectedOption = value;
-                                    selectedAdmNo = student['adm_no']
-                                        .toString();
+                                    selectedAdmNo = student['adm_no'].toString();
                                     staffPass = student['password'].toString();
                                   });
                                   _saveSelectedStudent(value!);
@@ -515,7 +519,7 @@ class _LoginPageState extends State<LoginUserLIst> {
                                   padding: EdgeInsets.all(3.sp),
                                   child: student['password'] != null
                                       ? Text(
-                                          'Teacher',
+                                          'Teacher ',
                                           style: TextStyle(
                                             fontWeight: FontWeight.w900,
                                             fontSize: 8.sp,

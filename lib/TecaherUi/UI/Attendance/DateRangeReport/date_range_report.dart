@@ -12,6 +12,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../constants.dart';
 
@@ -29,6 +30,8 @@ class _MonthlyAttendanceScreenState extends State<DateRangeAttendanceScreen> {
   List<dynamic> students = [];
   List<String> dates = [];
   bool isLoading = false;
+
+  String? printUrl;
 
   List<dynamic> classes = [];
   String? selectedClass;
@@ -167,9 +170,12 @@ class _MonthlyAttendanceScreenState extends State<DateRangeAttendanceScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
+        print('Attendance ${data}');
+
         setState(() {
           students = (data["data"]?["students"] as List?) ?? [];
           dates = List<String>.from((data["data"]?["dates"] as List?) ?? []);
+          printUrl=(data["print_url"].toString()) ?? '';
           isLoading = false;
         });
       } else {
@@ -340,7 +346,21 @@ class _MonthlyAttendanceScreenState extends State<DateRangeAttendanceScreen> {
     }
     return obj?.toString() ?? "";
   }
+  Future<void> downloadAttendanceReport() async {
+    final url = printUrl; // API se jo print_url aa raha hai
 
+    if (url == null || url.toString().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Download URL not found")),
+      );
+      return;
+    }
+
+    await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+  }
   @override
   Widget build(BuildContext context) {
     final visibleStudents = students.where((student) {
@@ -852,6 +872,20 @@ class _MonthlyAttendanceScreenState extends State<DateRangeAttendanceScreen> {
           ],
         ),
       ),
+      floatingActionButton: students.isEmpty
+          ? const SizedBox.shrink()
+          :FloatingActionButton(
+        shape: const CircleBorder(),
+
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+        onPressed: () {
+          downloadAttendanceReport();
+        },
+        child: const Center(
+          child: Icon(Icons.download),
+        ),
+      )
     );
   }
 }
