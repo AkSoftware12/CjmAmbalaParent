@@ -451,6 +451,24 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
               ),
             ),
           ),
+
+          // Padding(
+          //   padding: const EdgeInsets.all(15.0),
+          //   child: GestureDetector(
+          //     onTap: () async {
+          //       await Navigator.push(
+          //         context,
+          //         MaterialPageRoute(builder: (context) => LinkifyExample()),
+          //       );
+          //     },
+          //     child: Icon(
+          //       Icons.link,
+          //       size: 26,
+          //       color: Colors.white,
+          //     ),
+          //   ),
+          // ),
+
         ],
       ),
       body: _screens[_selectedIndex], // Display the selected screen

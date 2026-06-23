@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:avi/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -209,15 +210,33 @@ class _MessageDetailScreenState extends State<StudentMessageDetailScreen> {
                   ),
                 ],
                 SizedBox(height: 6.h),
-                Text(
-                  body,
+                SelectableLinkify(
+                  text: body,
+                  onOpen: _onOpen,
                   style: TextStyle(
                     fontSize: 12.sp,
                     height: 1.45,
                     fontWeight: FontWeight.w500,
                     color: Colors.black87,
                   ),
+                  linkStyle: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 12.sp,
+                    height: 1.45,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
+
+                // Text(
+                //   body,
+                //   style: TextStyle(
+                //     fontSize: 12.sp,
+                //     height: 1.45,
+                //     fontWeight: FontWeight.w500,
+                //     color: Colors.black87,
+                //   ),
+                // ),
                 if (attachment.isNotEmpty && attachment != "null") ...[
                   SizedBox(height: 10.h),
                   GestureDetector(
@@ -273,7 +292,11 @@ class _MessageDetailScreenState extends State<StudentMessageDetailScreen> {
       ),
     );
   }
-
+  Future<void> _onOpen(LinkableElement link) async {
+    if (!await launchUrl(Uri.parse(link.url))) {
+      throw Exception('Could not launch ${link.url}');
+    }
+  }
   Widget _buildReceiverCard(Map<String, dynamic> receiver) {
     final name = (receiver["name"] ?? "Receiver").toString();
     final image = (receiver["image"] ?? "").toString();

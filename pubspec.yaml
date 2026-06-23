@@ -2,7 +2,7 @@ name: avi
 description: "A new Flutter project."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.56+56
+version: 1.0.57+57
 
 
 environment:
@@ -58,6 +58,8 @@ dependencies:
   flutter_widget_from_html: ^0.17.1
   confetti: ^0.7.0
   upgrader: ^12.5.0
+
+  flutter_linkify: ^6.0.0
 
 
 

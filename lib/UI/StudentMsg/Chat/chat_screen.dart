@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -348,13 +349,32 @@ class _ChatScreenState extends State<StudentChatScreen> with WidgetsBindingObser
             crossAxisAlignment:
             isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              Text(
-                message.body,
+              SelectableLinkify(
+                text:  message.body,
+                onOpen: _onOpen,
                 style: TextStyle(
+                  fontSize: 14.sp,
+                  height: 1.45,
+                  // fontWeight: FontWeight.normal,
                   color: isMe ? Colors.black : Colors.black87,
-                  fontSize: 16,
+                ),
+                linkStyle: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 14.sp,
+                  height: 1.45,
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.underline,
                 ),
               ),
+
+
+              // Text(
+              //   message.body,
+              //   style: TextStyle(
+              //     color: isMe ? Colors.black : Colors.black87,
+              //     fontSize: 16,
+              //   ),
+              // ),
               if (isUploading) ...[
                 const SizedBox(height: 6),
                 Text(
@@ -455,6 +475,11 @@ class _ChatScreenState extends State<StudentChatScreen> with WidgetsBindingObser
         ),
       ),
     );
+  }
+  Future<void> _onOpen(LinkableElement link) async {
+    if (!await launchUrl(Uri.parse(link.url))) {
+      throw Exception('Could not launch ${link.url}');
+    }
   }
   String safeUrl(String url) {
     final uri = Uri.parse(url.trim());

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -970,14 +971,32 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
               ),
 
             if (body.isNotEmpty)
-              Text(
-                body,
+              SelectableLinkify(
+                text: body,
+                onOpen: _onOpen,
                 style: TextStyle(
-                  color: textColor,
                   fontSize: 14.sp,
                   height: 1.45,
+                  // fontWeight: FontWeight.normal,
+                  color: textColor,
+                ),
+                linkStyle: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 14.sp,
+                  height: 1.45,
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.underline,
                 ),
               ),
+
+            // Text(
+            //     body,
+            //     style: TextStyle(
+            //       color: textColor,
+            //       fontSize: 14.sp,
+            //       height: 1.45,
+            //     ),
+            //   ),
 
             if (isUploading)
               Padding(
@@ -1106,7 +1125,11 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
   // ─────────────────────────────────────────────
   // FILE PREVIEW
   // ─────────────────────────────────────────────
-
+  Future<void> _onOpen(LinkableElement link) async {
+    if (!await launchUrl(Uri.parse(link.url))) {
+      throw Exception('Could not launch ${link.url}');
+    }
+  }
   Widget _buildFilePreview() {
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
