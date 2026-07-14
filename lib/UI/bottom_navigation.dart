@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../TecaherUi/UI/BirthdayScreen/birthday_screen.dart';
 import '../UI/Dashboard/HomeScreen .dart';
+import '../VacanciesScreen/vacancies_screen.dart';
 import '../constants.dart';
 import '../splash_sreen.dart';
 import '../strings.dart';
@@ -62,6 +63,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
   // ✅✅✅ COUNTS for drawer badges
   int? messageCount;
+  int? vacanciesCount;
   int? feesCount;
   int? assignmentCount;
   int? galleryCount;
@@ -182,6 +184,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
 
           // ✅ counts (safe)
           messageCount = _toInt(data['message_count']);
+          vacanciesCount = _toInt(data['vacancies_count']);
           assignmentCount = _toInt(data['assignment_count']);
           feesCount = _toInt(data['fee_count']);
 
@@ -932,6 +935,36 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
                               },
                             ),
                             _divider(),
+
+
+                            _drawerTile(
+                              title: 'Vacancies',
+                              badgeValue: vacanciesCount ?? 0,
+                              iconBox: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors.primary,
+                                child: Icon(
+                                  CupertinoIcons.briefcase_fill,
+                                  color: Colors.white,
+                                  size: 20.sp,
+                                ),
+                              ),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VacanciesScreen(),
+                                  ),
+                                );
+                                if (!mounted) return;
+                                await _refreshCounts();
+                              },
+                            ),
+
+                            _divider(),
+
 
                             // ✅ Photo Gallery (BADGE if you have galleryCount else 0)
                             _drawerTile(

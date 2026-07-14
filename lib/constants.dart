@@ -153,6 +153,8 @@ class ApiRoutes {
   static const String getTeacheProfile = "$baseUrl/teacher";
   static const String getTeacherPhotos = "$baseUrlNewUser/getPhotos";
   static const String getTeacherVideos = "$baseUrlNewUser/getVideos";
+  static const String getVacancies = "$baseUrlNewUser/vacancies";
+  static const String resetVacancies = "$baseUrl/reset-vacancy";
   static const String getTeacherlibrary = "$baseUrl/library-get";
   static const String getTeacherBookTypes = "$baseUrl/book-types";
   static const String getClassTeachers = "$baseUrl/class-teachers";

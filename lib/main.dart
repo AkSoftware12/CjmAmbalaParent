@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:avi/HexColorCode/HexColor.dart';
+import 'package:avi/VacanciesScreen/vacancies_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import '../splash_sreen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'constants.dart';
+// import '../screens/notification_screen.dart'; // ⬅️ ADDED - apni screen ka import yaha do
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -32,20 +34,18 @@ Future<void> main() async {
   HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
 
-
-
   Platform.isAndroid
       ? await Firebase.initializeApp(
-          options: kIsWeb || Platform.isAndroid
-              ? const FirebaseOptions(
-                  apiKey: 'AIzaSyBhuh_2exvng2cYi1-WVG8AWFGFgLjRYQM',
-                  appId: '1:1012918033516:android:0b6718b40f48b55cb84c49',
-                  messagingSenderId: '1012918033516',
-                  projectId: 'cjm-ambala',
-                  storageBucket: "cjm-ambala.firebasestorage.app",
-                )
-              : null,
-        )
+    options: kIsWeb || Platform.isAndroid
+        ? const FirebaseOptions(
+      apiKey: 'AIzaSyBhuh_2exvng2cYi1-WVG8AWFGFgLjRYQM',
+      appId: '1:1012918033516:android:0b6718b40f48b55cb84c49',
+      messagingSenderId: '1012918033516',
+      projectId: 'cjm-ambala',
+      storageBucket: "cjm-ambala.firebasestorage.app",
+    )
+        : null,
+  )
       : await Firebase.initializeApp();
   NotificationService.initNotifications();
   FirebaseMessaging.instance.getToken().then((token) {});
@@ -85,100 +85,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
-
-
-
-// class NotificationService {
-//   static final FirebaseMessaging _firebaseMessaging =
-//       FirebaseMessaging.instance;
-//   static final FlutterLocalNotificationsPlugin
-//   _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-//
-//   /// **🔹 Initialize Notifications**
-//   static Future<void> initNotifications() async {
-//     // **Request Permission for Push Notifications**
-//     NotificationSettings settings = await _firebaseMessaging.requestPermission(
-//       alert: true,
-//       badge: true,
-//       sound: true,
-//     );
-//
-//     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-//       if (kDebugMode) {
-//         print("✅ Push Notifications Enabled");
-//       }
-//
-//       // **Get FCM Token**
-//       String? token = await _firebaseMessaging.getToken();
-//       if (kDebugMode) {
-//         print("FCM Token: $token");
-//       } // Send this to your server
-//
-//       // **Handle Incoming Notifications**
-//       FirebaseMessaging.onMessage.listen(_onMessage);
-//       FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
-//       FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
-//
-//       // **Initialize Local Notifications**
-//       _initLocalNotifications();
-//     } else {}
-//   }
-//
-//   /// **🔹 Handle Foreground Notifications**
-//   static void _onMessage(RemoteMessage message) {
-//     _showLocalNotification(message);
-//   }
-//
-//   /// **🔹 Handle Notification Click**
-//   static void _onMessageOpenedApp(RemoteMessage message) {
-//     // **Navigate to a Specific Screen**
-//     // Navigator.push(
-//     //   context,
-//     //   MaterialPageRoute(builder: (context) => NotificationScreen()),
-//     // );
-//     // Navigate to the relevant screen based on message.data
-//   }
-//
-//   /// **🔹 Handle Background Notifications**
-//   static Future<void> _onBackgroundMessage(RemoteMessage message) async {}
-//
-//   /// **🔹 Initialize Local Notifications**
-//   static void _initLocalNotifications() {
-//     const AndroidInitializationSettings androidSettings =
-//         AndroidInitializationSettings('@mipmap/ic_launcher');
-//
-//     const InitializationSettings settings = InitializationSettings(
-//       android: androidSettings,
-//     );
-//
-//     _flutterLocalNotificationsPlugin.initialize(settings);
-//   }
-//
-//   /// **🔹 Show Local Notification**
-//   static Future<void> _showLocalNotification(RemoteMessage message) async {
-//     const AndroidNotificationDetails androidDetails =
-//         AndroidNotificationDetails(
-//           'channelId',
-//           'channelName',
-//           importance: Importance.max,
-//           priority: Priority.high,
-//         );
-//
-//     const NotificationDetails generalNotificationDetails = NotificationDetails(
-//       android: androidDetails,
-//     );
-//
-//     await _flutterLocalNotificationsPlugin.show(
-//       0,
-//       message.notification?.title,
-//       message.notification?.body,
-//       generalNotificationDetails,
-//     );
-//   }
-// }
-
-
 class NotificationService {
   static final FirebaseMessaging _firebaseMessaging =
       FirebaseMessaging.instance;
@@ -194,6 +100,20 @@ class NotificationService {
     importance: Importance.max,
     playSound: true,
   );
+
+  // ⬅️ ADDED - Backend se aaya pura data print karne ke liye common function
+  static void _printMessageData(String source, RemoteMessage message) {
+    if (kDebugMode) {
+      print("📩 ================ $source ================");
+      print("Title: ${message.notification?.title}");
+      print("Body: ${message.notification?.body}");
+      print("Data (backend se): ${message.data}");
+      print("Full data JSON: ${jsonEncode(message.data)}");
+      print("MessageId: ${message.messageId}");
+      print("SentTime: ${message.sentTime}");
+      print("=================================================");
+    }
+  }
 
   /// Initialize notifications
   static Future<void> initNotifications() async {
@@ -220,6 +140,18 @@ class NotificationService {
         sound: true,
       );
 
+      // ✅ Topic subscription - sabhi users ko 'all_users' topic pe subscribe karo
+      try {
+        await _firebaseMessaging.subscribeToTopic('all_users');
+        if (kDebugMode) {
+          print("✅ Subscribed to topic: all_users");
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print("❌ Topic subscribe error: $e");
+        }
+      }
+
       String? token = await _firebaseMessaging.getToken();
       if (kDebugMode) {
         print("FCM Token: $token");
@@ -233,31 +165,80 @@ class NotificationService {
 
       // Background/terminated
       FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
+
+      // ⬅️ ADDED - App terminated thi, notification tap se open hui
+      RemoteMessage? initialMessage =
+      await _firebaseMessaging.getInitialMessage();
+      if (initialMessage != null) {
+        // ⬅️ ADDED - Terminated state se open hone pe data print karo
+        _printMessageData("APP OPENED FROM TERMINATED", initialMessage);
+
+        Future.delayed(const Duration(seconds: 5), () {
+          _handleNavigation(initialMessage.data);
+        });
+      }
+    }
+  }
+
+  // ⬅️ ADDED - Common navigation handler
+  static void _handleNavigation(Map<String, dynamic> data) {
+    if (kDebugMode) {
+      print("🧭 Navigating with data: $data");
+    }
+
+    if (navigatorKey.currentState == null) {
+      if (kDebugMode) {
+        print("❌ Navigator not ready yet");
+      }
+      return;
+    }
+
+    final String? type = data['type']?.toString();
+
+    switch (type) {
+      case 'vacancy':
+        navigatorKey.currentState!.push(
+          MaterialPageRoute(
+            builder: (_) => const VacanciesScreen(), // ⬅️ apni screen daalo
+          ),
+        );
+        break;
+
+      default:
+        break;
     }
   }
 
   /// Foreground notification
   static void _onMessage(RemoteMessage message) {
+    // ⬅️ ADDED - Foreground me backend ka data print karo
+    _printMessageData("FOREGROUND NOTIFICATION", message);
+
     // Foreground me local notification dikha do
     _showLocalNotification(message);
   }
 
   /// Notification click
   static void _onMessageOpenedApp(RemoteMessage message) {
-    if (kDebugMode) {
-      print("Notification clicked: ${message.data}");
-    }
+    // ⬅️ ADDED - Notification tap pe backend ka data print karo
+    _printMessageData("NOTIFICATION CLICKED (BACKGROUND)", message);
 
-    // Yaha screen navigation kar sakte ho
-    // example:
-    // final type = message.data['type'];
-    // if (type == 'chat') { ... }
+    _handleNavigation(message.data); // ⬅️ ADDED
   }
 
   /// Background message handler
   @pragma('vm:entry-point')
   static Future<void> _onBackgroundMessage(RemoteMessage message) async {
     await Firebase.initializeApp();
+
+    // ⬅️ ADDED - Background me backend ka data print karo
+    if (kDebugMode) {
+      print("🌙 ============ BACKGROUND NOTIFICATION ============");
+      print("Title: ${message.notification?.title}");
+      print("Body: ${message.notification?.body}");
+      print("Data (backend se): ${message.data}");
+      print("==================================================");
+    }
   }
 
   /// Init local notifications
@@ -273,7 +254,26 @@ class NotificationService {
       settings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         if (kDebugMode) {
+          print('👆 Local notification tapped');
           print('Notification payload: ${response.payload}');
+        }
+        // ⬅️ ADDED - Foreground local notification tap pe navigation
+        if (response.payload != null && response.payload!.isNotEmpty) {
+          try {
+            final Map<String, dynamic> data =
+            jsonDecode(response.payload!) as Map<String, dynamic>;
+
+            // ⬅️ ADDED - Decoded data print karo
+            if (kDebugMode) {
+              print('Decoded data (backend se): $data');
+            }
+
+            _handleNavigation(data);
+          } catch (e) {
+            if (kDebugMode) {
+              print('❌ Payload decode error: $e');
+            }
+          }
         }
       },
     );
@@ -333,5 +333,3 @@ class NotificationService {
     );
   }
 }
-
-
