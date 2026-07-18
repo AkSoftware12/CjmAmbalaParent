@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../AlumniUserBottombarPage/alumni_user_bottombar_page.dart';
 import '../../NewUserBottombarPage/new_user_bottombar_page.dart';
 import '../../TecaherUi/UI/bottom_navigation.dart';
 import '../ChangePassword/change_password.dart';
@@ -111,6 +112,9 @@ class _LoginPageState extends State<LoginPage> {
       // Step 3: Try Login3
       bool login3Success = await _login3();
       if (login3Success) return;
+
+      bool loginAlumniSuccess = await _loginAlumni();
+      if (loginAlumniSuccess) return;
 
       // If all login attempts fail
       _showError2(context);
@@ -352,6 +356,72 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       // _handleError(e, AppStrings.unexpectedError);
       return false; // Fail
+    }
+  }
+
+  Future<bool> _loginAlumni() async {
+    final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+    String? deviceToken = await _firebaseMessaging.getToken();
+    debugPrint('Device token: $deviceToken');
+
+    try {
+      final url = Uri.parse(ApiRoutes.loginAlumniUser);
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
+          'username': _emailController.text.trim(),
+          'password': _passwordController.text,
+          'fcm': deviceToken ?? '',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+
+        if (jsonResponse['success'] == true) {
+          final prefs = await SharedPreferences.getInstance();
+
+          // Token is at the top level, not inside a list
+          final String? token = jsonResponse['token'];
+          final Map<String, dynamic>? alumni =
+          jsonResponse['alumni'] != null
+              ? Map<String, dynamic>.from(jsonResponse['alumni'])
+              : null;
+
+          if (token == null || alumni == null) return false;
+
+          await prefs.setString('alumniToken', token);
+          await prefs.setString('alumni_id', alumni['id'].toString());
+          await prefs.setString('alumniData', jsonEncode(alumni));
+
+          await _saveCredentials();
+
+          // Maintain login history (keyed by alumni id)
+          loginHistory = await _getStoredLoginList();
+          final exists = loginHistory.any(
+                (a) => a['id'].toString() == alumni['id'].toString(),
+          );
+          if (!exists) loginHistory.insert(0, alumni);
+          await _saveLoginList(loginHistory);
+
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AlumniUserBottombarPage(),
+              ),
+            );
+          }
+
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Alumni login error: $e');
+      // _handleError(e, AppStrings.unexpectedError);
+      return false;
     }
   }
 

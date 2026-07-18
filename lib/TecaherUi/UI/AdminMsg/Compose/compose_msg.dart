@@ -457,7 +457,7 @@ class _NewTeacherMessageScreenState extends State<ComposeMessageScreen>
       try {
         final Stopwatch apiWatch = Stopwatch()..start();
 
-        final url = Uri.parse("${ApiRoutes.messageSendStatus}$jobKey");
+        final url = Uri.parse("${ApiRoutes.sendTeacherMessageStatus}$jobKey");
 
         print('Api url $url');
 

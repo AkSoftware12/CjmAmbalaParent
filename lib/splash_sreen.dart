@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import '../constants.dart';
+import 'AlumniUserBottombarPage/alumni_user_bottombar_page.dart';
 import 'HexColorCode/HexColor.dart';
 import 'TecaherUi/UI/bottom_navigation.dart';
 import 'UI/Auth/login_screen.dart';
@@ -53,6 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
     String? token = prefs.getString('token');
     String? newUsertoken = prefs.getString('newusertoken');
     String? teacherToken = prefs.getString('teachertoken');
+    String? alumniToken = prefs.getString('alumniToken');
     final connectivityResult = await Connectivity().checkConnectivity();
 
     if (!mounted) return; // Check before using setState or Navigator
@@ -85,6 +87,15 @@ class _SplashScreenState extends State<SplashScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => TeacherBottomNavBarScreen(initialIndex: 0),
+          ),
+        );
+      } else if (alumniToken != null && alumniToken.isNotEmpty) {
+        print('CheckAlumniToken:$alumniToken');
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AlumniUserBottombarPage(),
           ),
         );
       } else {

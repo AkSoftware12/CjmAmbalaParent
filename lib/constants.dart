@@ -51,15 +51,16 @@ class ApiRoutes {
 
   // Main App Url
   static const String baseUrl = "https://softcjm.cjmambala.co.in/api";
-  // static const String baseUrl = "https://softcjm.aksoftsol.com/api";
+  static const String serverBaseUrl = "https://softcjm.aksoftsol.com/api";
   static const String baseUrlNewUser = "https://cjmambala.co.in/api";
+  static const String baseUrlAlumniUser = "https://cjmambala.co.in/api";
+  // static const String baseUrlAlumniUser = "http://192.168.1.3/ambala_web/api";
 
   // exam url
   static const String baseExamUrl = "https://exam.cjmambala.co.in/api/";
 
 
     // Doownload Main url
-  // static const String downloadUrl = "https://softcjm.cjmambala.co.in/student/fee-receipt/";
   static const String downloadUrl = "https://softcjm.cjmambala.co.in/";
   static const String newUserdownloadUrl = "https://cjmambala.co.in/api/fees/";
 
@@ -68,7 +69,7 @@ class ApiRoutes {
 // Local  App Url
 
   // static const String baseUrlNewUser = "http://192.168.1.5/cjmweb/api";
-  // static const String baseUrl = "http://192.168.1.8/cjm_ambala12/api";
+  // static const String baseUrl = "http://192.168.1.3/cjm_ambala12/api";
   // static const String baseUrl = "http://192.168.1.13:8080/cjm_ambala_admin/api";
   // // Download local url
   // static const String downloadUrl = "http://192.168.1.10/cjm_ambala12/";
@@ -84,6 +85,18 @@ class ApiRoutes {
   static const String orderCreateNewUser  = "$baseUrlNewUser/initiatepayment";
   static const String payFeesNewUser  = "$baseUrlNewUser/payfees";
   static const String admissionDownload  = "$baseUrlNewUser/profile/";
+
+
+
+
+  // Alumni Api
+  static const String loginAlumniUser = "$baseUrlAlumniUser/alumni/login";
+  static const String getProfileAlumniUser = "$baseUrlAlumniUser/alumni/profile";
+  static const String alumniMessageSend = "$baseUrlAlumniUser/alumni/message/send";
+  static const String getAlumniMessage = "$baseUrlAlumniUser/alumni/messages";
+  static const String getAlumniCount = "$baseUrlAlumniUser/alumni/dashboard";
+  static const String getAlumniNotice = "$baseUrlAlumniUser/notices";
+  static const String getAlumniInbox = "$baseUrlAlumniUser/alumni/inbox";
 
 
 // common
@@ -149,6 +162,7 @@ class ApiRoutes {
 
   // Teacher Api
 
+
   static const String teacherlogin = "$baseUrl/teacher-login";
   static const String getTeacheProfile = "$baseUrl/teacher";
   static const String getTeacherPhotos = "$baseUrlNewUser/getPhotos";
@@ -189,7 +203,9 @@ class ApiRoutes {
   static const String getAllTeacherMessages = "$baseUrl/teacher/messages";
   static const String getAllTeacherConversations = "$baseUrl/teacher/conversations";
   static const String getTeacherMessagesConversation = "$baseUrl/teacher/messages/conversation/";
-  static const String sendTeacherMessage = "$baseUrl/teacher/messages/send";
+  // static const String sendTeacherMessage = "$baseUrl/teacher/messages/send";
+  static const String sendTeacherMessage = "$serverBaseUrl/bulk-send";
+  static const String sendTeacherMessageStatus = "$serverBaseUrl/message-status/";
   static const String getSalarySlip = "$baseUrl/admin-salary";
   static const String getTeacherAppReport = "$baseUrl/app-report";
   static const String getFreeTeachers = "$baseUrl/free-teachers";
@@ -205,6 +221,20 @@ class ApiRoutes {
   static const String getTeacherSendPartner = "$baseUrl/teacher-send-partner/";
   static const String getInboxList = "$baseUrl/teacher-inbox";
   static const String adminMsgDelete = "$baseUrl/teacher-send/delete/";
+
+
+  // Admin Alumni Api
+
+  static const String getAdminAlumniList = "$baseUrlAlumniUser/alumnis";
+  static const String deleteAdminAlumniMsg = "$baseUrlAlumniUser/message/delete/";
+  static const String getAdminAlumniInbox = "$baseUrlAlumniUser/message/inbox";
+  static const String getAdminAlumniChat = "$baseUrlAlumniUser/message/inbox/";
+  static const String sendAdminAlumniMsg = "$baseUrlAlumniUser/alumni/message/principal/send";
+  static const String getAdminAlumniMessageSendList = "$baseUrlAlumniUser/message/report";
+  static const String getAdminAlumniDetailsMessageSendList = "$baseUrlAlumniUser/message/report/";
+
+
+
 
   // Student msg
 

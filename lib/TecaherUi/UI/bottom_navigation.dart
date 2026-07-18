@@ -29,6 +29,7 @@ import '../UI/Dashboard/HomeScreen%20.dart';
 import 'AdminMsg/AdminTabScreen/admin_tab_screen.dart';
 import 'AdminTimeTable/admin_time_table.dart';
 import 'AllStudents/all_students.dart';
+import 'AlumniDashBoard/AlumniAdminTabScreen/alumni_admin_tab_screen.dart';
 import 'AppReport/app_report.dart';
 import 'Assignment/assignment.dart';
 import 'Attendance/AttendanceScreen.dart';
@@ -68,6 +69,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
 
   int? messageCount;
   int? vacanciesCount;
+  int? alumniCount;
   int? feesCount;
   int? assignmentCount;
   int? galleryCount;
@@ -133,6 +135,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
         setState(() {
           messageCount = _toInt(data['message_count']);
           vacanciesCount = _toInt(data['vacancies_count']);
+          alumniCount = _toInt(data['alumni_count']);
           assignmentCount = _toInt(data['assignment_count']);
           feesCount = _toInt(data['fee_count']);
 
@@ -1159,6 +1162,42 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => NoticeScreen(),
+                                ),
+                              );
+                              if (!mounted) return;
+                              await _refreshCounts();
+                            },
+                          ),
+
+                          Padding(
+                            padding: EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
+
+
+                          _drawerTile(
+                            title: 'Alumni Messages',
+                            badgeValue: alumniCount ?? 0,
+                            iconBox: Container(
+                              height: 20,
+                              width: 20,
+                              color: AppColors.primary,
+                              child: Icon(
+                                CupertinoIcons.chat_bubble,
+                                color: Colors.white,
+                                size: 20.sp,
+                              ),
+                            ),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AlumniAdminMsgTabScreen(),
                                 ),
                               );
                               if (!mounted) return;

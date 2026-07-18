@@ -1,0 +1,635 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../CommonCalling/data_not_found.dart';
+import '../../../../CommonCalling/progressbarWhite.dart';
+import '../../../../constants.dart';
+import 'alumni_message_detail_screen.dart';
+
+class AlumniSendMsgScreen extends StatefulWidget {
+  final int? messageSendPermissionsApp;
+
+  const AlumniSendMsgScreen({
+    super.key,
+    required this.messageSendPermissionsApp,
+  });
+
+  @override
+  State<AlumniSendMsgScreen> createState() => _SendMsgScreenState();
+}
+
+class _SendMsgScreenState extends State<AlumniSendMsgScreen> {
+  bool isLoading = false;
+
+  List messages = [];
+  List filteredMessages = [];
+
+  /// Sender info (principal) comes at the top level of the response now
+  Map<String, dynamic> principal = {};
+
+  final TextEditingController searchController = TextEditingController();
+
+  int currentPage = 1;
+  int totalPages = 1;
+  int totalChat = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchMessages();
+  }
+
+  Future<void> fetchMessages() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('teachertoken');
+
+    if (token == null || token.isEmpty) {
+      setState(() {
+        isLoading = false;
+        messages = [];
+        filteredMessages = [];
+      });
+      return;
+    }
+
+    try {
+      final Uri url = Uri.parse(
+        '${ApiRoutes.getAdminAlumniMessageSendList}?page=$currentPage',
+      );
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+
+        messages = jsonResponse['data'] ?? [];
+        principal = jsonResponse['principal'] ?? {};
+        totalPages = jsonResponse['pagination']?['last_page'] ?? 1;
+        totalChat = jsonResponse['pagination']?['total'] ?? messages.length;
+
+        filterMessages(searchController.text);
+      } else {
+        messages = [];
+        filteredMessages = [];
+      }
+    } catch (e) {
+      messages = [];
+      filteredMessages = [];
+    }
+
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void filterMessages(String query) {
+    if (query.trim().isEmpty) {
+      setState(() {
+        filteredMessages = List.from(messages);
+      });
+      return;
+    }
+
+    final searchQuery = query.toLowerCase().trim();
+    final senderName =
+    (principal['name'] ?? '').toString().toLowerCase();
+
+    setState(() {
+      filteredMessages = messages.where((message) {
+        final body = (message['message'] ?? '').toString().toLowerCase();
+
+        return body.contains(searchQuery) ||
+            senderName.contains(searchQuery);
+      }).toList();
+    });
+  }
+
+  Widget _buildPagination() {
+    return Container(
+      height: 25.sp,
+      padding: EdgeInsets.symmetric(horizontal: 4.sp, vertical: 2.sp),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white24, width: 1),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: currentPage > 1
+                ? () {
+              setState(() {
+                currentPage--;
+              });
+              fetchMessages();
+            }
+                : null,
+            child: Container(
+              padding: EdgeInsets.all(2.sp),
+              decoration: BoxDecoration(
+                color: currentPage > 1 ? Colors.white24 : Colors.white10,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.chevron_left,
+                color: Colors.white,
+                size: 15.sp,
+              ),
+            ),
+          ),
+          SizedBox(width: 8.sp),
+          DropdownButton<int>(
+            value: currentPage <= totalPages ? currentPage : 1,
+            dropdownColor: Colors.red.shade400,
+            icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+            underline: const SizedBox(),
+            borderRadius: BorderRadius.circular(12),
+            style: GoogleFonts.montserrat(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  currentPage = value;
+                });
+                fetchMessages();
+              }
+            },
+            items: List.generate(
+              totalPages == 0 ? 1 : totalPages,
+                  (index) {
+                final pageNumber = index + 1;
+                return DropdownMenuItem<int>(
+                  value: pageNumber,
+                  child: Text(
+                    "$pageNumber",
+                    style: GoogleFonts.montserrat(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          SizedBox(width: 8.sp),
+          GestureDetector(
+            onTap: currentPage < totalPages
+                ? () {
+              setState(() {
+                currentPage++;
+              });
+              fetchMessages();
+            }
+                : null,
+            child: Container(
+              padding: EdgeInsets.all(2.sp),
+              decoration: BoxDecoration(
+                color: currentPage < totalPages
+                    ? Colors.white24
+                    : Colors.white10,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.chevron_right,
+                color: Colors.white,
+                size: 15.sp,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageCard(dynamic message) {
+    String formatted = '';
+
+    try {
+      if (message['created_at'] != null) {
+        final dateTime = DateTime.parse(message['created_at'].toString());
+        formatted = DateFormat('dd-MM-yyyy hh:mm a').format(dateTime);
+      }
+    } catch (_) {
+      formatted = message['created_at']?.toString() ?? '';
+    }
+
+    final senderName = principal['name']?.toString() ?? 'Sender';
+    final senderDesignation = principal['designation']?.toString() ?? '';
+    final senderPhoto = principal['photo']?.toString() ?? '';
+    final body = message['message']?.toString() ?? '';
+    final attachment = message['attachment']?.toString() ?? '';
+    final recipientCount = message['recipient_count'] ?? 0;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AlumniMessageDetailScreen(
+              userName: senderName,
+              userImage: senderPhoto,
+              partnerId: message['id'],
+              classSection: senderDesignation.isNotEmpty
+                  ? senderDesignation
+                  : 'Message',
+            ),
+          ),
+        );
+      },
+      child: Padding(
+        padding: EdgeInsets.all(3.sp),
+        child: Container(
+          padding: EdgeInsets.all(6.sp),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 16.r,
+                backgroundColor: Colors.red.shade100,
+                child: ClipOval(
+                  child: senderPhoto.isNotEmpty
+                      ? Image.network(
+                    senderPhoto,
+                    width: 32.r,
+                    height: 32.r,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.person,
+                        size: 18.sp,
+                        color: Colors.red,
+                      );
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Icon(
+                        Icons.person,
+                        size: 18.sp,
+                        color: Colors.red,
+                      );
+                    },
+                  )
+                      : Icon(
+                    Icons.person,
+                    size: 18.sp,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      senderName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.black87,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      formatted,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.grey,
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      body.isNotEmpty
+                          ? body.replaceAll('\n', ' ')
+                          : attachment.isNotEmpty
+                          ? 'Attachment'
+                          : '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.montserrat(
+                        color: Colors.black54,
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 3.h),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.people_alt_outlined,
+                          size: 12.sp,
+                          color: Colors.red.shade400,
+                        ),
+                        SizedBox(width: 3.w),
+                        Text(
+                          '$recipientCount Recipients',
+                          style: GoogleFonts.montserrat(
+                            color: Colors.red.shade400,
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 6.w),
+              FutureBuilder<SharedPreferences>(
+                future: SharedPreferences.getInstance(),
+                builder: (context, snapshot) {
+
+                  if (!snapshot.hasData) {
+                    return SizedBox();
+                  }
+
+                  final prefs = snapshot.data!;
+                  final userRole = prefs.getString('user_role') ?? '';
+
+                  /// sirf role 2 wale ko show hoga
+                  if (userRole != '2') {
+                    return SizedBox();
+                  }
+
+                  return GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: true,
+                        builder: (context) {
+                          return Dialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22.r),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(20.sp),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    height: 65.sp,
+                                    width: 65.sp,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.red,
+                                      size: 35.sp,
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 18.h),
+
+                                  Text(
+                                    "Delete Message?",
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 18.sp,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 10.h),
+
+                                  Text(
+                                    "Are you sure you want to delete this message?",
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.montserrat(
+                                      fontSize: 13.sp,
+                                      color: Colors.grey.shade700,
+                                      height: 1.5,
+                                    ),
+                                  ),
+
+                                  SizedBox(height: 22.h),
+
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                          },
+                                          borderRadius: BorderRadius.circular(12.r),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(vertical: 13.h),
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(12.r),
+                                              color: Colors.grey.shade200,
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                "Cancel",
+                                                style: GoogleFonts.montserrat(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      SizedBox(width: 12.w),
+
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: () async {
+                                            Navigator.pop(context);
+
+                                            try {
+                                              SharedPreferences prefs =
+                                              await SharedPreferences.getInstance();
+
+                                              String token =
+                                                  prefs.getString('teachertoken') ?? '';
+
+                                              if (token.isEmpty) {
+                                                Fluttertoast.showToast(
+                                                  msg: "Token not found",
+                                                  backgroundColor: Colors.red,
+                                                  textColor: Colors.white,
+                                                );
+                                                return;
+                                              }
+
+                                              final response = await http.post(
+                                                Uri.parse(
+                                                  '${ApiRoutes.deleteAdminAlumniMsg}${message['id']}',
+                                                ),
+                                                headers: {
+                                                  'Accept': 'application/json',
+                                                  'Authorization': 'Bearer $token',
+                                                },
+                                              );
+
+                                              if (response.statusCode == 200) {
+                                                Fluttertoast.showToast(
+                                                  msg:
+                                                  "Message Deleted Successfully",
+                                                  backgroundColor: Colors.green,
+                                                  textColor: Colors.white,
+                                                );
+
+                                                await fetchMessages();
+                                              } else {
+                                                Fluttertoast.showToast(
+                                                  msg: "Delete Failed",
+                                                  backgroundColor: Colors.red,
+                                                  textColor: Colors.white,
+                                                );
+                                              }
+                                            } catch (e) {
+                                              print("DELETE ERROR: $e");
+
+                                              Fluttertoast.showToast(
+                                                msg: "Something went wrong",
+                                                backgroundColor: Colors.red,
+                                                textColor: Colors.white,
+                                              );
+                                            }
+                                          },
+                                          borderRadius: BorderRadius.circular(12.r),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(vertical: 13.h),
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(12.r),
+                                              color: Colors.red,
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                "Yes, Delete",
+                                                style: GoogleFonts.montserrat(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(5.sp),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(.1),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.red,
+                        size: 16.sp,
+                      ),
+                    ),
+                  );
+                },
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.secondary,
+      body: Column(
+        children: [
+          SizedBox(height: 4.sp),
+
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.sp, vertical: 5.sp),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Send ($totalChat)',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textwhite,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10.sp),
+                _buildPagination(),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 4.sp),
+
+          Expanded(
+            child: isLoading
+                ? WhiteCircularProgressWidget()
+                : filteredMessages.isEmpty
+                ? Center(
+              child: DataNotFoundWidget(
+                title: 'No messages found.',
+              ),
+            )
+                : RefreshIndicator(
+              onRefresh: fetchMessages,
+              child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: filteredMessages.length,
+                itemBuilder: (context, index) {
+                  final message = filteredMessages[index];
+                  return _buildMessageCard(message);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

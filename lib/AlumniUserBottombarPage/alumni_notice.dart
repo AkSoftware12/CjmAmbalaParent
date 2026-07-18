@@ -11,19 +11,18 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../constants.dart';
 import '../../utils/date_time_utils.dart';
-import 'notice_detail.dart';
+import 'alumni_notice_detail.dart';
 
-class NoticeScreen extends StatefulWidget {
-  const NoticeScreen({super.key});
+class AlumniNoticeScreen extends StatefulWidget {
+  const AlumniNoticeScreen({super.key});
 
   @override
-  State<NoticeScreen> createState() => _NoticeScreenState();
+  State<AlumniNoticeScreen> createState() => _NoticeScreenState();
 }
 
-class _NoticeScreenState extends State<NoticeScreen> {
+class _NoticeScreenState extends State<AlumniNoticeScreen> {
   bool isLoading = false;
   List<dynamic> notices = [];
 
@@ -37,22 +36,19 @@ class _NoticeScreenState extends State<NoticeScreen> {
     setState(() => isLoading = true);
 
     final prefs = await SharedPreferences.getInstance();
-    final studentToken = prefs.getString('token');
-    final teacherToken = prefs.getString('teachertoken');
     final alumniToken = prefs.getString('alumnitoken');
-    final activeToken = studentToken ?? teacherToken ?? alumniToken;
 
-    if (activeToken == null || activeToken.isEmpty) {
-      setState(() => isLoading = false);
-      _toast("No token found. Please login again.");
-      return;
-    }
+    // if (alumniToken == null || alumniToken.isEmpty) {
+    //   setState(() => isLoading = false);
+    //   _toast("No token found. Please login again.");
+    //   return;
+    // }
 
     try {
       final response = await http.get(
-        Uri.parse(ApiRoutes.notice),
+        Uri.parse(ApiRoutes.getAlumniNotice),
         headers: {
-          'Authorization': 'Bearer $activeToken',
+          'Authorization': 'Bearer $alumniToken',
           'Accept': 'application/json',
         },
       );
@@ -303,7 +299,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
         elevation: 0,
         backgroundColor: AppColors.primary,
         title: const Text(
-          "Notices",
+          "Alumni Notices",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -384,7 +380,7 @@ class _NoticeScreenState extends State<NoticeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => NotificationDetailScreen(
+                builder: (_) => AlumniNotificationDetailScreen(
                   noticeId: noticeId.toString(),
                 ),
               ),
