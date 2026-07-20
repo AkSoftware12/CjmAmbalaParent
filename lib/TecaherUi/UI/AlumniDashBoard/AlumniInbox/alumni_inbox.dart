@@ -446,6 +446,48 @@ class _AlumniInboxScreenState extends State<AlumniInboxScreen> {
                                 ),
                             ],
                           ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.class_,
+                                size: 10.sp,
+                                color: Colors.grey.shade600,
+                              ),
+                              SizedBox(width: 4.w),
+                              Expanded(
+                                child: Text(
+                                  alumni['class_passed'].toString(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_month,
+                                size: 10.sp,
+                                color: Colors.grey.shade600,
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                alumni['year_of_passing'].toString(),
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+
 
                           /// Last Message
                           Row(

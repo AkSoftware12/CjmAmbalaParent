@@ -522,7 +522,7 @@ class _MessageDetailScreenState extends State<AlumniMessageDetailScreen> {
                   Row(
                     children: [
                       Icon(
-                        Icons.email_outlined,
+                        Icons.class_,
                         size: 12.sp,
                         color: Colors.grey.shade600,
                       ),
@@ -547,7 +547,7 @@ class _MessageDetailScreenState extends State<AlumniMessageDetailScreen> {
                   Row(
                     children: [
                       Icon(
-                        Icons.phone_outlined,
+                        Icons.calendar_month,
                         size: 12.sp,
                         color: Colors.grey.shade600,
                       ),

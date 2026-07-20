@@ -51,7 +51,8 @@ class ApiRoutes {
 
   // Main App Url
   static const String baseUrl = "https://softcjm.cjmambala.co.in/api";
-  static const String serverBaseUrl = "https://softcjm.aksoftsol.com/api";
+  // static const String serverBaseUrl = "https://softcjm.aksoftsol.com/api";
+  // static const String serverBaseUrl = "http://192.168.1.10/softcjmmassgeapi/api";
   static const String baseUrlNewUser = "https://cjmambala.co.in/api";
   static const String baseUrlAlumniUser = "https://cjmambala.co.in/api";
   // static const String baseUrlAlumniUser = "http://192.168.1.3/ambala_web/api";
@@ -66,10 +67,13 @@ class ApiRoutes {
 
 
 
+
 // Local  App Url
 
   // static const String baseUrlNewUser = "http://192.168.1.5/cjmweb/api";
-  // static const String baseUrl = "http://192.168.1.3/cjm_ambala12/api";
+  // static const String baseUrl = "http://192.168.1.10/cjm_ambala12/api";
+  // static const String baseUrlAlumniUser = "http://192.168.1.10/ambala_web/api";
+
   // static const String baseUrl = "http://192.168.1.13:8080/cjm_ambala_admin/api";
   // // Download local url
   // static const String downloadUrl = "http://192.168.1.10/cjm_ambala12/";
@@ -203,9 +207,10 @@ class ApiRoutes {
   static const String getAllTeacherMessages = "$baseUrl/teacher/messages";
   static const String getAllTeacherConversations = "$baseUrl/teacher/conversations";
   static const String getTeacherMessagesConversation = "$baseUrl/teacher/messages/conversation/";
-  // static const String sendTeacherMessage = "$baseUrl/teacher/messages/send";
-  static const String sendTeacherMessage = "$serverBaseUrl/bulk-send";
-  static const String sendTeacherMessageStatus = "$serverBaseUrl/message-status/";
+  static const String sendTeacherMessage = "$baseUrl/teacher/messages/send";
+  // static const String sendTeacherMessage = "$serverBaseUrl/bulk-send";
+  // static const String sendTeacherMessageStatus = "$serverBaseUrl/message-status/";
+  static const String sendTeacherMessageStatus = "$baseUrl/message-status/";
   static const String getSalarySlip = "$baseUrl/admin-salary";
   static const String getTeacherAppReport = "$baseUrl/app-report";
   static const String getFreeTeachers = "$baseUrl/free-teachers";
@@ -230,6 +235,7 @@ class ApiRoutes {
   static const String getAdminAlumniInbox = "$baseUrlAlumniUser/message/inbox";
   static const String getAdminAlumniChat = "$baseUrlAlumniUser/message/inbox/";
   static const String sendAdminAlumniMsg = "$baseUrlAlumniUser/alumni/message/principal/send";
+  static const String getAlumniProfileList = "$baseUrlAlumniUser/alumni/list";
   static const String getAdminAlumniMessageSendList = "$baseUrlAlumniUser/message/report";
   static const String getAdminAlumniDetailsMessageSendList = "$baseUrlAlumniUser/message/report/";
 

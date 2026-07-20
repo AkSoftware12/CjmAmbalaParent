@@ -372,6 +372,7 @@ class _SendMsgScreenState extends State<SendMsgScreen> {
                     return SizedBox();
                   }
 
+
                   return GestureDetector(
                     onTap: () {
                       showDialog(

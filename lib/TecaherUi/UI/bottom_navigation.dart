@@ -30,6 +30,7 @@ import 'AdminMsg/AdminTabScreen/admin_tab_screen.dart';
 import 'AdminTimeTable/admin_time_table.dart';
 import 'AllStudents/all_students.dart';
 import 'AlumniDashBoard/AlumniAdminTabScreen/alumni_admin_tab_screen.dart';
+import 'AlumniProfileList/admin_alumni_profile.dart';
 import 'AppReport/app_report.dart';
 import 'Assignment/assignment.dart';
 import 'Attendance/AttendanceScreen.dart';
@@ -1178,6 +1179,47 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             ),
                           ),
 
+
+                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '') == 2)
+                            ListTile(
+                              title: Text(
+                                'Alumni Profile',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors2.primary,
+                                child: Icon(
+                                  CupertinoIcons.person_2,
+                                  color: AppColors2.textblack,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return AdminAlumniListScreen();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          Padding(
+                            padding: EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
 
                           _drawerTile(
                             title: 'Alumni Messages',
