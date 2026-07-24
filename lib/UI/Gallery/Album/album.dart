@@ -20,12 +20,14 @@ import '../ImageList/image_list.dart' show ImageListScreen;
 class Album {
   final String coverImageUrl;
   final String albumName;
+  final String description;
   final String eventDate;
   final List<AlbumImage> albumImages;
 
   Album({
     required this.coverImageUrl,
     required this.albumName,
+    required this.description,
     required this.eventDate,
     required this.albumImages,
   });
@@ -41,6 +43,7 @@ class Album {
     return Album(
       coverImageUrl: json['cover_image_url'] ?? '',
       albumName: json['album_name'] ?? '',
+      description: json['description'] ?? '',
       eventDate: json['event_date'] ?? '',
       albumImages: images,
     );
