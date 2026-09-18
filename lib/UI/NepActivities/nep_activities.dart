@@ -271,7 +271,7 @@ class NepSummaryCard extends StatelessWidget {
                     children: [
                       _miniChip(Icons.calendar_month_rounded, AppDateTimeUtils.date(item['event_date'])),
                       SizedBox(width: 8.w),
-                      _miniChip(Icons.smart_display_rounded, "${videos.length} Videos"),
+                      _miniChip(Icons.image, "${videos.length} Images"),
                       const Spacer(),
                       Container(
                         padding: EdgeInsets.all(8.w),
@@ -324,36 +324,36 @@ class NepSummaryCard extends StatelessWidget {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(8.r)),
               ),
               child: Center(
-                child: Icon(Icons.image_not_supported_rounded, color: Colors.white, size: 44.sp),
+                child: Icon(Icons.image, color: Colors.white, size: 44.sp),
               ),
             ),
           ),
         ),
-        Positioned(
-          left: 12.w,
-          bottom: 12.h,
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 5.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30.r),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.play_circle_fill_rounded, color: kRed, size: 15.sp),
-                SizedBox(width: 5.w),
-                Text(
-                  "$count Videos",
-                  style: GoogleFonts.poppins(
-                    color: kRed,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        // Positioned(
+        //   left: 12.w,
+        //   bottom: 12.h,
+        //   child: Container(
+        //     padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 5.h),
+        //     decoration: BoxDecoration(
+        //       color: Colors.white,
+        //       borderRadius: BorderRadius.circular(30.r),
+        //     ),
+        //     child: Row(
+        //       children: [
+        //         Icon(Icons.image, color: kRed, size: 15.sp),
+        //         SizedBox(width: 5.w),
+        //         Text(
+        //           "$count Photos",
+        //           style: GoogleFonts.poppins(
+        //             color: kRed,
+        //             fontSize: 10.sp,
+        //             fontWeight: FontWeight.w800,
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }
@@ -452,7 +452,7 @@ class NepDetailScreen extends StatelessWidget {
                     children: [
                       _infoChip(Icons.calendar_month_rounded, AppDateTimeUtils.date(item['event_date'])),
                       SizedBox(width: 8.w),
-                      _infoChip(Icons.smart_display_rounded, "${videos.length} Videos"),
+                      _infoChip(Icons.image, "${videos.length} Images"),
                     ],
                   ),
                   SizedBox(height: 5.h),
@@ -481,7 +481,7 @@ class NepDetailScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 10.h),
                   Text(
-                    "Videos List",
+                    "Image List",
                     style: GoogleFonts.poppins(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w800,
@@ -613,29 +613,47 @@ class YoutubeCard extends StatelessWidget {
               decoration:  BoxDecoration(
                 color: Colors.grey.shade400
               ),
-            ),
-          ),
-        ),
-        Positioned.fill(
-          child: Center(
-            child: Container(
-              height: 46.h,
-              width: 46.w,
-              decoration: BoxDecoration(
-                color: kRed,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: kRed.withOpacity(.45),
-                    blurRadius: 14,
-                    spreadRadius: 2,
+              child: Center(
+                child: Container(
+                  height: 46.h,
+                  width: 46.w,
+                  decoration: BoxDecoration(
+                    color: kRed,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: kRed.withOpacity(.45),
+                        blurRadius: 14,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
-                ],
+                  child: Icon(Icons.image, color: Colors.white, size: 30.sp),
+                ),
               ),
-              child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 30.sp),
             ),
           ),
         ),
+        // Positioned.fill(
+        //   child: Center(
+        //     child: Container(
+        //       height: 46.h,
+        //       width: 46.w,
+        //       decoration: BoxDecoration(
+        //         color: kRed,
+        //         shape: BoxShape.circle,
+        //         boxShadow: [
+        //           BoxShadow(
+        //             color: kRed.withOpacity(.45),
+        //             blurRadius: 14,
+        //             spreadRadius: 2,
+        //           ),
+        //         ],
+        //       ),
+        //       child: Icon(Icons.image, color: Colors.white, size: 30.sp),
+        //     ),
+        //   ),
+        // ),
       ],
     );
   }

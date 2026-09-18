@@ -1,20 +1,19 @@
 import 'dart:convert';
 import 'package:avi/constants.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class MessageDetailScreen extends StatefulWidget {
+class AlumniStudentMessageDetailScreen extends StatefulWidget {
   final String userName;
   final String userImage;
   final int partnerId;
   final String classSection;
 
-  const MessageDetailScreen({
+  const AlumniStudentMessageDetailScreen({
     super.key,
     required this.userName,
     required this.userImage,
@@ -23,13 +22,11 @@ class MessageDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<MessageDetailScreen> createState() => _MessageDetailScreenState();
+  State<AlumniStudentMessageDetailScreen> createState() => _MessageDetailScreenState();
 }
 
-class _MessageDetailScreenState extends State<MessageDetailScreen> {
+class _MessageDetailScreenState extends State<AlumniStudentMessageDetailScreen> {
   bool isLoading = true;
-  bool isReceiverLoadingMore = false;
-  bool isSearchingReceiver = false;
 
   Map<String, dynamic>? messageData;
   Map<String, dynamic>? userData;
@@ -38,213 +35,65 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
   int totalReceivers = 0;
   int seenByReceivers = 0;
 
-  int currentPage = 1;
-  int lastPage = 1;
-  bool hasMoreReceivers = true;
-
   String receiverSearch = "";
-  final TextEditingController receiverSearchController =
-  TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchMessages(page: 1, reset: true);
+    fetchMessages();
   }
 
-  @override
-  void dispose() {
-    receiverSearchController.dispose();
-    super.dispose();
-  }
-
-  Future<void> fetchMessages({
-    int page = 1,
-    bool reset = true,
-    String search = "",
-  }) async {
+  Future<void> fetchMessages() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('teachertoken');
+      final token = prefs.getString('token');
 
       if (token == null || token.isEmpty) {
-        setState(() {
-          isLoading = false;
-          isReceiverLoadingMore = false;
-          isSearchingReceiver = false;
-        });
+        setState(() => isLoading = false);
+        debugPrint("Token not found");
         return;
       }
 
-      if (reset) {
-        setState(() {
-          isLoading = true;
-          currentPage = 1;
-          lastPage = 1;
-          hasMoreReceivers = true;
-          isReceiverLoadingMore = false;
-          receiversList.clear();
-        });
-      }
-
-      final uri = Uri.parse(
-        "${ApiRoutes.getTeacherSendPartner}${widget.partnerId}",
-      ).replace(
-        queryParameters: {
-          "page": page.toString(),
-          "per_page": "100",
-          if (search.trim().isNotEmpty) "search": search.trim(),
-        },
+      final url = Uri.parse(
+        "${ApiRoutes.getStudentSendPartner}${widget.partnerId}",
       );
 
       final response = await http.get(
-        uri,
+        url,
         headers: {
           "Authorization": "Bearer $token",
           "Accept": "application/json",
         },
       );
 
-      debugPrint("API URL: $uri");
       debugPrint("API STATUS: ${response.statusCode}");
       debugPrint("API BODY: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        final List<Map<String, dynamic>> newReceivers =
-        List<Map<String, dynamic>>.from(
-          (data["receivers"] ?? []).map(
-                (e) => Map<String, dynamic>.from(e),
-          ),
-        );
-
-        final pagination = data["pagination"] ?? {};
-
         setState(() {
           messageData = Map<String, dynamic>.from(data["message"] ?? {});
           userData = Map<String, dynamic>.from(data["user"] ?? {});
 
-          if (reset) {
-            receiversList = newReceivers;
-          } else {
-            receiversList.addAll(newReceivers);
-          }
+          receiversList = List<Map<String, dynamic>>.from(
+            (data["receivers"] ?? []).map(
+                  (e) => Map<String, dynamic>.from(e),
+            ),
+          );
 
           totalReceivers = data["total_receivers"] ?? receiversList.length;
           seenByReceivers = data["seen_by_receivers"] ?? 0;
 
-          currentPage = pagination["current_page"] ?? page;
-          lastPage = pagination["last_page"] ?? 1;
-          hasMoreReceivers = currentPage < lastPage;
-
           isLoading = false;
-          isReceiverLoadingMore = false;
-          isSearchingReceiver = false;
         });
       } else {
-        setState(() {
-          isLoading = false;
-          isReceiverLoadingMore = false;
-          isSearchingReceiver = false;
-        });
+        setState(() => isLoading = false);
       }
     } catch (e) {
       debugPrint("Message API Error: $e");
-      setState(() {
-        isLoading = false;
-        isReceiverLoadingMore = false;
-        isSearchingReceiver = false;
-      });
+      setState(() => isLoading = false);
     }
-  }
-
-  Future<void> loadMoreReceivers(VoidCallback refreshSheet) async {
-    if (isReceiverLoadingMore || !hasMoreReceivers) return;
-
-    setState(() {
-      isReceiverLoadingMore = true;
-    });
-
-    refreshSheet();
-
-    await fetchMessages(
-      page: currentPage + 1,
-      reset: false,
-      search: receiverSearch,
-    );
-
-    refreshSheet();
-  }
-
-  Future<void> searchReceivers(VoidCallback refreshSheet) async {
-    FocusScope.of(context).unfocus();
-
-    setState(() {
-      receiverSearch = receiverSearchController.text.trim();
-      isSearchingReceiver = true;
-    });
-
-    refreshSheet();
-
-    await fetchMessages(
-      page: 1,
-      reset: true,
-      search: receiverSearch,
-    );
-
-    refreshSheet();
-  }
-
-  Future<void> clearReceiverSearch(VoidCallback refreshSheet) async {
-    FocusScope.of(context).unfocus();
-
-    receiverSearchController.clear();
-
-    setState(() {
-      receiverSearch = "";
-      isSearchingReceiver = true;
-    });
-
-    refreshSheet();
-
-    await fetchMessages(
-      page: 1,
-      reset: true,
-      search: "",
-    );
-
-    refreshSheet();
-  }
-
-  // ─────────────────────────────────────────────
-  // COPY
-  // ─────────────────────────────────────────────
-
-  void _showSnackBar(String msg) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _copyMessage() async {
-    final title = (messageData?["title"] ?? "").toString().trim();
-    final body = (messageData?["body"] ?? "").toString().trim();
-
-    final text = title.isNotEmpty ? '$title\n\n$body' : body;
-    if (text.isEmpty) return;
-
-    await Clipboard.setData(ClipboardData(text: text));
-    _showSnackBar('Copied');
   }
 
   Widget _networkAvatar({
@@ -293,10 +142,8 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
     final title = (messageData?["title"] ?? "").toString();
     final body = (messageData?["body"] ?? "").toString();
     final time = (messageData?["created_at"] ?? "").toString();
-    // final senderName = (userData?["name"] ?? widget.userName).toString();
-    final senderName = (widget.userName).toString();
-    // final senderImage = (userData?["photo"] ?? widget.userImage).toString();
-    final senderImage = (widget.userImage).toString();
+    final senderName = (userData?["name"] ?? widget.userName).toString();
+    final senderImage = (userData?["photo"] ?? widget.userImage).toString();
     final attachment = (messageData?["attachment"] ?? "").toString();
 
     return Container(
@@ -342,22 +189,6 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
                       ),
                     ),
                     SizedBox(width: 6.w),
-
-                    // time right me hai, to copy icon uske left me
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _copyMessage,
-                      child: Padding(
-                        padding: EdgeInsets.all(2.w),
-                        child: Icon(
-                          Icons.copy_rounded,
-                          size: 15.sp,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 6.w),
-
                     Text(
                       time,
                       style: TextStyle(
@@ -396,6 +227,16 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
                     decoration: TextDecoration.underline,
                   ),
                 ),
+
+                // Text(
+                //   body,
+                //   style: TextStyle(
+                //     fontSize: 12.sp,
+                //     height: 1.45,
+                //     fontWeight: FontWeight.w500,
+                //     color: Colors.black87,
+                //   ),
+                // ),
                 if (attachment.isNotEmpty && attachment != "null") ...[
                   SizedBox(height: 10.h),
                   GestureDetector(
@@ -406,6 +247,11 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
                           url,
                           mode: LaunchMode.externalApplication,
                         );
+                      } else {
+                        // _showSnackBar(
+                        //   'Could not open attachment',
+                        //   isError: true,
+                        // );
                       }
                     },
                     child: Container(
@@ -446,22 +292,20 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
       ),
     );
   }
-
   Future<void> _onOpen(LinkableElement link) async {
     if (!await launchUrl(Uri.parse(link.url))) {
       throw Exception('Could not launch ${link.url}');
     }
   }
-
   Widget _buildReceiverCard(Map<String, dynamic> receiver) {
     final name = (receiver["name"] ?? "Receiver").toString();
-    final className = (receiver["class_name"] ?? "").toString();
     final image = (receiver["image"] ?? "").toString();
+    final type = (receiver["designation"] ?? "").toString();
     final seenAt = receiver["seen_by_receiver"];
     final read = receiver["read"] == 1;
 
-    final bool isRead =
-        read || (seenAt != null && seenAt.toString().trim().isNotEmpty);
+    final bool isRead = read ||
+        (seenAt != null && seenAt.toString().trim().isNotEmpty);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 9.h),
@@ -474,10 +318,28 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _networkAvatar(
-            image: image,
-            radius: 20,
-            iconSize: 22,
+          CircleAvatar(
+            radius: 20.r,
+            backgroundColor: Colors.grey.shade200,
+            child: ClipOval(
+              child: image.trim().isNotEmpty
+                  ? Image.network(
+                image,
+                width: 40.r,
+                height: 40.r,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Icon(
+                  Icons.person_outline,
+                  color: Colors.grey,
+                  size: 22.sp,
+                ),
+              )
+                  : Icon(
+                Icons.person_outline,
+                color: Colors.grey,
+                size: 22.sp,
+              ),
+            ),
           ),
           SizedBox(width: 10.w),
           Expanded(
@@ -494,17 +356,15 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
                     color: Colors.black87,
                   ),
                 ),
-                if (className.isNotEmpty)
-                  Text(
-                    className.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black54,
-                    ),
+                SizedBox(height: 3.h),
+                Text(
+                  type,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade500,
                   ),
+                ),
                 if (seenAt != null && seenAt.toString().trim().isNotEmpty) ...[
                   SizedBox(height: 4.h),
                   Text(
@@ -529,9 +389,8 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
       ),
     );
   }
-
   void _showReceiversBottomSheet() {
-    final ScrollController scrollController = ScrollController();
+    receiverSearch = "";
 
     showModalBottomSheet(
       context: context,
@@ -540,29 +399,18 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            void onScroll() {
-              if (!scrollController.hasClients) return;
-
-              final currentScroll = scrollController.position.pixels;
-              final maxScroll = scrollController.position.maxScrollExtent;
-
-              if (currentScroll >= maxScroll - 150) {
-                loadMoreReceivers(() {
-                  setSheetState(() {});
-                });
-              }
-            }
-
-            scrollController.removeListener(onScroll);
-            scrollController.addListener(onScroll);
+            final filteredList = receiversList.where((receiver) {
+              final name = (receiver["name"] ?? "").toString().toLowerCase();
+              final type = (receiver["receiver_type"] ?? "").toString().toLowerCase();
+              final search = receiverSearch.toLowerCase().trim();
+              return name.contains(search) || type.contains(search);
+            }).toList();
 
             return Container(
-              height: MediaQuery.of(context).size.height * 0.82,
+              height: MediaQuery.of(context).size.height * 0.78,
               decoration: BoxDecoration(
                 color: const Color(0xffFFF8F8),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(22.r),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(22.r)),
               ),
               child: Column(
                 children: [
@@ -579,116 +427,25 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
 
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12.w),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: receiverSearchController,
-                            textInputAction: TextInputAction.search,
-                            onSubmitted: (_) {
-                              searchReceivers(() {
-                                setSheetState(() {});
-                              });
-                            },
-                            decoration: InputDecoration(
-                              hintText: "Search receiver...",
-                              prefixIcon: Icon(
-                                Icons.search,
-                                color: Colors.red.shade600,
-                              ),
-                              suffixIcon: receiverSearchController.text
-                                  .trim()
-                                  .isNotEmpty
-                                  ? IconButton(
-                                onPressed: () {
-                                  clearReceiverSearch(() {
-                                    setSheetState(() {});
-                                  });
-                                },
-                                icon: Icon(
-                                  Icons.close,
-                                  color: Colors.red.shade600,
-                                ),
-                              )
-                                  : null,
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12.w,
-                                vertical: 10.h,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                                borderSide:
-                                BorderSide(color: Colors.red.shade100),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                                borderSide: BorderSide(
-                                  color: Colors.red.shade500,
-                                  width: 1.4,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        InkWell(
-                          onTap: isSearchingReceiver
-                              ? null
-                              : () {
-                            searchReceivers(() {
-                              setSheetState(() {});
-                            });
-                          },
+                    child: TextField(
+                      onChanged: (value) {
+                        setSheetState(() => receiverSearch = value);
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Search receiver...",
+                        prefixIcon: Icon(Icons.search, color: Colors.red.shade600),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                        enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12.r),
-                          child: Container(
-                            height: 35.h,
-                            padding: EdgeInsets.symmetric(horizontal: 13.w),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade700,
-                              borderRadius: BorderRadius.circular(12.r),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withOpacity(.18),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: isSearchingReceiver
-                                  ? SizedBox(
-                                height: 18.h,
-                                width: 18.h,
-                                child: const CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                                  : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.search,
-                                    color: Colors.white,
-                                    size: 17.sp,
-                                  ),
-                                  SizedBox(width: 4.w),
-                                  Text(
-                                    "Search",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          borderSide: BorderSide(color: Colors.red.shade100),
                         ),
-                      ],
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          borderSide: BorderSide(color: Colors.red.shade500, width: 1.4),
+                        ),
+                      ),
                     ),
                   ),
 
@@ -699,20 +456,14 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10.w,
-                          vertical: 0.h,
-                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
                         decoration: BoxDecoration(
                           color: Colors.red.shade50,
                           borderRadius: BorderRadius.circular(20.r),
                           border: Border.all(color: Colors.red.shade100),
                         ),
                         child: Text(
-                          receiverSearch.trim().isEmpty
-                              ? "Read by : $seenByReceivers/$totalReceivers "
-                              "(${totalReceivers == 0 ? "0" : ((seenByReceivers / totalReceivers) * 100).toStringAsFixed(2)}%) Recipient(s)"
-                              : "Search: $receiverSearch | Result: ${receiversList.length}",
+                          "Read by : $seenByReceivers/$totalReceivers (${totalReceivers == 0 ? "0" : ((seenByReceivers / totalReceivers) * 100).toStringAsFixed(2)}%) Recipient(s)",
                           style: TextStyle(
                             fontSize: 11.sp,
                             fontWeight: FontWeight.w700,
@@ -727,13 +478,9 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
                   SizedBox(height: 6.h),
 
                   Expanded(
-                    child: receiversList.isEmpty
+                    child: filteredList.isEmpty
                         ? Center(
-                      child: isSearchingReceiver
-                          ? const CircularProgressIndicator(
-                        color: Colors.red,
-                      )
-                          : Text(
+                      child: Text(
                         "No receivers found",
                         style: TextStyle(
                           fontSize: 13.sp,
@@ -743,22 +490,9 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
                       ),
                     )
                         : ListView.builder(
-                      controller: scrollController,
-                      itemCount: receiversList.length +
-                          (isReceiverLoadingMore ? 1 : 0),
+                      itemCount: filteredList.length,
                       itemBuilder: (context, index) {
-                        if (index == receiversList.length) {
-                          return Padding(
-                            padding: EdgeInsets.all(14.h),
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.red,
-                              ),
-                            ),
-                          );
-                        }
-
-                        return _buildReceiverCard(receiversList[index]);
+                        return _buildReceiverCard(filteredList[index]);
                       },
                     ),
                   ),
@@ -768,11 +502,8 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
           },
         );
       },
-    ).whenComplete(() {
-      scrollController.dispose();
-    });
+    );
   }
-
   Widget _buildReceiverButton() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
@@ -868,8 +599,7 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
         title: Row(
           children: [
             _networkAvatar(
-              // image: senderImage,
-              image: widget.userImage,
+              image: senderImage,
               radius: 19,
               iconSize: 20,
             ),
@@ -879,8 +609,7 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.userName.toString(),
-                    // senderName,
+                    senderName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -919,11 +648,7 @@ class _MessageDetailScreenState extends State<MessageDetailScreen> {
       )
           : RefreshIndicator(
         color: Colors.red,
-        onRefresh: () async {
-          receiverSearchController.clear();
-          receiverSearch = "";
-          await fetchMessages(page: 1, reset: true);
-        },
+        onRefresh: fetchMessages,
         child: ListView(
           padding: EdgeInsets.only(bottom: 10.h),
           children: [

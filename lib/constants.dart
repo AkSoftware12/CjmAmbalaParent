@@ -21,6 +21,15 @@ class AppColors {
   static const Color error = Color(0xFFDC3545); // Error color (red)
   static const Color success = Color(0xFF28A745); // Success color (green)
   static const Color yellow = Color(0xFFCCAB21); // Success color (green)
+
+  static const red = Color(0xFFC62828);
+  static const redDeep = Color(0xFF8E0000);
+  static const redSoft = Color(0xFFFFEBEE);
+  static const ink = Color(0xFF1C1B1F);
+  static const muted = Color(0xFF6B7280);
+  static const line = Color(0xFFE6E8EC);
+  static const canvas = Color(0xFFF5F6F8);
+
 }
 
 class AppColors2 {

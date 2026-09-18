@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
@@ -126,12 +127,19 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
   bool _isDisposed = false;
   bool _inFlight = false;
 
+  // har poll pe SharedPreferences platform call na ho, isliye cache
+  String? _token;
+
+  // last response body — same hai to poora kaam skip
+  String? _lastBody;
+
   PlatformFile? _selectedFile;
   Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
+
     _fetchMessages(initial: true);
     _startPolling();
   }
@@ -152,8 +160,9 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
 
   void _startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || _isDisposed) return;
+      if (_focusNode.hasFocus) return; // user type/paste kar raha hai => skip
       _fetchMessages();
     });
   }
@@ -172,8 +181,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
         setState(() => _isLoading = true);
       }
 
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('teachertoken');
+      final token = await _getToken();
 
       if (token == null) return;
 
@@ -188,6 +196,11 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
       if (!mounted || _isDisposed) return;
 
       if (response.statusCode == 200) {
+        // kuch nahi badla => decode/parse/rebuild kuch mat karo.
+        // isi se platform channel free rehta hai (clipboard, keyboard).
+        if (response.body == _lastBody) return;
+        _lastBody = response.body;
+
         final data = jsonDecode(response.body);
         final List raw = data['messages'] ?? [];
 
@@ -220,7 +233,8 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
           }
         }
 
-        if (mounted) {
+        // agar data bilkul same hai to rebuild mat karo
+        if (mounted && _signature(unique) != _signature(_messages)) {
           setState(() {
             _messages
               ..clear()
@@ -318,7 +332,9 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
 
       if (!mounted || _isDisposed) return;
 
-      if (response.statusCode == 200 || response.statusCode == 201|| response.statusCode == 202) {
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 202) {
         Map<String, dynamic>? decoded;
         try {
           decoded = jsonDecode(responseBody);
@@ -392,57 +408,6 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
   }
 
   // ─────────────────────────────────────────────
-  // DELETE
-  // ─────────────────────────────────────────────
-
-  Future<void> _deleteMessage(MessageModel msg) async {
-    // local pending / failed delete
-    if (msg.status == MessageStatus.sending ||
-        msg.status == MessageStatus.failed ||
-        msg.id == null) {
-      setState(() {
-        _messages.removeWhere((m) => m.localId == msg.localId);
-      });
-      _showSnackBar('Message removed');
-      return;
-    }
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('teachertoken');
-      if (token == null) {
-        _showSnackBar('Token not found', isError: true);
-        return;
-      }
-
-      final response = await http.post(
-        Uri.parse('${ApiRoutes.messageDelete}${msg.id}'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-
-      debugPrint('DELETE [${response.statusCode}] => ${response.body}');
-
-      if (!mounted || _isDisposed) return;
-
-      if (response.statusCode == 200) {
-        setState(() {
-          _messages.removeWhere((m) => m.id == msg.id);
-        });
-        _showSnackBar('Message deleted successfully');
-        await _fetchMessages();
-      } else {
-        _showSnackBar('Failed to delete message', isError: true);
-      }
-    } catch (e) {
-      debugPrint('Delete error: $e');
-      _showSnackBar('Delete error: $e', isError: true);
-    }
-  }
-
-  // ─────────────────────────────────────────────
   // PICK FILE
   // ─────────────────────────────────────────────
 
@@ -491,6 +456,19 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
     );
   }
 
+  Future<String?> _getToken() async {
+    if (_token != null) return _token;
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('teachertoken');
+    return _token;
+  }
+
+  // list ka fingerprint — isse pata chalta hai kuch actually change hua ya nahi
+  String _signature(List<MessageModel> list) => list
+      .map((m) =>
+  '${m.id}|${m.localId}|${m.status.index}|${m.seenByReceiver ?? ''}|${m.body.hashCode}|${m.attachmentUrl ?? ''}')
+      .join(',');
+
   bool _isMe(MessageModel msg) => msg.send == 1;
 
   DateTime? _parseDate(String raw) {
@@ -527,137 +505,6 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
     return DateFormat('dd MMM yyyy').format(dt);
   }
 
-  Future<void> _showDeleteSheet(MessageModel msg) async {
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(28),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // drag handle
-                  Container(
-                    width: 42,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-
-                  // icon
-                  Container(
-                    height: 62,
-                    width: 62,
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.10),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: Colors.red,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // title
-                  const Text(
-                    'Delete message?',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1C1C1E),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // subtitle
-                  Text(
-                    msg.status == MessageStatus.sending
-                        ? 'This message is still sending. It will be removed from your chat.'
-                        : 'This message will be deleted from the conversation.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(52),
-                            side: BorderSide(color: Colors.grey.shade300),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context, 'delete'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            elevation: 0,
-                            minimumSize: const Size.fromHeight(52),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: const Text(
-                            'Delete',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    if (action == 'delete') {
-      await _deleteMessage(msg);
-    }
-  }
   // ─────────────────────────────────────────────
   // BUILD
   // ─────────────────────────────────────────────
@@ -670,8 +517,11 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
       body: Column(
         children: [
           Expanded(child: _buildMessageList()),
-          if (_selectedFile != null) _buildFilePreview(),
-          _buildInputBar(),
+          SizedBox(
+            height: 80,
+          )
+          // if (_selectedFile != null) _buildFilePreview(),
+          // _buildInputBar(),
         ],
       ),
     );
@@ -792,6 +642,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
             index == 0 || _isMe(_messages[index - 1]) != isMe;
 
         return Column(
+          key: ValueKey(msg.id ?? msg.localId),
           children: [
             if (showDate) _buildDateSeparator(msg.createdAt),
             _buildRow(msg, isMe, showAvatar),
@@ -834,31 +685,6 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
     );
   }
 
-  // Widget _buildRow(MessageModel msg, bool isMe, bool showAvatar) {
-  //   final avatarWidget =
-  //   showAvatar ? _buildAvatar(msg, isMe) : SizedBox(width: 36.w);
-  //
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-  //     child: Row(
-  //       mainAxisAlignment:
-  //       isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-  //       crossAxisAlignment: CrossAxisAlignment.end,
-  //       children: isMe
-  //           ? [
-  //         _buildBubble(msg, isMe),
-  //         const SizedBox(width: 6),
-  //         avatarWidget,
-  //       ]
-  //           : [
-  //         avatarWidget,
-  //         const SizedBox(width: 6),
-  //         _buildBubble(msg, isMe),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   Widget _buildAvatar(MessageModel msg, bool isMe) {
     final initial =
     msg.senderName.isNotEmpty ? msg.senderName[0].toUpperCase() : '?';
@@ -883,10 +709,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
     showAvatar ? _buildAvatar(msg, isMe) : SizedBox(width: 36.w);
 
     final bubbleWidget = Flexible(
-      child: GestureDetector(
-        onLongPress: isMe ? () => _showDeleteSheet(msg) : null,
-        child: _buildBubble(msg, isMe),
-      ),
+      child: _buildBubble(msg, isMe),
     );
 
     return Padding(
@@ -906,6 +729,33 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
           const SizedBox(width: 6),
           bubbleWidget,
         ],
+      ),
+    );
+  }
+
+  // poora message clipboard me — dusre apps me paste karne ke liye
+  Future<void> _copyToClipboard(MessageModel msg) async {
+    final text = msg.body.trim();
+    if (text.isEmpty) return;
+
+    await Clipboard.setData(ClipboardData(text: text));
+    // _showSnackBar('Copied');
+  }
+
+  // time ke opposite side wala copy icon
+  Widget _buildCopyButton(MessageModel msg) {
+    if (msg.body.trim().isEmpty) return const SizedBox.shrink();
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _copyToClipboard(msg),
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Icon(
+          Icons.copy_rounded,
+          size: 14,
+          color: Colors.grey.shade500,
+        ),
       ),
     );
   }
@@ -970,14 +820,14 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
                 ),
               ),
 
+            // Long press => text seedha input field me (niche _buildRow me)
             if (body.isNotEmpty)
-              SelectableLinkify(
+              Linkify(
                 text: body,
                 onOpen: _onOpen,
                 style: TextStyle(
                   fontSize: 14.sp,
                   height: 1.45,
-                  // fontWeight: FontWeight.normal,
                   color: textColor,
                 ),
                 linkStyle: TextStyle(
@@ -988,15 +838,6 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
                   decoration: TextDecoration.underline,
                 ),
               ),
-
-            // Text(
-            //     body,
-            //     style: TextStyle(
-            //       color: textColor,
-            //       fontSize: 14.sp,
-            //       height: 1.45,
-            //     ),
-            //   ),
 
             if (isUploading)
               Padding(
@@ -1100,6 +941,12 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // mera message => time right me hai, to copy left me
+                if (isMe) ...[
+                  _buildCopyButton(msg),
+                  const SizedBox(width: 6),
+                ],
+
                 Text(
                   _formatTime(msg.createdAt),
                   style: TextStyle(
@@ -1107,6 +954,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
                     fontSize: 10.sp,
                   ),
                 ),
+
                 if (isMe && msg.status == MessageStatus.sent) ...[
                   const SizedBox(width: 3),
                   Icon(
@@ -1115,6 +963,12 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
                     color: isSeen ? Colors.lightBlueAccent : Colors.grey,
                   ),
                 ],
+
+                // received message => time left me hai, to copy right me
+                if (!isMe) ...[
+                  const SizedBox(width: 6),
+                  _buildCopyButton(msg),
+                ],
               ],
             ),
           ],
@@ -1122,14 +976,17 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
       ),
     );
   }
+
   // ─────────────────────────────────────────────
   // FILE PREVIEW
   // ─────────────────────────────────────────────
+
   Future<void> _onOpen(LinkableElement link) async {
     if (!await launchUrl(Uri.parse(link.url))) {
       throw Exception('Could not launch ${link.url}');
     }
   }
+
   Widget _buildFilePreview() {
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 4),
@@ -1210,6 +1067,44 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
                 ),
               ),
             ),
+            // DIAGNOSTIC — clipboard Flutter ko kya dikh raha hai
+            // InkWell(
+            //   borderRadius: BorderRadius.circular(50),
+            //   onTap: () async {
+            //     final sw = Stopwatch()..start();
+            //     final data = await Clipboard.getData(Clipboard.kTextPlain);
+            //     final ms = sw.elapsedMilliseconds;
+            //     final len = data?.text?.length ?? -1;
+            //
+            //     debugPrint('CLIPBOARD READ => ${ms}ms, len=$len');
+            //     _showSnackBar('${ms}ms, len=$len', isError: len <= 0);
+            //
+            //     final text = data?.text;
+            //     if (text != null && text.isNotEmpty) {
+            //       final v = _messageController.value;
+            //       final s = v.selection.start < 0
+            //           ? v.text.length
+            //           : v.selection.start;
+            //       final e =
+            //       v.selection.end < 0 ? v.text.length : v.selection.end;
+            //
+            //       _messageController.value = TextEditingValue(
+            //         text: v.text.replaceRange(s, e, text),
+            //         selection:
+            //         TextSelection.collapsed(offset: s + text.length),
+            //       );
+            //       _focusNode.requestFocus();
+            //     }
+            //   },
+            //   child: Padding(
+            //     padding: const EdgeInsets.all(8),
+            //     child: Icon(
+            //       Icons.content_paste_rounded,
+            //       color: AppColors.primary,
+            //       size: 20,
+            //     ),
+            //   ),
+            // ),
             Expanded(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 120),
@@ -1227,6 +1122,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen> {
                     focusNode: _focusNode,
                     enabled: !_isSending,
                     maxLines: null,
+                    enableInteractiveSelection: true,
                     keyboardType: TextInputType.multiline,
                     textCapitalization: TextCapitalization.sentences,
                     style: TextStyle(

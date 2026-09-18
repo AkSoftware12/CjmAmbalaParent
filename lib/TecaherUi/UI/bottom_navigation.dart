@@ -39,6 +39,7 @@ import 'dart:convert';
 import 'BirthdayScreen/birthday_screen.dart';
 import 'ClassTeacher/class_teacher.dart';
 import 'FreeTeachers/free_teacher.dart';
+import 'MasterSearch/master_report_screen.dart';
 import 'Notice/notice.dart';
 import 'Notification/notification.dart';
 import 'Profile/ProfileScreen.dart';
@@ -660,7 +661,46 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                               thickness: 1,
                             ),
                           ),
-
+                          if (int.tryParse(teacherData?['role_manual'].toString() ?? '') == 2)
+                            ListTile(
+                              title: Text(
+                                'Master Search',
+                                style: GoogleFonts.cabin(
+                                  textStyle: TextStyle(
+                                    color: AppColors2.textblack,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              trailing: Container(
+                                height: 20,
+                                width: 20,
+                                color: AppColors2.primary,
+                                child: Icon(
+                                  CupertinoIcons.search,
+                                  color: AppColors2.textblack,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return MasterReportScreen();
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          Padding(
+                            padding: EdgeInsets.only(left: 8, right: 8),
+                            child: Divider(
+                              height: 1,
+                              color: Colors.grey.shade300,
+                              thickness: 1,
+                            ),
+                          ),
                           ListTile(
                             title: Text(
                               'Students Profile',
@@ -1150,6 +1190,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                             iconBox: Container(
                               height: 20,
                               width: 20,
+
                               color: AppColors.primary,
                               child: Icon(
                                 CupertinoIcons.bell,
