@@ -46,6 +46,7 @@ import 'Profile/ProfileScreen.dart';
 import 'SalarySlip/salary_slip.dart';
 import 'TeacherMessage/message.dart';
 import 'TeachingStaff/teaching_staff.dart';
+import 'TeachingStaffProfile/staff_type_screen.dart';
 import 'TeachingStaffProfile/teaching_staff_profile.dart';
 import 'TimeTable/time_table_teacher.dart';
 import 'TransactionLibrary/teacher_transaction_library.dart';
@@ -900,7 +901,7 @@ class _BottomNavBarScreenState extends State<TeacherBottomNavBarScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) {
-                                      return TeachingStaffProfile();
+                                      return StaffTypeScreen();
                                     },
                                   ),
                                 );

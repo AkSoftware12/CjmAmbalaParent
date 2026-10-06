@@ -7,9 +7,10 @@ class AppColors {
    static  Color secondary =Colors.red.shade500;
   // static  Color secondary41 =HexColor('#FF2C2C');
 
-
-
-
+  static const Color primaryDark = Color(0xFF8E0000);
+  static const Color primaryLight = Color(0xFFFFEBEE);
+  static const Color text = Color(0xFF2B1B1B);
+  static const Color subtext = Color(0xFF8A7474);
 
 
 
@@ -209,6 +210,7 @@ class ApiRoutes {
   static const String getTeacherTeacherSubject = "$baseUrl/teacher-assigned-subjects";
   static const String getTeacherAllStudents1 = "$baseUrl/teachers/students";
   static const String getTeacherStudentsProfile = "$baseUrl/teachers/students/";
+  static const String getStaffType = "$baseUrl/staff-by-type";
   static const String getTeacherAllStudents = "$baseUrl/teachers/students?class=1&section=1";
 
 

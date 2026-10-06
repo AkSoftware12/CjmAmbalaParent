@@ -2,7 +2,7 @@ name: avi
 description: "A new Flutter project."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.62+62
+version: 1.0.63+63
 
 
 environment:
@@ -21,6 +21,7 @@ dependencies:
 #  google_fonts: ^8.0.2
   google_fonts: ^6.2.1
   carousel_slider_plus: ^7.1.0
+
   table_calendar: ^3.0.9
   intl: ^0.20.2
   html: ^0.15.0 # Check for the latest version

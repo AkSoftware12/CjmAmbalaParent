@@ -311,7 +311,7 @@ class _MasterReportScreenState extends State<MasterReportScreen> {
               onRemovePerson: _removePerson,
             ),
           // if (!_loading && _error == null && _items.isNotEmpty)
-            // _StatsStrip(stats: _stats),
+          // _StatsStrip(stats: _stats),
           Expanded(
             child: RefreshIndicator(
               color: AppColors.red,
@@ -926,14 +926,23 @@ class _StatusPill extends StatelessWidget {
 }
 
 /// Student ko Employee se alag pehchanne ke liye chhota pill.
+/// [label] diya ho (receiver_type se) to wahi text dikhta hai.
 class _KindBadge extends StatelessWidget {
-  const _KindBadge({required this.isStudent});
+  const _KindBadge({required this.isStudent, this.label});
 
   final bool isStudent;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
-    final color = isStudent ? AppColors.red : AppColors.ink;
+    final both = label == 'Employee & Student';
+    final student = label == null ? isStudent : label == 'Student';
+    final color = student ? AppColors.red : AppColors.ink;
+    final icon = both
+        ? Icons.groups_rounded
+        : (student ? Icons.school_rounded : Icons.badge_rounded);
+    final text = label ?? (isStudent ? 'Student' : 'Employee');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
       decoration: BoxDecoration(
@@ -943,11 +952,10 @@ class _KindBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isStudent ? Icons.school_rounded : Icons.badge_rounded,
-              size: 11, color: color),
+          Icon(icon, size: 11, color: color),
           const SizedBox(width: 4),
           Text(
-            isStudent ? 'Student' : 'Employee',
+            text,
             style: TextStyle(
                 fontSize: 10.5, fontWeight: FontWeight.w700, color: color),
           ),
@@ -1750,22 +1758,15 @@ class _MessageSheet extends StatelessWidget {
                     _PartyRow(
                       label: 'From',
                       person: m.sender,
-                      // onTap: () => onOpenChat(m.sender),
-                      // onTap: () {
-                      //
-                      // },
                     ),
                     const SizedBox(height: 12),
                     _PartyRow(
                       label: 'To',
                       person: m.receiver,
+                      badgeLabel: m.receiverTypeLabel,
                       extra: m.totalReceivers > 1
                           ? '+${m.totalReceivers - 1} more'
                           : null,
-                      // onTap: () => onOpenChat(m.receiver),
-                      // onTap: () {
-                      //
-                      // },
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -1779,12 +1780,11 @@ class _MessageSheet extends StatelessWidget {
                         ),
                         onPressed: () => onOpenChat(m.sender),
                         icon: const Icon(Icons.more, size: 18),
-                        label: Text(
-                          // 'Open chat with ${_firstName(m.sender.name)}',
+                        label: const Text(
                           'View Detail',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 14.5, fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -1823,7 +1823,6 @@ class _MessageSheet extends StatelessWidget {
                         label: 'Status', value: m.isUnread ? 'Unread' : 'Read'),
                     _InfoRow(label: 'Receivers', value: '${m.totalReceivers}'),
                     _InfoRow(label: 'Seen by', value: '${m.seenByReceivers}'),
-                    // _InfoRow(label: 'Message ID', value: '${m.id}'),
                   ],
                 ),
               ),
@@ -1840,13 +1839,19 @@ class _PartyRow extends StatelessWidget {
     required this.label,
     required this.person,
     this.extra,
-    // this.onTap,
+    this.badgeLabel,
   });
 
   final String label;
   final MessagePerson person;
   final String? extra;
-  // final VoidCallback? onTap;
+
+  /// receiver_type wala text (Employee / Student / Employee & Student).
+  final String? badgeLabel;
+
+  /// Naam + "+40 more" (naam khali ho to sirf "+40 more", bina extra space).
+  String get _nameText =>
+      '${_titleCase(person.name)}  ${extra ?? ''}'.trim();
 
   @override
   Widget build(BuildContext context) {
@@ -1855,7 +1860,6 @@ class _PartyRow extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        // onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
           child: Row(
@@ -1872,38 +1876,59 @@ class _PartyRow extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: AppColors.muted)),
                     const SizedBox(height: 2),
-                    Text(
-                      _titleCase(person.name) +
-                          (extra == null ? '' : '  $extra'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.ink),
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        _KindBadge(isStudent: person.isStudent),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            person.detail,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                fontSize: 13, color: AppColors.muted),
+                    if (badgeLabel != null)
+                    // "To" row: "+40 more" aur badge ek hi line me,
+                    // neeche "Staff" wala text nahi.
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              _nameText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.ink),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 8),
+                          _KindBadge(
+                            isStudent: person.isStudent,
+                            label: badgeLabel,
+                          ),
+                        ],
+                      )
+                    else ...[
+                      Text(
+                        _nameText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.ink),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          _KindBadge(isStudent: person.isStudent),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              person.detail,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontSize: 13, color: AppColors.muted),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
-              // if (onTap != null)
-              //   const Icon(Icons.chevron_right_rounded,
-              //       size: 22, color: AppColors.muted),
             ],
           ),
         ),

@@ -10,7 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../ClassTeacher/fullimageclassteacher.dart';
 
 class TeachingStaffProfile extends StatefulWidget {
-  const TeachingStaffProfile({super.key});
+  final int id;
+  const TeachingStaffProfile({super.key, required this.id});
 
   @override
   State<TeachingStaffProfile> createState() => _TeachingStaffState();
@@ -51,7 +52,10 @@ class _TeachingStaffState extends State<TeachingStaffProfile> {
       // ✅ Your API:
       // http://192.168.1.10/cjm_ambala12/api/staff
       final res = await http.get(
-        Uri.parse(ApiRoutes.getStaff), // ✅ make sure this points to /api/staff
+        Uri.parse('${ApiRoutes.getStaff}/${widget.id}'),
+        // Uri.parse('http://192.168.1.6/cjm_ambala12/api/staff/${widget.id}'),
+
+        // Uri.parse(ApiRoutes.getStaff), // ✅ make sure this points to /api/staff
         headers: {
           "Accept": "application/json",
           if (token.isNotEmpty) "Authorization": "Bearer $token",

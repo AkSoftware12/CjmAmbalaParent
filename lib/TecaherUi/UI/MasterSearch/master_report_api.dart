@@ -274,6 +274,7 @@ class MessageItem {
   final String? attachment;
   final MessagePerson sender;
   final MessagePerson receiver;
+  final int? receiverType; // 1 = Employee, 2 = Student, 3 = Both
   final int totalReceivers;
   final int seenByReceivers;
   final int unseenByReceivers;
@@ -288,6 +289,7 @@ class MessageItem {
     this.title,
     this.body,
     this.attachment,
+    this.receiverType,
     this.totalReceivers = 1,
     this.seenByReceivers = 0,
     this.unseenByReceivers = 0,
@@ -299,6 +301,19 @@ class MessageItem {
   int get newMsgId => id;
 
   bool get isUnread => unseenByReceivers > 0;
+
+  /// receiver_type ka label: 1 = Employee, 2 = Student, 3 = dono.
+  String? get receiverTypeLabel {
+    switch (receiverType) {
+      case 1:
+        return 'Employee';
+      case 2:
+        return 'Student';
+      case 3:
+        return 'Employee & Student';
+    }
+    return null;
+  }
 
   bool get hasAttachment => attachment != null && attachment!.isNotEmpty;
 
@@ -339,6 +354,7 @@ class MessageItem {
         Map<String, dynamic>.from(j['receiver'] as Map? ?? const {}),
         newMsgId: newMsgId,
       ),
+      receiverType: _asInt(j['receiver_type']),
       totalReceivers: _asInt(j['total_receivers']) ?? 1,
       seenByReceivers: _asInt(j['seen_by_receivers']) ?? 0,
       unseenByReceivers: _asInt(j['unseen_by_receivers']) ?? 0,
