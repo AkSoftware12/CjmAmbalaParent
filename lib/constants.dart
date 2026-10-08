@@ -59,8 +59,10 @@ class ApiRoutes {
   // Gallery App url
 
 
+
   // Main App Url
   static const String baseUrl = "https://softcjm.cjmambala.co.in/api";
+  // static const String baseUrl = "http://192.168.1.6/cjm_ambala12/api";
   // static const String serverBaseUrl = "https://softcjm.aksoftsol.com/api";
   // static const String serverBaseUrl = "http://192.168.1.10/softcjmmassgeapi/api";
   static const String baseUrlNewUser = "https://cjmambala.co.in/api";

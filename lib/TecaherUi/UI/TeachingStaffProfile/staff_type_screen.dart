@@ -11,14 +11,22 @@ class StaffType {
   final int id;
   final String title;
   final int priorityOrder;
+  final int activeUsersCount;
 
-  StaffType({required this.id, required this.title, required this.priorityOrder});
+  StaffType({
+    required this.id,
+    required this.title,
+    required this.priorityOrder,
+    required this.activeUsersCount,
+  });
 
   factory StaffType.fromJson(Map<String, dynamic> json) {
     return StaffType(
       id: json['id'] ?? 0,
       title: (json['title'] ?? '').toString(),
       priorityOrder: json['priority_order'] ?? 0,
+      activeUsersCount:
+      int.tryParse((json['active_users_count'] ?? 0).toString()) ?? 0,
     );
   }
 
@@ -200,6 +208,7 @@ class _StaffCardState extends State<_StaffCard> {
   @override
   Widget build(BuildContext context) {
     final accent = widget.item.accent;
+    final count = widget.item.activeUsersCount;
 
     return AnimatedScale(
       scale: _pressed ? 0.96 : 1,
@@ -284,7 +293,7 @@ class _StaffCardState extends State<_StaffCard> {
                       Row(
                         children: [
                           Text(
-                            'View staff',
+                            '$count ${count == 1 ? 'member' : 'members'}',
                             style: TextStyle(
                               color: accent,
                               fontSize: 13,
